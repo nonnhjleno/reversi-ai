@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 配布ZIPから展開できる大容量の棋譜データ
+102400-games/102400-games.pkl
