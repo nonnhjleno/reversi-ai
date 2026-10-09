@@ -2,27 +2,35 @@ import random
 
 
 class Pos(object):
+    """盤面上の座標を表す。x は列、y は行で、左上を (0, 0) とする。"""
 
     def __init__(self, x, y):
+        """座標を初期化する。盤面内かどうかの判定は is_valid() で行う。"""
         self.x = x
         self.y = y
 
     def is_valid(self):
+        """座標が 8×8 の盤面内にあれば True を返す。"""
         return 0 <= self.x < 8 and 0 <= self.y < 8
 
     def add(self, p):
+        """別の座標または方向 p を加えた新しい Pos を返す。自身は変更しない。"""
         return Pos(self.x + p.x, self.y + p.y)
 
     def __add__(self, p):
+        """+ 演算子で座標を加算し、新しい Pos を返す。"""
         return Pos(self.x + p.x, self.y + p.y)
 
     def __eq__(self, p):
+        """x と y の両方が等しい Pos 同士を等しいと判定する。"""
         return self.x == p.x and self.y == p.y
 
     def __str__(self):
+        """GUIとの通信で使う「x y」形式の文字列を返す。"""
         return '{} {}'.format(self.x, self.y)
 
 
+# 8方向の相対座標。盤面の走査や石を挟める方向の判定に共用する。
 AROUND = [
     Pos(-1, -1), Pos(-1, 0), Pos(-1, 1),
     Pos(0, -1), Pos(0, 1),
@@ -30,9 +38,15 @@ AROUND = [
 
 
 class Board(object):
+    """リバーシの盤面を保持し、着手判定・盤面更新・GUI応答を行う。
+
+    cell は cell[y][x] の二次元リストで、'B' は黒、'W' は白、
+    'E' は空きマスを表す。内部の着手判定は _ask() に集約し、
+    result() は現在の盤面だけから対局状態と勝敗を返す。
+    """
 
     def __init__(self):
-        # python 内包表現
+        """空きマスで盤面を作り、リバーシの初期配置を置く。"""
         self.cell = [['E' for _ in range(8)] for _ in range(8)]
         self.cell[3][4] = 'B'
         self.cell[4][3] = 'B'
@@ -40,11 +54,11 @@ class Board(object):
         self.cell[4][4] = 'W'
 
     def ask(self, color, pos):
-        '''指定された座標にコマを置けるかどうかを確認し、その結果を表示する。
-        Args:
-          color (str): コマの色 "B" or "W"
-          pos (Pos): コマを置く座標
-        '''
+        """着手可能かを検査し、GUI向けに OK または NG を出力する。
+
+        color は 'B'（黒）または 'W'（白）、pos は候補座標。
+        盤面は変更しない。座標・色が不正、または合法手でない場合は NG。
+        """
         # 引数確認
         if color != 'B' and color != 'W':
             print('NG', flush=True)
@@ -57,14 +71,14 @@ class Board(object):
         if self._ask(color, pos):
             print('OK', flush=True)
         else:
-            print('NG', flush=False)
+            print('NG', flush=True)
 
     def play(self, color, pos):
-        '''指定された座標にコマを置き、その結果を表示する。
-        Args:
-          color (str): コマの色 "B" or "W"
-          pos (Pos): コマを置く座標
-        '''
+        """指定した合法手を盤面に反映し、GUI向けに結果を出力する。
+
+        color は 'B'（黒）または 'W'（白）、pos は着手座標。
+        不正な入力または置けない場所なら盤面を変更せず NG を出力する。
+        """
         # 引数確認
         if color != 'B' and color != 'W':
             print('NG', flush=True)
@@ -80,10 +94,11 @@ class Board(object):
             print('NG', flush=True)
 
     def genmove(self, color):
-        '''指定された色のコマを置き、その結果を表示する。
-        Args:
-          color (str): コマの色 "B" or "W"
-        '''
+        """指定色の合法手からランダムに1手を選び、着手結果を出力する。
+
+        合法手がある場合は盤面を更新して座標を出力する。
+        合法手がない場合は NG を出力し、盤面は変更しない。
+        """
         # 引数確認
         if color != 'B' and color != 'W':
             print('NG', flush=True)
@@ -93,23 +108,41 @@ class Board(object):
         pos = self._genmove(color)
 
         if pos is not None:
-            print(pos)
+            print(pos, flush=True)
         else:
-            print('NG')
+            print('NG', flush=True)
 
     def showboard(self):
-        '''盤面をっ表示する。'''
+        """現在の盤面を8行の文字列にして標準出力へ表示する。"""
         print(self, flush=True)
 
+    def result(self):
+        """現在の盤面から対局状態または勝敗を返す。
+
+        どちらかに合法手があれば 'NG'、両色とも合法手がなければ
+        石数に応じて 'B'、'W'、'D' を返す。盤面は変更しない。
+        """
+        if self._has_legal_move('B') or self._has_legal_move('W'):
+            return 'NG'
+
+        black_count = sum(row.count('B') for row in self.cell)
+        white_count = sum(row.count('W') for row in self.cell)
+
+        if black_count > white_count:
+            return 'B'
+        elif white_count > black_count:
+            return 'W'
+        else:
+            return 'D'
+
     def _get_reverse_pos(self, color, pos, direction):
-        '''指定された座標にコマを置けるかを確認し、ひっくり返す必要のある終点座標を返す。
-        Args:
-          color (str): コマの色 "B" or "W"
-          pos (Pos): コマを置く座標
-          direction (Pos): 調べる方向
-        Return:
-          bool: コマを置けたなら終点座標を返す。おけない場合はNoneを返す。
-        '''
+        """1方向を調べ、石を挟める場合は自色の終点座標を返す。
+
+        pos から direction へ進み、最初に相手の石があり、その先に
+        空きマスを挟まず自色の石が続く場合に、その自色の座標を返す。
+        条件を満たさない場合は None。盤面や pos 自体は変更しない。
+        呼び出し側で color と pos の妥当性を確認しておく。
+        """
         opposite = 'B' if color == 'W' else 'W'
         current = pos + direction
         # 下のコードと同じ
@@ -131,13 +164,11 @@ class Board(object):
                 return current
 
     def _play(self, color, pos):
-        '''指定された座標にコマを置いて、必要な部分のコマを反転させる。
-        Args:
-          color (str): コマの色 "B" or "W"
-          pos (Pos): コマを置く座標
-        Return:
-          bool: コマを置けたならTrueを返す
-        '''
+        """合法性を確認して着手し、成功したかを返す。
+
+        合法手なら _update() で盤面を更新して True、置けなければ
+        盤面を変えず False を返す。color と pos は有効値であること。
+        """
         # 置けることの確認
         if not self._ask(color, pos):
             return False
@@ -148,13 +179,11 @@ class Board(object):
         return True
 
     def _ask(self, color, pos):
-        '''指定された座標にコマを置けるかどうかを確認する。
-        Args:
-          color (str): コマの色 "B" or "W"
-          pos (Pos): コマを置く座標
-        Return:
-          bool: コマを置けるならTrueを返す
-        '''
+        """空きマスで、少なくとも1方向に相手の石を挟めるか判定する。
+
+        True は合法手、False は着手不可を表す。盤面は変更しない。
+        color は 'B' または 'W'、pos は盤面内であることが前提。
+        """
         if self.cell[pos.y][pos.x] != 'E':
             return False
 
@@ -166,13 +195,25 @@ class Board(object):
 
         return False
 
+    def _has_legal_move(self, color):
+        """指定色に合法手が1つでもあるかを返す。
+
+        全マスを調べ、合法手が見つかった時点で True を返す。
+        color は 'B' または 'W' であることが前提。盤面は変更しない。
+        """
+        for y in range(8):
+            for x in range(8):
+                if self._ask(color, Pos(x, y)):
+                    return True
+
+        return False
+
     def _update(self, color, pos):
-        '''指定された座標にコマを置いて、必要な部分のコマを反転させる。
-        指定座標は置くことが可能な場所であること。
-        Args:
-          color (str): コマの色 "B" or "W"
-          pos (Pos): コマを置く座標
-        '''
+        """合法手 pos に石を置き、挟んだ相手の石を自色に変える。
+
+        pos は事前に _ask() で合法と確認済みであること。
+        各方向の終点石は既に自色なので、その手前の石だけを反転する。
+        """
         # 石を置く
         self.cell[pos.y][pos.x] = color
 
@@ -190,12 +231,11 @@ class Board(object):
                 current += direction
 
     def _genmove(self, color):
-        '''指定された色のコマを置いて、必要な部分のコマを反転させる。
-        Args:
-          color (str): コマの色 "B" or "W"
-        Return:
-          Pos: コマを置いた座標（おけなかった場合はNone）を返す。
-        '''
+        """合法手をすべて列挙してランダムに1手を着手し、その座標を返す。
+
+        合法手がない場合は None を返す。着手が成功した場合は盤面も
+        更新される。候補選択は一様なランダム順序に依存する。
+        """
         candidates = []
 
         for y in range(8):
@@ -215,10 +255,16 @@ class Board(object):
         return candidates[0]
 
     def __str__(self):
+        """盤面を1行8マス、改行区切りの文字列にして返す。"""
         return '\n'.join(''.join(r) for r in self.cell)
 
 
 def main():
+    """GUIとの標準入出力プロトコルを読み取り、盤面操作を実行する。
+
+    1行ずつコマンドを受け取り、quit で終了する。name、ask、play、
+    genmove、showboard、result に応答するため、標準出力には応答だけを出す。
+    """
     board = Board()
 
     while True:
@@ -236,6 +282,8 @@ def main():
             board.genmove(cmd[1])
         elif cmd[0] == 'showboard':
             board.showboard()
+        elif cmd == ['result']:
+            print(board.result(), flush=True)
 
 
 if __name__ == '__main__':
