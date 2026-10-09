@@ -1,6 +1,4 @@
 import queue
-import subprocess
-import sys
 import threading
 import unittest
 import io
@@ -8,8 +6,51 @@ import random
 from contextlib import redirect_stdout
 from pathlib import Path
 
-from reversi_player.reversi import Board
+import pytest
+
+from harness import referee
+from harness.protocol import Player
+from reversi_player.reversi import Board, Pos
 from reversi_player.web import Process, RequestHandler
+
+
+class BoundedWebProcess(Process):
+    def __init__(self):
+        super().__init__()
+        self._ready = False
+
+    def command(self, command, lines=1):
+        responses = queue.Queue()
+
+        def receive():
+            try:
+                responses.put((True, super(BoundedWebProcess, self).command(command, lines)))
+            except Exception as error:
+                responses.put((False, error))
+
+        reader = threading.Thread(target=receive, daemon=True)
+        reader.start()
+        timeout = 5 if not self._ready else 10 if command.startswith('genmove ') else 1
+        try:
+            succeeded, response = responses.get(timeout=timeout)
+        except queue.Empty as error:
+            self.proc.kill()
+            self.proc.wait(timeout=2)
+            reader.join(timeout=1)
+            raise AssertionError('GUI command timed out: ' + command) from error
+        self._ready = True
+        if not succeeded:
+            raise response
+        return response
+
+    def __exit__(self, exception_type, exception, traceback):
+        try:
+            if self.proc.poll() is None:
+                super().__exit__(exception_type, exception, traceback)
+                self.proc.wait(timeout=2)
+        finally:
+            for pipe in (self.proc.stdin, self.proc.stdout):
+                pipe.close()
 
 
 class ResultCommandTests(unittest.TestCase):
@@ -61,39 +102,15 @@ class ResultCommandTests(unittest.TestCase):
 
     def test_cli_flushes_result_before_receiving_next_command(self):
         script = Path(__file__).resolve().parents[1] / 'reversi_player' / 'reversi.py'
-        process = subprocess.Popen(
-            [sys.executable, str(script)],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1,
-        )
-        responses = queue.Queue()
-        reader = threading.Thread(
-            target=lambda: responses.put(process.stdout.readline()),
-            daemon=True,
-        )
-
-        try:
-            process.stdin.write('result\n')
-            process.stdin.flush()
-            reader.start()
-            self.assertEqual(responses.get(timeout=1), 'NG\n')
-        finally:
-            if process.poll() is None:
-                process.stdin.write('quit\n')
-                process.stdin.flush()
-                process.wait(timeout=2)
-            process.stdin.close()
-            process.stdout.close()
-            process.stderr.close()
+        with Player(script) as process:
+            self.assertEqual(process.command('result'), ['NG'])
+            self.assertLessEqual(process.commands[-1]['seconds'], 1)
 
     def test_web_process_gets_board_legal_moves_and_result(self):
         output = io.StringIO()
 
         with redirect_stdout(output):
-            with Process() as process:
+            with BoundedWebProcess() as process:
                 rows = process.command('showboard', lines=8).split('\n')
                 legal_moves = [
                     process.command('ask B {} {}'.format(x, y))
@@ -111,43 +128,37 @@ class ResultCommandTests(unittest.TestCase):
         self.assertEqual(result, 'NG')
 
     def test_web_response_handles_pass_and_terminal_result(self):
-        saved_random_state = random.getstate()
         game = None
-
-        try:
-            for seed in range(32):
-                random.seed(seed)
-                board = Board()
-                moves = []
-                after_first_pass = None
-
-                for _ in range(128):
-                    color = ('B', 'W')[len(moves) % 2]
-                    pos = board._genmove(color)
-                    if pos is None:
-                        moves.append([-1, -1])
-                        if after_first_pass is None:
-                            after_first_pass = moves[:]
-                    else:
-                        moves.append([pos.x, pos.y])
-
-                    result = board.result()
-                    if result != 'NG':
-                        break
-
-                if after_first_pass is not None and result in ('B', 'W', 'D'):
-                    game = (board, moves, after_first_pass, result)
+        for seed in range(32):
+            generator = random.Random(seed)
+            rows = referee.INITIAL_ROWS
+            moves = []
+            after_first_pass = None
+            for _ in range(128):
+                color = ('B', 'W')[len(moves) % 2]
+                possible = referee.legal_moves(rows, color)
+                if not possible:
+                    moves.append([-1, -1])
+                    if after_first_pass is None:
+                        after_first_pass = moves[:]
+                else:
+                    position = generator.choice(possible)
+                    rows = referee.apply_move(rows, color, position)
+                    moves.append(list(position))
+                result = referee.result(rows)
+                if result != 'NG':
                     break
-        finally:
-            random.setstate(saved_random_state)
+            if after_first_pass is not None and result in ('B', 'W', 'D'):
+                game = (rows, moves, after_first_pass, result)
+                break
 
         self.assertIsNotNone(game, 'パスを含む終局対局を生成できなかった')
-        board, moves, after_first_pass, result = game
+        rows, moves, after_first_pass, result = game
         handler = object.__new__(RequestHandler)
         output = io.StringIO()
 
         def get_response(request):
-            with Process() as process:
+            with BoundedWebProcess() as process:
                 handler._make_board(process, request)
                 response = handler._make_response(process, request)
                 process.proc.stdout.close()
@@ -168,8 +179,96 @@ class ResultCommandTests(unittest.TestCase):
         self.assertEqual(
             end_response['board'],
             [[1 if cell == 'B' else -1 if cell == 'W' else 0
-              for cell in row] for row in board.cell],
+              for cell in row] for row in rows],
         )
+
+
+@pytest.mark.parametrize('color', ['B', 'W'])
+@pytest.mark.parametrize('delta_x,delta_y', [
+    (-1, -1), (0, -1), (1, -1), (-1, 0),
+    (1, 0), (-1, 1), (0, 1), (1, 1),
+])
+def test_each_direction_flips_exactly_the_enclosed_stone(color, delta_x, delta_y):
+    opponent = 'W' if color == 'B' else 'B'
+    rows = [list('EEEEEEEE') for _ in range(8)]
+    rows[3 + delta_y][3 + delta_x] = opponent
+    rows[3 + 2 * delta_y][3 + 2 * delta_x] = color
+    expected = [row[:] for row in rows]
+    expected[3][3] = color
+    expected[3 + delta_y][3 + delta_x] = color
+    before = tuple(''.join(row) for row in rows)
+    board = Board()
+    board.cell = rows
+    output = io.StringIO()
+    with redirect_stdout(output):
+        board.play(color, Pos(3, 3))
+    assert output.getvalue() == 'OK\n'
+    assert board.cell == expected
+    assert referee.apply_move(before, color, (3, 3)) == tuple(''.join(row) for row in expected)
+
+
+def test_all_eight_directions_flip_together():
+    before = (
+        'EEEEEEEE', 'EBEBEBEE', 'EEWWWEEE', 'EBWEWBEE',
+        'EEWWWEEE', 'EBEBEBEE', 'EEEEEEEE', 'EEEEEEEE',
+    )
+    expected = (
+        'EEEEEEEE', 'EBEBEBEE', 'EEBBBEEE', 'EBBBBBEE',
+        'EEBBBEEE', 'EBEBEBEE', 'EEEEEEEE', 'EEEEEEEE',
+    )
+    board = Board()
+    board.cell = [list(row) for row in before]
+    output = io.StringIO()
+    with redirect_stdout(output):
+        board.ask('B', Pos(3, 3))
+        assert tuple(''.join(row) for row in board.cell) == before
+        board.play('B', Pos(3, 3))
+    assert output.getvalue() == 'OK\nOK\n'
+    assert tuple(''.join(row) for row in board.cell) == expected
+    assert referee.apply_move(before, 'B', (3, 3)) == expected
+
+
+@pytest.mark.parametrize('row', ['EEEEEEEE', 'EWEEEEEE', 'EBEEEEEE', 'EWEEBEEE'])
+def test_no_capture_without_an_unbroken_opponent_ray(row):
+    board = Board()
+    board.cell = [list(row)] + [list('EEEEEEEE') for _ in range(7)]
+    before = [cells[:] for cells in board.cell]
+    output = io.StringIO()
+    with redirect_stdout(output):
+        board.ask('B', Pos(0, 0))
+        board.play('B', Pos(0, 0))
+    assert output.getvalue() == 'NG\nNG\n'
+    assert board.cell == before
+    assert referee.flipped_cells(tuple(''.join(cells) for cells in before), 'B', (0, 0)) == []
+
+
+@pytest.mark.parametrize('rows,expected', [
+    (referee.INITIAL_ROWS, 'NG'),
+    (('EWBBBBBB',) + ('BBBBBBBB',) * 7, 'NG'),
+    (('EBWWWWWW',) + ('WWWWWWWW',) * 7, 'NG'),
+    (('EBBBBBBB',) + ('BBBBBBBB',) * 7, 'B'),
+    (('BBBBBBBB',) * 8, 'B'),
+    (('WWWWWWWW',) * 8, 'W'),
+    (('BBBBBBBB',) * 4 + ('WWWWWWWW',) * 4, 'D'),
+])
+def test_referee_terminal_results_match_fixed_positions(rows, expected):
+    assert referee.result(rows) == expected
+
+
+@pytest.mark.parametrize('color,rows', [
+    ('W', ('EWBBBBBB',) + ('BBBBBBBB',) * 7),
+    ('B', ('EBWWWWWW',) + ('WWWWWWWW',) * 7),
+    ('B', ('WWWWWWWW',) * 8),
+    ('W', ('BBBBBBBB',) * 8),
+])
+def test_genmove_without_legal_moves_preserves_fixed_board(color, rows):
+    board = Board()
+    board.cell = [list(row) for row in rows]
+    output = io.StringIO()
+    with redirect_stdout(output):
+        board.genmove(color)
+    assert output.getvalue() == 'NG\n'
+    assert tuple(''.join(row) for row in board.cell) == rows
 
 
 if __name__ == '__main__':

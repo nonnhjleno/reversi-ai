@@ -8,3 +8,6 @@ venv/
 
 # 配布ZIPから展開できる大容量の棋譜データ
 102400-games/102400-games.pkl
+
+# ハーネスの詳細な対局ログ（必要な評価結果は個別に保管する）
+evaluation_results/
