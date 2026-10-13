@@ -1,6 +1,6 @@
 # ハーネスのデータ契約と不変条件
 
-更新日: 2026-10-13。現行実装: evaluation/analysis/comparison schema5、trace4、validation3。本文は現行の定義・検査・保証境界をまとめる。旧schemaの成功記録を現行の資格に読み替えない。
+更新日: 2026-10-13。コード基準: ae4a8cb。現行実装はevaluation/analysis/comparison schema5、trace4、validation3。本文とアーキテクチャ図を実装へ再照合した。旧schemaの成功記録を現行の資格に読み替えない。
 
 外部コマンド・盤面・時間制限の正本は[課題仕様](../プログラム開発方法.md)、実行方法は[ハーネス.md](../ハーネス.md)、責務と図は[harness_architecture.md](harness_architecture.md)。実行確認と残件は[正常化完了報告](reports/ハーネス正常化完了報告.md)。旧定義・監査・整理前の本文は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管する。
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | Rows / Position | referee・openings・AI応答 → evaluate/contracts | 8行×8文字B/W/E。メモリtuple、JSON配列。座標はx列・y行、0～7。harnessのpassはNone |
 | OpeningPopulation / SelectionManifest | openings → evaluate/contracts | 母集合/識別規則/抽出algorithmはv1。合法履歴・N/hash・重複・抽出を再検証 |
-| BudgetConfig | search_budget → producer/検証器 | v1入力も対応し、defaultを含めv2へ正規化。kindはnone/time/nodes/depth、時間上限は整数ns |
+| BudgetConfig | search_budget → producer/検証器 | v1入力も対応しv2へ正規化。kindはunknown/none/time/nodes/depth。未指定はunknownで、none適用除外とは別。timeの上限は整数ns |
 | ProcessEvidence / CommandRecord | protocol.Player → evaluate/contracts/search_budget | 親lifecycle、実測整数ns、時計/thread、session/generation、全command index/ID。secondsは派生表示 |
 | raw trace4 | 対応producer → search_budget/contracts | configヘッダ、全command/genmove、quit、process_exit_ready。保存bytesのhashと意味を同じsnapshotで検査 |
 | Game / EvaluationReport | evaluate → inspection/analysis | case/pair/leg、role seed、色割当、棋譜、両host記録、trace、status/cache/summary。新規評価はschema5 |
@@ -32,14 +32,19 @@ canonical JSONはensure_ascii=False・sort_keys=True・空白なし・allow_nan=
 | case_id | openings.case_id。rules/identity版、初期盤面、全履歴、到達盤面、手番のSHA-256 | 履歴込みのケース。盤面だけが同じでも履歴が違えば別IDになり得る。AI・run・保存先を含めない |
 | orbit_id | openings.orbit_id。盤面＋手番のD4対称8変換の代表 | 対称重複排除用。case_idやpair対応の代用にしない |
 | population_hash / selection_hash | 母集合/manifestの自己hashを除く内容 | archive・報告・conditions・manifestの関連aliasを照合 |
-| pair_id | contracts.pair_id。pair_version=1、case_id、A/B seeds、role_swap_version=1 | 同じケース・役割seedの先後2局。run・leg・予算・AI版を含めず、前後比較でも対応付ける |
+| pair_id | contracts.pair_id_forで照合。evaluateの取得側は同じpayloadを_hash_payloadで生成。pair_version=1、case_id、A/B seeds、role_swap_version=1 | 同じケース・役割seedの先後2局。run・leg・予算・AI版を含めず、前後比較でも対応付ける |
 | run_id | evaluateのUUID | 1取得を識別。条件一致を意味しない |
 | clock_domain_id | 取得run共通の時計比較scope | tokenだけで時計の比較可能性を証明しない。別runの絶対時刻を比較しない |
 | process_session_id / process_generation | Popen試行のsessionと世代 | 同一run全体でsession一意。現取得はgeneration=0、同slot途中restart継続は正式対象として実装しない |
 | command_id | protocol.command_id。run/purpose/pair/leg/role/session/generation/indexの結合 | 全commandの位置・実文字列・case/role seedを期待contextへ照合。probeとgameを混ぜない |
 | experiment_id / evaluation_fingerprint | evaluate。conditions/runtime/targets/明示assets/取得コード | confidence等の解析条件と分離。seeded_playerも取得依存へ登録。全AI importの自動登録ではない |
-| analysis_id / analysis_fingerprint | analysis。元source hash、現検証器/数式/解析spec | 取得証拠を変更せず別解析を識別。confidence変更は解析条件として扱う |
+| analysis_id / analysis_fingerprint | 新規取得はevaluate、再解析/比較はanalysis._analysis_lineage（詳細は下記） | confidenceは解析条件。取得時IDと再解析IDを同一の生成式とみなさず、原取得証拠を変更しない |
 | board_sha256 | search_budget。要求前の行を改行連結したASCII bytesのSHA-256 | traceのgenmove要求前盤面と対応。JSON hashやcase/orbit IDとは異なる |
+
+analysisの識別規則は経路で異なる。
+- 新規取得のanalysis_fingerprintはanalysis.py/statistics.pyのhashとmethod/confidenceから生成し、analysis_idはexperiment_id・そのfingerprint・analysis_specから生成する。
+- 再解析/比較のanalysis_fingerprintは解析コードhash・spec・fresh検証版/fingerprintを含み、analysis_idはsource(s)（原report hash等）とそのfingerprintから生成する。取得側と再解析側のIDが同じになる保証はない。
+- _harness_infoの取得fingerprint対象はevaluate/protocol/referee/openings/search_budget/contracts/seeded_player。analysis/statisticsは解析fingerprint側で識別する。
 
 opening_id、sample_set_id、execution_orderという専用フィールドは実装済みとして扱わない。現状のケースID、manifest配列、game indexを用いる。PIDは再利用されるため診断補助でありsessionの代用ではない。
 
@@ -67,9 +72,11 @@ AIを分離したらengine・設定・モデル等を--a-asset/--b-assetへ明�
 
 ## 5. 時計・プロセス・通信の不変条件
 
-現measurement_contractは`local_cpython313_perf_ns_lifecycle_v2`。対応登録のあるlocal CPython3.13/Windows/QueryPerformanceCounter契約で、元のclock descriptor・QPC周波数・run domain・session・計測threadを確認してから比較する。再解析環境の時計に原記録を書き換えない。
+新規取得のmeasurement_contractは`local_cpython313_perf_ns_lifecycle_v2`。そのclock_status登録はlocal CPython3.13.5/Windows/QueryPerformanceCounter、有効なqpc_frequency_hz、monotonic/adjustable等の属性を要求する。v2の別patch版はunknown。元のdescriptor・domain・session・計測threadを確認してから比較し、再解析環境の時計で原記録を書き換えない。
 
-整数nsは1ns精度を意味しない。同一計測threadは整数の順序を厳密に検査し、同値/0経過を許す。親子など異threadの辺は、`U=ceil(1_000_000_000/qpc_frequency_hz)+1`nsを用い、後点−前点が>Uならverified、<-Uならfailed、[-U,U]ならunknown。このUを猶予として緩めたり、別時計比較へ流用したりしない。未知契約・不足はunknown、既知不一致・不正型はfailed。提供された不正型を別の欠損で隠さない。
+低水準clock_statusは旧`local_cpython313_perf_ns_enclosed_v1` descriptorも互換判定する（CPython3.13/Windows/QPC）。v2のpatch/周波数検査をそのままv1へ適用する実装ではない。異process辺のtemporal_orderは別途有効周波数を要求する。conditionsのmeasurement_contract、descriptorの登録、host/child/runtimeの一致、source版と全lifecycle/正式資格は別々の検査であり、低水準verifiedだけで正式資格を保証しない。
+
+整数nsは1ns精度を意味しない。同一計測threadは整数の順序を厳密に検査し、同値/0経過を許す。親子など異threadの辺は、`U=ceil(1_000_000_000/qpc_frequency_hz)+1`nsを用い、後点−前点が>Uならverified、<-Uならfailed、[-U,U]ならunknown。このUを猶予として緩めたり、別時計比較へ流用したりしない。未知契約・不足はunknown、各型/一致検査で確認できた矛盾はfailed。clock_statusは非dict descriptorをunknownとする一方、temporal_orderは提供された非整数端点を時計不足より先にfailedとする。全不正型を一律に同じ状態へ分類する実装ではない。
 
 | 記号 | 実測点・所属 |
 |---|---|
@@ -87,11 +94,11 @@ CSはOS死亡時刻ではなく、EOもabort全体の完了点とは違う。単
 | T-ID / T-CLK | run/slot/session/generation/command/case/role seed一致、session一意、時計/domain/thread所属 |
 | T-SP | SP≤PR≤全host HE0。startup_endはHE1_name |
 | T-INIT | SP≤CE≤IR≤CC_name。CEとPR、IRとHS_nameの相対順は固定しない |
-| T-CMD | 通常全要求でHE0≤HS≤CC≤CR≤HR≤HE1。genmoveではCC≤SS≤SE≤CRも要求 |
-| T-SERIAL | 親の前HE1≤次HE0、子の前CR≤次CC。最後はquit、quit後のcommandなし |
+| T-CMD | quit以外はHE0≤HS≤CC≤CR≤HR≤HE1。genmoveイベントではCC≤SS≤SE≤CRも要求。quitには応答CR/HR/HE1を要求しない |
+| T-SERIAL | 親の前HE1≤次HE0、子の前CR≤次CC。正常終了の最後はquit。quitの親終点はEOで、quit後のcommandを認めない |
 | T-EXIT | 正常quitのHE0q≤HSq≤CCq≤CS≤EO。子イベントはCSまで、通常host応答はquit前 |
 | T-LOAD | startupはCE≤load_start≤load_end≤IR。対応command loadはCC〜CR内、使用モデルはload_end≤SS |
-| T-DIFF | search=SE−SS、wire=HR−HS、external=HE1−HE0。実測差/表示alias/期限を照合し、bool/floatや負の同thread差を認めない |
+| T-DIFF | 通常要求はsearch=SE−SS、wire=HR−HS、external=HE1−HE0。quitのexternalはEO−HE0でwireなし。端点/差は整数ns、secondsは派生数値。bool端点や負の同thread差を認めない |
 | T-CAUSE | collectorの予定順からA name→B spawn、actor genmove→peer play、同期検査、quit等を再構成。保存時刻をソートして正当化しない |
 | T-GATE | 必須時間各軸と他の品質/統計条件のAND。時間verifiedだけ、hash一致、n=N、取得completeでは正式不可 |
 
@@ -112,11 +119,15 @@ clock/QPCの根拠は[Python 3.13 time](https://docs.python.org/3.13/library/tim
 
 外部はcommand既定1秒・genmove10秒、startup別既定5秒。初回nameのstartup期限と通常command期限は区別する。実際の条件は数値フィールドでありtimeout_policy説明文字列だけを正本にしない。
 
-内部search_only、モデル読込、JSONL書込、盤面適用、stdout/queue・OS待ちを混同しない。モデルなしは明示not_required。startup loadはCE〜IR、対応command loadは利用前に完了し、内部探索合計へ加算しない。未対応のlazy/background/GPU scopeはunknownであり、必要な証拠/同期契約とテストなしにverifiedへしない。fixtureのscopeは実AIの予定scopeと同名だけで同等扱いしない。
+search_onlyという名称だけで実AIの純粋な探索範囲を保証しない。現行budget_playerのSS〜SEは合法手列挙・盤面適用も含み、模擬counterである。モデル読込、JSONL書込、stdout/queue・OS待ちはfixtureの探索端点の外で、外部応答には含まれる。実AIの予定scopeと同名だけで同等扱いしない。
+
+モデルなしは明示not_required。trace4 headerのload検査窓はCE〜IR、command eventのload検査窓はCC〜CRで、command loadにはload_end≤SSも要求する。fixtureが実際に行うのはstartup read_bytesであり、command loadではない。headerの初期load証拠も別に必要なため、初回genmoveで初めてloadするlazy方式を、そのまま正式対応済みとしない。未知scope/background/GPUは必要な証拠・同期契約・テストなしにverifiedへしない。
 
 ## 7. 観測・集計・状態
 
 contracts.inspect_evaluationは原report snapshotと同一呼出内のartifact bytes cacheを使い、母集合/棋譜/両通信/rawと保存cache/summaryを再照合する。取得summary前だけprivate _acquisition_summaryが保存summary照合なしのcoreを使う。公開skip flagはない。原証拠や不正summaryを正しい派生値で黙って置き換えない。
+
+順序は取得→_acquisition_summary→summary設定→analysis.estimateのfresh検証→statistics/status設定→complete checkpoint→API return→CLIのfresh assess→final writer。保存済みsourceの再解析はsource JSONと原証跡を別に読み直す。checkpointの参考summarize、canonical summary、final保存成功を同一状態として扱わない。
 
 | 状態・結果 | 意味 |
 |---|---|
@@ -125,12 +136,12 @@ contracts.inspect_evaluationは原report snapshotと同一呼出内のartifact b
 | game complete | 合法終局を得た実行状態。後続通信/quit/検証/保存成功とは別 |
 | reference_available | 現行正常対局の参考集計可否。正式資格ではない。旧資料は互換分岐と保証不足を明示 |
 | formal eligible / ineligible / not_requested | 品質・統計条件による資格。不成立と要求なしを区別 |
-| statistics available / descriptive_only / unavailable | 正式区間 / 参考のみ / 正式計算不可 |
-| publication saved / failed、decision undetermined | 保存結果と採用判断。取得completeや数値基準metから自動採用しない |
+| statistics available / descriptive_only / unavailable | 正式資格＋数式computedで正式区間 / valid入力でCI未要求 / 正式計算不可。descriptive_onlyだけでreference_availableは保証しない |
+| 保存成功/失敗、decision undetermined | writerの戻り値/ArtifactWriteErrorで判定。publicationを評価JSONの共通status fieldとして保存していない。decisionはevaluationのstatus内・comparisonのrootで、analysisには同じfieldなし |
 
 参考分母は正常終局・通信verifiedの完了局。勝率=wins/completed、勝ち点率=(wins+draws/2)/completed、0完了はnull。A勝1・分0.5・負0で、色B/Wと役割A/Bを区別する。不正手/通信失敗を相手の勝ちに変換しない。
 
-RTTの全genmove、内部全genmove、内部normal_moveを別に集計し、pass/terminal probeを明示する。sum/max nsとsample数から再計算する。実AItraceなしは内部平均null/unknown。予算・測定・時系列のrole→game→report階層の保存矛盾も拒否する。
+RTTは成功したgenmove通信の平均・最大で、失敗局に含まれる成功問い合わせやpass/terminal probeも対象となる。内部全genmoveとnormal_moveは別に集計し、内部sum/max nsとsample数をrawから再計算する。勝敗率の正常完了分母とは別の標本である。実AItraceなしは内部平均null/unknown。予算・測定・時系列のrole→game→report階層の保存矛盾も拒否する。
 
 ## 8. 正式資格と統計の推定対象
 
@@ -140,11 +151,13 @@ RTTの全genmove、内部全genmove、内部normal_moveを別に集計し、pass
 
 statistics単独APIはcomputed/arithmetic_only/not_assessedで、母集合やrawの証明書ではない。検証済みNと派生gameだけをanalysisから渡す。bootstrapや非決定AIの反復分布推定は現行方式ではなく、追加設計が必要。
 
-品質検証、数式計算、数値基準met/not_met、採用decisionを分離する。事前固定基準・未閲覧held_out・学習非混入・任意停止/多重比較の運用は検証器だけで保証しない。
+品質検証、数式計算、数値基準met/not_met、採用decisionを分離する。取得evaluationのperformance_criterionはconfirmatoryでpoint_rate≥0.55かつ区間lower>0.5ならmet、区間なしはundetermined、他profileはnot_requestedという現在の固定規則。comparisonのimprovement_criterionは対応差のlower>0ならmet。これらは自動採用ではなく、数値基準未達だけでCLIを失敗にしない。再解析analysisは元evaluationのperformance_criterionを同じfieldへ再発行しない。
+
+事前固定基準・未閲覧held_out・学習非混入・任意停止/多重比較の運用は検証器だけで保証しない。新しい採用基準を導入するなら、現在の固定規則との違いを明示する。
 
 ## 9. 保存・互換性・再解析
 
-最終reportは排他新規作成・flush/fsync。checkpointのatomic replaceはrun所有領域だけで、既存finalを置換しない。取得完了と保存成功は別。途中ファイルや元の失敗を成功へ修復せず、失敗phase/path/causeを残す。
+最終reportはCLIが排他新規作成・flush/fsyncする。evaluate APIはraw/母集合/checkpointを保存するがfinal JSONは返却辞書であり、final writerはCLI/呼出元の責務。純粋なanalysis APIは解析辞書を返す。checkpointのatomic replaceはrun所有領域だけで、既存finalを置換しない。取得完了と保存成功は別。途中ファイルや元の失敗を成功へ修復せず、共通保存例外のphase/path/causeを残す。
 
 旧schema1〜4は読込と可能な参考再解析を維持する。旧秒から新端点を補造せず、旧4の比較可能な起動前/要求間矛盾はfailed、不足する新lifecycle証拠はunknown。新analysis/comparison5や過去eligibleだけで旧sourceを正式昇格しない。
 
