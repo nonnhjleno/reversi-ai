@@ -1,9 +1,66 @@
 """有限母集合の低水準区間計算。N・抽出・固定得点・原traceは呼出側が先に検証する。"""
 
+from __future__ import annotations
+
 import math
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+    from typing import Any, NotRequired, TypedDict
+
+    class _GameRecord(TypedDict, total=False):
+        """算術が参照する入力形状。任意キーと未検証得点を許し、正式資格は表さない。"""
+
+        pair_id: str | None
+        case_id: str | None
+        leg: int | None
+        game_status: str | None
+        protocol_status: str | None
+        budget_status: str | None
+        colors: dict[str, str]
+        seeds: dict[str, int | None]
+        score_a: object
+
+    class _PairScore(TypedDict):
+        """既存の値域検査を通った先後平均と元の得点値。原trace検証とは別である。"""
+
+        case_id: str | None
+        score: float
+        game_scores: list[object]
+
+    class _Interval(TypedDict):
+        """算術区間の既存辞書形状。全数の場合はrhoキーを持たない。"""
+
+        mean: float
+        lower: float
+        upper: float
+        half_width: float
+        method: str
+        confidence: float
+        rho: NotRequired[float]
+        calculation_status: str
+        result_scope: str
+        formal_eligibility: str
+
+    class _StatisticsResult(TypedDict, total=False):
+        """単独/対応計算の既存結果。失敗経路によるキー欠損やNoneを保持する。"""
+
+        status: str
+        calculation_status: str
+        result_scope: str
+        formal_eligibility: str
+        reason: str | None
+        pair_count: int
+        invalid_pairs: dict[str, str]
+        point_rate: float | None
+        interval: _Interval | None
+        pairs: dict[str, _PairScore]
+        mean_delta: float
 
 
-def confidence_interval(values, population_size, confidence=0.95, value_range=(0.0, 1.0)):
+def confidence_interval(values: Sequence[float], population_size: int, confidence: float = 0.95,
+                        value_range: tuple[float, float] = (0.0, 1.0)) -> _Interval:
     """有界な固定得点の有限母集合平均に対し、全数区間または有限母集合boundを計算する。
 
     valuesは一様な非復元抽出の観測、population_sizeは検証済みNを想定する。
@@ -44,20 +101,20 @@ def confidence_interval(values, population_size, confidence=0.95, value_range=(0
     }
 
 
-def pair_scores(games):
+def pair_scores(games: Iterable[_GameRecord]) -> tuple[dict[str, _PairScore], dict[str, str]]:
     """記録上の条件を満たす先後2legを得点化し、ペア別得点と不適格理由を返す。
 
     A勝1・引分0.5・負0の2局平均。保存statusを参照する低水準関数であり、
     raw意味や母集合を検証した正式資格とは別。入力を変更しない。
     """
-    grouped = {}
-    reasons = {}
+    grouped: dict[str, list[_GameRecord]] = {}
+    reasons: dict[str, str] = {}
     for game in games:
         pair_id = game.get('pair_id')
         if not pair_id:
             continue
         grouped.setdefault(pair_id, []).append(game)
-    scores = {}
+    scores: dict[str, _PairScore] = {}
     for pair_id, pair_games in grouped.items():
         if len(pair_games) != 2:
             reasons[pair_id] = 'incomplete_pair'
@@ -74,7 +131,8 @@ def pair_scores(games):
         if any(game.get('budget_status') not in ('verified', 'exempt') for game in pair_games):
             reasons[pair_id] = 'budget_not_verified'
             continue
-        values = []
+        # 未検証得点だけの動的境界。後続の既存値域検査は省略/変更しない。
+        values: list[Any] = []
         for game in pair_games:
             values.append(game.get('score_a'))
         if {game.get('colors', {}).get('B') for game in pair_games} != {'A', 'B'}:
@@ -97,9 +155,11 @@ def pair_scores(games):
     return scores, reasons
 
 
-def estimate_pair_scores(games, population_size, confidence=0.95, eligible=True,
-                         ineligibility_reason=None, expected_pair_count=None,
-                         expected_case_ids=None):
+def estimate_pair_scores(games: Sequence[_GameRecord], population_size: int,
+                         confidence: float = 0.95, eligible: bool = True,
+                         ineligibility_reason: str | None = None,
+                         expected_pair_count: int | None = None,
+                         expected_case_ids: Iterable[str | None] | None = None) -> _StatisticsResult:
     """ペア完全性と指定coverageを確認してAの平均得点区間を返す低水準関数。
 
     eligibleは算術計算の許可だけで正式資格ではない。Nの根拠は検証せず、成功も
@@ -138,8 +198,10 @@ def estimate_pair_scores(games, population_size, confidence=0.95, eligible=True,
     }
 
 
-def paired_difference(before_games, after_games, population_size, confidence=0.95,
-                      expected_pair_count=None, expected_case_ids=None):
+def paired_difference(before_games: Iterable[_GameRecord], after_games: Iterable[_GameRecord],
+                      population_size: int, confidence: float = 0.95,
+                      expected_pair_count: int | None = None,
+                      expected_case_ids: Iterable[str | None] | None = None) -> _StatisticsResult:
     """同じpair IDのafter-before得点差を[-1,1]の有限母集合区間で推定する。
 
     固定母集合・取得条件同一性・trace検証は呼出側の責務。両側の予定ペアが

@@ -1017,3 +1017,35 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
     assert quality.main() == 1
     output = next((tmp_path / 'evaluation_results').glob('quality-*'))
     assert not json.loads((output / 'quality.json').read_text(encoding='utf-8'))['passed']
+
+
+def test_statistics_is_checked_by_configured_strict_gate(tmp_path):
+    """通常のgate argvで統計の未注釈関数を拒否し、filesからの対象漏れを検出する。"""
+    source = ROOT / 'harness/statistics.py'
+    shadow = tmp_path / 'statistics.py'
+    shadow.write_text(
+        source.read_text(encoding='utf-8')
+        + '\n\ndef _strict_scope_probe(value):\n'
+        + '    """型検査対象からの漏れを検出するための一時的な未注釈関数。"""\n'
+        + '    return value\n',
+        encoding='utf-8',
+    )
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [
+            *step.command,
+            '--cache-dir',
+            str(tmp_path / 'mypy-cache'),
+            '--shadow-file',
+            str(source),
+            str(shadow),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert 'statistics.py:' in result.stdout
+    assert '[no-untyped-def]' in result.stdout

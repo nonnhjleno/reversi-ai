@@ -417,3 +417,77 @@ lintとstrict5sourceは成功。Ruffが示した整形差分だけをapply_patch
 モデルのJL→EC→evidence検査→quality失敗が、21改変の単体回帰、full/smoke双方の公開run_gate回帰6件、実main回帰2件に対応する。正常fixture内metadata/複数観測/直列test、setup失敗/skip・collection失敗/skip、既存crash/timeout/保存失敗の回帰は成功。元pytestの記録された合否と収集完全性を分離し、不正journalを正常へ修復していない。unsupported versionもincompleteにし、別の品質unknown/failed型を導入しない。
 
 現行の保存v1・AI正式評価schema5/trace4/validation3・正式入口・AI/GUIは不変。verify_publicationは引き続きbytes対応確認のみで、意味検証や真正性保証を発行しない。保存済み正常v1との状態契約互換性は確認したが、未対応形式・全plugin・並列/rerun・実Mermaidレンダリング・別OSは保証しない。ステージ・commit・push・branch操作なし。今回確認した検証漏れの修正と回帰は完了。
+
+## mypy strict拡大 Phase 0・1（statisticsのみ）
+
+### Phase 0：PASS / 開始状態と型付け方針
+
+開始HEADはb34a3bf6af598e97fb527c7cb63798ee0b6b729b、main=origin/main、作業ツリーclean。AGENTS、現行architecture/contracts、品質runner、全本番import DAG、statistics全4関数とanalysis/evaluate/testsの呼出を確認した。新規一時領域reversi-strict-phase01-7b1gd12rへ全tracked開始hash、元statistics、診断log、解析graphとDAGを保存。既存成果物は変更しない。
+
+変更前の明示strictはreferee/seeded_player/tools.quality/tools.evidence/tools.evidence_pluginの5件。通常mypyは終了0・5source成功。実graphはこの5件とharness/toolsのdocstringだけの__init__2件で、strict有効・ignore_all=False。現在の成功証拠quality-4c0edb02f46a412881f353676b4ede6fは全466件＋独立smoke1件成功で、31source開始/終了/現在hash一致、verify_publication=[]。したがって変更前の全gateを重複実行せず、この対応済み証拠をベースラインとする。
+
+statistics単独の既存strict診断は10件：4関数のno-untyped-def、groupedのvar-annotated、pair_scores呼出3箇所とconfidence_interval呼出2箇所のno-untyped-call。数値関数→ペア集計→単独/対応推定の順で型付けする。statisticsはmath以外のharness依存を持たず、analysisとevaluateから呼ばれる低水準算術で、正式資格を発行しない。
+
+全本番＋tests指定ではreversi/reversi_player.reversi重複で終了2。--explicit-package-basesをCLIだけで指定すると重複は消え、23source/16filesの1423診断となる。今回は既にpackage化されたharness.statisticsだけを追加するため、このflagの常設化や__init__追加は不要。Phase 2以後の名前解決方法として記録するだけで、他moduleをstrictへ追加しない。
+
+#### 実装前の契約・モデル判断
+
+対象は関数署名・ローカル注釈・既存辞書の静的TypedDict表現のみ。数式、比較、条件分岐、例外、dict/list生成、キーと戻り値、公開入口を変更しない。追加の型はTYPE_CHECKING内のprivate定義とし、実行時の新しいコンテナや型変換を作らず、他のharness moduleもimportしない。将来注釈を用いて型名の実行時評価を避ける。現行図のanalysis/evaluate→statistics、computed/arithmetic_only/not_assessed、正式ANDの境界・保存schemaは変わらないため、モデル図/データ契約の変更は不要と判断する。実装後はASTで処理同一性と図のimport辺を再照合する。操作文書のstrict範囲だけは常設追加時に更新する。
+
+入力Gameのscore_aはobjectのままとし、型によって未検証値を合法得点へ昇格しない。現行evaluateはincompleteゲームにscore_a=Noneを含めてpair_scoresへ渡し、同関数は既存の状態検査と値域検査で除外する。mypyはany(value not in (0, .5, 1) ...)によるlist全体の絞り込みを追跡しないため、収集用ローカルvaluesだけlist[Any]を許可する方針とする。これは元の不正入力/None/JSON boolの振る舞いと検査順序を保持するための局所的動的境界であり、全入力/全出力をAnyにするものではない。既存値域検査は削除せず、None/文字列/NaN/範囲外等の除外とbool保持を回帰確認する。
+
+代替は、(1)入力得点をfloat必須と宣言する案：実際のNone/未検証値を隠すため不採用、(2)絞り込みループ/追加assert/castで変換する案：処理追加や再設計が今回の制約に反するため不採用。Anyはこのローカル要素型に限り、関数署名・他のdict・算術結果型へ一括伝播させない。保存結果の宣言は既存形状の記述であり、JSON入力の検証済み証明や正式資格ではない。
+
+### Phase 1：実施中
+
+まず独立した手計算期待値と既存の例外/不正得点の回帰を既存test_harnessへ追加し、変更前実装で成功を確認する。その後statisticsへ注釈を追加し、単独strict成功後に既存filesへstatisticsを追加する。既存5対象、strict=true、品質ゲート判定/timeoutを維持し、Phase 2以降は実装しない。
+
+型付け前に新30ケースと既存算術1件を実行し31成功・312除外0.85秒。census平均/after-before差の手計算、None/欠損/文字列/NaN/範囲外得点、JSON boolの元値保持、無効N/confidence、既存KeyError/TypeError/AttributeErrorを固定した。その後、TYPE_CHECKING内のprivate TypedDict4個、4関数の注釈、grouped/reasons/scoresと得点収集の注釈を追加。単独strictは10→0、1source成功。注釈を除いた4関数のASTは全て開始時と一致し、数式・分岐・例外・戻り値・呼出を変更していない。
+
+常設scopeの回帰は通常quality.required_stepsのtyping argvに一時shadow-fileだけを追加し、statistics内の未注釈関数が検出されることを要求する。files追加前はmypyが5source成功してしまい、回帰が1失敗・98除外3.33秒となることを先に確認した。単独strict成功後にfilesへstatisticsだけを追加し、操作文書の5→6と未型付け範囲を更新した。他module、型flag、フォーマット除外、品質runnerは変更していない。静的型だけの追加なのでモデル図/データ契約は変更しない。
+
+常設追加後の通常mypyは6source成功。実graphは元の7module＋harness.statisticsの8件で、全件strict有効・ignore_all=False。lint成功、既存format scope9files成功（statistics/test_harnessは既存の除外を維持し整形導入を別課題とする）。関連の統計/正式入口/母集合・全数/数値境界は35成功・308除外16.90秒、scope漏れ回帰は1成功・98除外3.34秒。通常argvのshadow probeが未注釈関数を拒否することを確認した。
+
+追加互換確認では、注釈を除いたASTだけでなく4関数の実行bytecode・定数・参照名・ローカル名も変更前と一致した（行情報/注釈flagは比較対象外）。元実装を一時namespaceで読み、未検証JSON得点・各N/confidence・例外・入力不変性の1182ケースを差分照合して不一致0。これは既存挙動の比較であって独立した数式正しさの証明ではない。手計算期待値は別途30回帰で確認した。型名はTYPE_CHECKING内に置き実行時構築せず、現行にget_type_hints/__annotations__/inspect.signatureを利用する呼出は見つからなかった。将来その種の型introspectionを導入する場合はprivate forward referenceの解決を別途設計する。
+
+モデル双方向照合はvalidate_model=[]、statisticsから他harnessへの新importなし、analysis/evaluate→statisticsと算術/正式資格の分離を維持。型注釈でもstatisticsのsource hashが変わるためanalysis_fingerprint/analysis_idは契約どおり変化するが、取得fingerprint・validator契約・raw/schemaを変更せず、過去hashを書き換えない。ここまでの変更はstatistics/config/既存テスト2件/操作文書/本記録の6ファイルだけで他62trackedは開始hash一致。最終の通常品質ゲートを新規UUIDへ実行し、その間は対象source/config/modelを編集しない。
+
+### Phase 1：PASS / 最終結果と停止点
+
+`python -B tools/quality.py` は終了0 / QUALITY PASS。新規成果物は `evaluation_results/quality-26c2ba70645344f1aaad11da22119b1c/`。全pytest **497成功・0失敗234.47秒**、独立smoke **1成功・0失敗496除外2.44秒**。旧466＋統計30＋常設scope1=497。既存assertを緩和せず、環境/model/dependencies/lint/format/typing/pytest/smoke/snapshot/evidenceの必須10検査がすべて成功。typing.txtは「6 source files成功」を記録する。
+
+| 完了条件 | 根拠 |
+|---|---|
+| 既存strict維持・対象追加 | strict=trueと既存5件を維持しstatisticsだけ追加。明示5→6、間接2は同じ |
+| 統計診断 | 単独10→0。通常設定でも6source診断0、実graphにstatisticsを含む |
+| 常設対象漏れ防止 | 一時shadowで未注釈関数を注入し、通常gate argvが失敗することを新回帰で確認。設定追加前の回帰失敗も記録 |
+| 算術/境界/例外 | 関連35件＋scope1件成功。4関数AST/実行bytecode同一、1182差分ケース不一致0 |
+| 最終証拠 | publication照合[]、JSON→Markdown再生成一致。full/smokeともcomplete・errors=[]、pending残存なし |
+| source整合 | 31source開始/終了/現在hash一致。本最終追記だけは対象外の進捗記録 |
+| モデル/契約 | validate_model=[]。harness import DAG/数式と正式資格の境界・schema5/trace4/validation3は不変 |
+| 変更保全 | 開始68tracked中6件だけ変更。他62件はhash一致。HEAD=b34a3bfのまま、ステージ/commit/push/branch操作なし |
+
+変更ファイルはharness/statistics.py、pyproject.toml、tests/test_harness.py、tests/test_quality.py、ハーネス.md、QUALITY_PROGRESS.md。モデル図・契約の変更不要の理由はPhase 0で先に記録し、実装後の依存/処理/状態を双方向照合した。品質runnerと判定条件/timeout、AI/GUI、データ資産、過去結果は編集していない。
+
+主な実行コマンド（キャッシュ/診断logは専用一時領域へ保存）:
+
+```powershell
+python -B -m mypy --no-incremental --config-file pyproject.toml
+python -B -m mypy --no-incremental --config-file pyproject.toml harness/statistics.py
+python -B -m mypy --no-incremental --config-file pyproject.toml harness reversi_player tools tests
+python -B -m mypy --no-incremental --config-file pyproject.toml --explicit-package-bases harness reversi_player tools tests
+python -B -m ruff check harness/statistics.py tests/test_harness.py tests/test_quality.py --no-cache --config pyproject.toml
+python -B -m ruff format --diff tests/test_quality.py --config pyproject.toml
+python -B -m ruff format --check . --no-cache --config pyproject.toml
+python -B -m pytest -q tests/test_harness.py -k 'statistics_typing or finite_population_interval' -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_harness.py -k 'statistics_typing or finite_population_interval or census_requires or confirmatory_evaluation_verifies or consistency_formal_entry_closure or inspection_uses_archive_size' -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_quality.py -k statistics_is_checked -p no:cacheprovider --tb=short
+python -B tools/quality.py
+git diff --check
+```
+
+個別mypyは追加の--cache-dirをリポジトリ外へ指定し、関連統計pytestはJUnitも保存した。上記の全範囲指定は移行基盤の診断用であり、常設scopeを拡大したわけではない。前者の終了2は既知の名前衝突、後者の終了1は未移行moduleの診断であり、既存通常strictの失敗ではない。Ruff差分はapply_patchで適用し既存format除外は維持した。
+
+未解決の作業blockerはない。ただし得点収集ローカルのlist[Any]は、既存any(...)値域検査の型絞り込み限界と動作維持のための明示的動的境界として残す。任意の非JSON数値/独自オブジェクトまでの静的保証や、結果の全状態を区別する精密な型化は今回行わない。JSON boolを0/1相当とする既存挙動も、型付けを理由に修正しない。将来の型introspection、全本番の自動対象化、残り8本番ファイル、全テストのstrict化は未実施。性能比較は未測定であり、実行時間差を改善/悪化と解釈しない。
+
+次の第一候補はopenings（依存するrefereeが既に型付きで、プロセス/時計契約へ手を広げずに進められるため）。再開時は本6対象のstrict成功と対応済み証拠を確認し、公開入力/戻り値と母集合IDの契約を調査する。データ契約を変更するなら必ずモデル先行で合意する。今回は**Phase 0 PASS・Phase 1 PASSで終了し、Phase 2以降の実装へ進まない**。

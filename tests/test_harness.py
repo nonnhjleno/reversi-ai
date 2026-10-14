@@ -2366,3 +2366,129 @@ def test_finite_population_interval_handles_constant_scores_and_census():
     # 全数平均は(0+0.5+1)/3=0.5。同点標本N=1000には未観測ケースが残る。
     census = confidence_interval([0.0, 0.5, 1.0], 3)
     assert census['lower'] == census['mean'] == census['upper'] == 0.5
+
+
+def _arithmetic_games(scores=(0.0, 1.0)):
+    """母集合/trace証明ではない、手計算用の先後交換1ペアを作る。"""
+    return [
+        {
+            'pair_id': 'pair', 'case_id': 'case', 'leg': leg,
+            'game_status': 'complete', 'protocol_status': 'verified', 'budget_status': 'verified',
+            'colors': {'B': 'A', 'W': 'B'} if leg == 0 else {'B': 'B', 'W': 'A'},
+            'seeds': {'A': 1, 'B': 2}, 'score_a': score,
+        }
+        for leg, score in enumerate(scores)
+    ]
+
+
+@pytest.mark.parametrize('scores', [(0.0, 1.0), (0, 1), (False, True)])
+def test_statistics_typing_preserves_pair_values_and_arithmetic_scope(scores):
+    """既存の等値比較はJSON boolも0/1として扱う。型付けで変換/拒否しない。"""
+    from harness import statistics
+    games = _arithmetic_games(scores)
+    before = copy.deepcopy(games)
+    pairs, reasons = statistics.pair_scores(games)
+    assert reasons == {}
+    assert pairs == {'pair': {'case_id': 'case', 'score': 0.5, 'game_scores': list(scores)}}
+    assert all(type(actual) is type(expected) for actual, expected in zip(pairs['pair']['game_scores'], scores))
+    result = estimate_pair_scores(games, 1)
+    assert result['status'] == 'computed'
+    assert result['result_scope'] == 'arithmetic_only'
+    assert result['formal_eligibility'] == 'not_assessed'
+    assert result['point_rate'] == 0.5
+    assert result['interval'] == {
+        'mean': 0.5, 'lower': 0.5, 'upper': 0.5, 'half_width': 0.0,
+        'method': 'finite_population_census', 'confidence': 0.95,
+        'calculation_status': 'computed', 'result_scope': 'arithmetic_only',
+        'formal_eligibility': 'not_assessed',
+    }
+    assert games == before
+
+
+@pytest.mark.parametrize('key,value,reason', [
+    ('leg', 1, 'invalid_pair_legs'),
+    ('game_status', 'incomplete', 'incomplete_or_invalid_game'),
+    ('protocol_status', 'failed', 'protocol_not_verified'),
+    ('budget_status', 'unknown', 'budget_not_verified'),
+    ('colors', {}, 'roles_not_swapped'),
+    ('case_id', 'other', 'case_id_mismatch'),
+    ('seeds', {'A': 3, 'B': 2}, 'player_seed_mismatch'),
+    ('score_a', None, 'invalid_game_score'),
+    ('score_a', '1', 'invalid_game_score'),
+    ('score_a', float('nan'), 'invalid_game_score'),
+    ('score_a', float('inf'), 'invalid_game_score'),
+    ('score_a', 2.0, 'invalid_game_score'),
+])
+def test_statistics_typing_preserves_invalid_pair_reasons(key, value, reason):
+    """状態/得点の未検証入力は、元と同じ検査順序で理由付き除外する。"""
+    from harness import statistics
+    games = _arithmetic_games()
+    games[0][key] = value
+    assert statistics.pair_scores(games) == ({}, {'pair': reason})
+
+
+def test_statistics_typing_preserves_missing_values_and_empty_pairs():
+    """欠損得点を0へ補わず、ペア識別子欠損と空入力の既存挙動も維持する。"""
+    from harness import statistics
+    games = _arithmetic_games()
+    del games[0]['score_a']
+    assert statistics.pair_scores(games) == ({}, {'pair': 'invalid_game_score'})
+    for game in games:
+        del game['pair_id']
+    assert statistics.pair_scores(games) == ({}, {})
+    assert estimate_pair_scores([], 1)['reason'] == 'at least one observation is required'
+    assert statistics.paired_difference([], [], 1) == {
+        'status': 'unavailable', 'reason': 'no_complete_pairs', 'interval': None,
+    }
+
+
+@pytest.mark.parametrize('values,population,confidence,value_range,message', [
+    ([], 1, 0.95, (0.0, 1.0), 'at least one observation'),
+    ([0.5], 0, 0.95, (0.0, 1.0), 'population size'),
+    ([0.5], True, 0.95, (0.0, 1.0), 'population size'),
+    ([0.5], 1.0, 0.95, (0.0, 1.0), 'population size'),
+    ([0.5], 2, 0.0, (0.0, 1.0), 'confidence'),
+    ([0.5], 2, 1.0, (0.0, 1.0), 'confidence'),
+    ([-0.1], 2, 0.95, (0.0, 1.0), 'observations'),
+    ([float('nan')], 2, 0.95, (0.0, 1.0), 'observations'),
+    ([float('inf')], 2, 0.95, (0.0, 1.0), 'observations'),
+    ([0.5], 2, 0.95, (1.0, 1.0), 'observations'),
+])
+def test_statistics_typing_preserves_interval_boundary_errors(
+        values, population, confidence, value_range, message):
+    """型の宣言にかかわらず、既存の厳密int検査と算術のValueErrorを維持する。"""
+    with pytest.raises(ValueError, match=message):
+        confidence_interval(values, population, confidence, value_range)
+
+
+@pytest.mark.parametrize('mutation,error', [
+    ('missing_case', KeyError), ('null_colors', AttributeError), ('unhashable_pair', TypeError),
+])
+def test_statistics_typing_does_not_repair_malformed_input(mutation, error):
+    """元実装が例外にする構造不正を、新しい分岐で黙って正常化しない。"""
+    from harness import statistics
+    games = _arithmetic_games()
+    if mutation == 'missing_case':
+        for game in games:
+            del game['case_id']
+    elif mutation == 'null_colors':
+        games[0]['colors'] = None
+    else:
+        games[0]['pair_id'] = ['not-hashable']
+    with pytest.raises(error):
+        statistics.pair_scores(games)
+
+
+def test_statistics_typing_preserves_difference_direction_and_coverage():
+    """先後平均after=.5、before=0なので、全数1ペアの対応差は+.5となる。"""
+    from harness import statistics
+    before = _arithmetic_games((0.0, 0.0))
+    after = _arithmetic_games((0.0, 1.0))
+    result = statistics.paired_difference(before, after, 1)
+    assert result['mean_delta'] == 0.5
+    assert result['interval']['lower'] == result['interval']['upper'] == 0.5
+    assert result['result_scope'] == 'arithmetic_only'
+    assert result['formal_eligibility'] == 'not_assessed'
+    assert statistics.paired_difference(before, after, 1, expected_case_ids=['other'])['reason'] == 'expected_cases_mismatch'
+    assert estimate_pair_scores(after, 1, eligible=False)['reason'] == 'evaluation_not_eligible'
+    assert estimate_pair_scores(after, 1, expected_pair_count=2)['reason'] == 'incomplete_pairs'
