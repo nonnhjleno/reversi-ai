@@ -1,12 +1,12 @@
 # ハーネスのデータ契約と不変条件
 
-更新日: 2026-10-13。コード基準: ae4a8cb。現行実装はevaluation/analysis/comparison schema5、trace4、validation3。本文とアーキテクチャ図を実装へ再照合した。旧schemaの成功記録を現行の資格に読み替えない。
+更新日: 2026-10-14。評価契約の基準: 8712843＋品質導入の非意味的lint整理・型注釈。現行実装はevaluation/analysis/comparison schema5、trace4、validation3。第13節は実装に先行して確定した開発用品質契約。旧schemaや品質ゲートの成功を正式AI評価資格に読み替えない。
 
 外部コマンド・盤面・時間制限の正本は[課題仕様](../プログラム開発方法.md)、実行方法は[ハーネス.md](../ハーネス.md)、責務と図は[harness_architecture.md](harness_architecture.md)。実行確認と残件は[正常化完了報告](reports/ハーネス正常化完了報告.md)。旧定義・監査・整理前の本文は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管する。
 
 ## 1. 形式・型と外部仕様
 
-説明上の型名に対応する新しいクラスを追加したわけではない。実装は主にdict/list/tupleであり、全形式を網羅する独立JSON Schemaはない。
+評価データの説明上の型名に対応する新しいクラスを追加したわけではない。実装は主にdict/list/tupleであり、全形式を網羅する独立JSON Schemaはない。refereeのRows/Position/BoardRows/Resultは静的な型aliasであり、盤面形状・値域の実行時検証や正式資格の証明を代替しない。
 
 | データ | 生成元 → 消費先 | 現行の表現・境界 |
 |---|---|---|
@@ -206,6 +206,8 @@ statistics単独APIはcomputed/arithmetic_only/not_assessedで、母集合やraw
 
 変更する責務・生成データ・必要role/phase・時計scope・source/cache/raw・旧schema・公開入口を先に確認する。新method/estimandを追加する場合も、共通Inspection/Assessmentと必要証拠のANDを迂回しない。失敗を除いて対象を再定義しない。実装・関連回帰・本書・設計図・操作手順を一緒に更新する。
 
+意味・構造・契約を変更するときは、実装前に図と本書を更新・照合し、実装後に双方向の対応を検証する。型注釈・format等で意味に影響しない場合は、図の更新不要の理由を品質進捗へ記録する。
+
 ## 12. 時間・公開入口契約の索引
 
 時間の正本は第5・6節、必要集合/状態/資格は第7・8節。実行経路は[現行構造](harness_architecture.md)。公開入口は原evaluation reportと原証跡を受ける。
@@ -218,3 +220,19 @@ statistics単独APIはcomputed/arithmetic_only/not_assessedで、母集合やraw
 | evaluate.compare_reports、evaluate/analysis CLI | 同じanalysis経路を使用。独自の保存flag資格判定をしない |
 
 comparison_reportのcaller resultはfresh結果との一致確認だけで、予約fieldを上書きしない。unknown/failedを許可する互換モードはない。内部private関数の改造や全原証拠の整合した偽造を防ぐ認証機構ではない。
+
+## 13. 開発用品質報告（実装前に確定した別契約）
+
+品質runnerの結果は`report_kind=quality_gate / format_version=1`であり、evaluation/analysis/comparison schema5ではない。品質passedを正式評価のInspection/Assessmentへ渡さない。
+
+| データ | 生成・利用 | 不変条件 |
+|---|---|---|
+| Step | tools.quality.required_steps→run_gate/run_step | 必須command名・argv・timeout。公開CLIに成功を偽装するskip選択を設けない |
+| StepResult | 実プロセスまたは環境/モデル検査→集約 | name/command/exit_code/seconds/log/error/passedを保持。nonzero・不在・timeout・未実行はpassed=false。負値や未測定を推測補完しない |
+| QualityReport | run_gate→新規quality.json | 全必須の結果、環境・依存版・開始/終了source hash・model_errors。passedは全必須成功とsnapshot一致を要求し、保存失敗ではCLI0を返さない |
+| 原テスト/対局資産 | 既存pytest/smoke→各新規証拠 | 既存評価ファイルを上書きせず、失敗・不明値を成功へ補修しない |
+
+strict型範囲はpyproject.tomlの明示files、format未導入範囲と意図的fixture E402は同設定とQUALITY_PROGRESS.mdに記録する。全体の未型付け箇所をAny/ignoreでstrict対象に見せない。
+実行不能な環境・異なるtool版は品質gate失敗として明示し、harnessのunknown/failed状態を変更しない。対応環境は直接CPython3.13.5/Windows、venvランチャーは未対応。CI未実行やブラウザ未確認をローカルgate成功から保証しない。
+
+source_hashesは開始時、source_hashes_endは終了時の対象コード・設定・モデル文書。変化はsnapshot検査の失敗として保持し、終了時の新しいhashだけで成功へ置き換えない。全時間・状態・呼出順の証明や、2観測間の改ざん認証ではない。実行中の編集を避ける。

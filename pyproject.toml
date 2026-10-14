@@ -1,0 +1,24 @@
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+include = ["harness/**/*.py", "reversi_player/**/*.py", "tests/**/*.py", "tools/**/*.py"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/fixtures/budget_player.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "single"
+exclude = [
+    "harness/analysis.py", "harness/contracts.py", "harness/evaluate.py",
+    "harness/openings.py", "harness/protocol.py", "harness/search_budget.py",
+    "harness/statistics.py", "reversi_player/*.py", "tests/test_harness.py",
+    "tests/test_result.py", "tests/test_stdin_commands.py", "tests/fixtures/*.py",
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["harness/referee.py", "harness/seeded_player.py", "tools/quality.py"]

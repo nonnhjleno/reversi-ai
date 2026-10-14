@@ -752,7 +752,6 @@ def _command_contexts(game, conditions, run_id=None, strengthened=False, schema5
     gameは更新せず、不完全または矛盾した記録は例外で拒否する。AIは起動しない。
     """
     from harness import referee
-    from harness.protocol import validate_response
 
     expected = {label: [] for label in ('A', 'B')}
     rows = referee.INITIAL_ROWS
@@ -1486,7 +1485,6 @@ def reduce_observations(games, measurements_by_leg=None):
 def _inspection_errors(inspection):
     """inspectionを互換用エラー配列へ変換する。正式/deploymentではunknownも拒否理由に含める。"""
     errors = list(inspection['integrity_errors'])
-    report = inspection.get('snapshot', {})
     if inspection.get('decoded', {}).get('requested_profile') in ('confirmatory', 'deployment'):
         errors.extend(item['code'] for item in inspection['reasons'] if item['status'] == 'unknown')
     return sorted(set(errors))

@@ -13,7 +13,7 @@ import harness.evaluate as evaluate_module
 
 from harness.evaluate import compare_reports, evaluate
 from harness.openings import generate_population, load_population, select_entries, validate_population
-from harness.protocol import HarnessError, Player
+from harness.protocol import HarnessError, Player, validate_response
 from harness.search_budget import board_sha256, canonical_json, normalize_config, validate_trace
 from harness.referee import INITIAL_ROWS
 from harness.statistics import confidence_interval, estimate_pair_scores
@@ -23,6 +23,37 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'reversi_player' / 'reversi.py'
 FAULT = ROOT / 'tests' / 'fixtures' / 'fault_player.py'
 BUDGET_FIXTURE = ROOT / 'tests' / 'fixtures' / 'budget_player.py'
+
+
+@pytest.mark.parametrize('command,lines', [
+    ('name', ['sample']), ('ask B 2 3', ['OK']), ('play B 0 0', ['NG']),
+    ('genmove B', ['2 3']), ('genmove W', ['NG']),
+    ('showboard', list(INITIAL_ROWS)), ('result', ['D']), ('quit', []),
+])
+def test_response_contract_accepts_exact_wire_format_without_mutation(command, lines):
+    """授業仕様の行形式を検証する。ここでは着手合法性や盤面遷移は判定しない。"""
+    before = copy.deepcopy(lines)
+    assert validate_response(command, lines) is None
+    assert lines == before
+
+
+@pytest.mark.parametrize('command,lines', [
+    ('name', []), ('name', ['  ']), ('name', ['sample', 'DEBUG']),
+    ('ask B 2 3', ['OK ']), ('play B 2 3', ['ok']),
+    ('genmove B', ['8 0']), ('genmove B', ['2  3']), ('genmove B', ['２ ３']),
+    ('genmove B', ['2 3', 'DEBUG']), ('showboard', ['EEEEEEEE'] * 7),
+    ('showboard', ['EEEEEEEX'] * 8), ('showboard', ['EEEEEEEE '] * 8),
+    ('result', ['WIN']), ('quit', ['OK']), ('result', 'B'),
+    ('result', [None]), ('unsupported', ['NG']),
+])
+def test_response_contract_rejects_malformed_output_without_mutation(command, lines):
+    """余剰出力・誤った型や形式を通信失敗として保持し、正常応答へ補修しない。"""
+    before = copy.deepcopy(lines)
+    with pytest.raises(HarnessError) as failure:
+        validate_response(command, lines)
+    assert failure.value.kind == 'protocol_error'
+    assert failure.value.command == command
+    assert lines == before
 
 
 @pytest.fixture(scope='module')

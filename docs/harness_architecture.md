@@ -1,6 +1,6 @@
 # リバーシ評価ハーネスの現行アーキテクチャ
 
-更新日: 2026-10-13。schema5 / trace4 / validation3、コード基準はae4a8cb（旧schemaのoptional予算設定修正を含む）。図は現行実装の説明で、理想設計や新しいPython型・状態enumを追加したものではない。今回の照合では文書2件だけを変更し、コード・AI・GUI・評価データは変更しない。
+更新日: 2026-10-14。schema5 / trace4 / validation3、評価経路のコード基準は8712843＋品質導入時の非意味的なlint整理・型注釈。第2〜6節は現行評価モデルで、状態はPython enumの追加を意味しない。第11節は品質ゲートの実装前に確定した設計で、実装状況はQUALITY_PROGRESS.mdで区別する。AI・GUI・評価契約は変更しない。
 
 [操作手順](../ハーネス.md)、[データ契約](harness_contracts.md)、[最新実行報告](reports/ハーネス正常化完了報告.md)を参照する。整理前の図・監査・旧版説明は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管し、現行の指示には使わない。AI分離は別の[未実装設計案](../リバーシAI分離設計.md)である。
 
@@ -276,7 +276,7 @@ stateDiagram-v2
 2. 必要role/phase、case/pair/seed、session/command、時計と計測scope、予算/counter定義を確定する。
 3. source/cache/rawの生成元と消費先を表で確認し、共通inspection/Assessmentへ合流させる。
 4. 正常schema5、欠損unknown、既知矛盾failed、旧schema、保存障害、全公開入口/CLIの回帰を確認する。
-5. 実装した時点で図・契約・操作資料を更新する。予定設計を現行図へ混ぜず、過去の指示やテスト成功を新保証へ流用しない。
+5. 意味・構造・依存・契約を変えるときは図・契約を先に更新して照合し、その後実装する。注釈/formatだけならモデル変更不要の理由を記録する。予定設計と実装状況を区別し、過去の成功を新保証へ流用しない。
 
 履歴はarchive、実行証拠はreports、日常の操作はハーネス.md、現行データ契約はharness_contracts.mdに分ける。追加ファイルや大規模な責務分割は必要性を測ってから行う。
 
@@ -294,3 +294,52 @@ stateDiagram-v2
 コードの不変条件と回帰テストを根拠とし、図だけで整合性を保証しない。今回の更新範囲は本書とharness_contracts.mdのみ。AI本体の分離やハーネスの新機能を実装したものではない。
 
 今回実行した関連回帰は62成功・0失敗・226除外（31.73秒）。コマンドは `python -B -m pytest -q tests/test_harness.py -k 'legacy_optional_budget or schema5_reference_generation_roundtrip or schema5_cli_saves_reloads_and_reanalyses or temporal_public_apis_and_saved_clis_agree or consistency_formal_entry_closure_and_arithmetic_boundary or temporal_real_startup_model_load_is_separate_from_search or consistency_prepare_failure_is_after_preflight' -p no:cacheprovider`。全341件の再実行ではなく、上記の入口・時間・保存・互換性に関係する既存テストを選択した。Mermaidの実レンダリングは今回未確認で、図の構造・リンク・コード対応を照合する。
+
+## 11. 開発用品質ゲート（現行実装）
+
+本節の図と契約はGoal 5のコード追加に先行して確定・照合した。対応するtools.qualityと27ゲート回帰は実装済みで、統合ゲートもローカル成功を確認した。最新の実行結果・未確認範囲はQUALITY_PROGRESS.mdに記録する。品質runnerを評価器や正式資格発行元へ組み込まず、第2〜6節の経路・schema・fresh検証を変えない。stdlibだけの`tools/quality.py`を入口とし、harnessからtoolsへのimportは禁止。CIも同じrunnerを呼び、独自の成功基準を持たない。
+
+```mermaid
+flowchart TD
+    DEV["開発者 / Windows CI"] --> Q["tools/quality.py<br/>直接CPython3.13.5・固定dev依存を確認"]
+    CFG["pyproject.toml / requirements-dev.txt"] --> Q
+    Q --> M["validate_model<br/>AST import辺・主要fresh呼出辺を照合"]
+    DOC["現行設計図 / 契約"] --> M
+    CODE["harness / fixture / 公開wrapperコード"] --> M
+    Q --> L["Ruff lint / 限定format / strict mypy / pip check"]
+    Q --> T["全pytest<br/>既存回帰・通信形式・不変条件・ゲート負例"]
+    T --> S["独立smoke<br/>既存の軽量参考対局"]
+    M --> OUT["必須結果の集約<br/>全成功のみpassed"]
+    L --> OUT
+    S --> OUT
+    Q --> SNAP["開始時の対象source hash"]
+    S --> SAME["終了時hashと照合<br/>観測した変更はgate失敗"]
+    SNAP --> SAME
+    SAME --> OUT
+    OUT --> LOG["新規owned領域<br/>各commandログ・品質JSON・環境/コードhash"]
+    LOG --> EXIT["保存も成功かつ全必須成功: exit0<br/>それ以外: exit1"]
+```
+
+各コマンドは直列で実行し、失敗を握り潰さない。環境が不適合なら後続を未実行として明記し成功にしない。時間上限による回収ではrunner所有の子プロセスだけを停止し、Windowsではそのtreeをtaskkillする。taskkill不在/失敗でも直接の子は回収し、tree未確認の失敗を報告する（完全回収済みとは扱わない）。既存評価結果を上書きせず、品質JSONは評価schema5入力ではない。
+
+設計照合時に、終了時hashだけでは途中で変更されたsourceを全検査済みとしてしまう穴を見つけた。実装に先行して開始/終了snapshotの一致を必須条件へ追加した。観測間の一時変更・復元まで検出するファイルロックや改ざん認証ではない。実行中は対象コード/設定/モデルを編集しない。
+
+```mermaid
+stateDiagram-v2
+    [*] --> PrepareQuality
+    PrepareQuality --> Checks: owned出力・対応環境
+    PrepareQuality --> GateFailed: 設定/環境/準備不適合
+    Checks --> GatePassed: 全必須終了0・モデル照合成功・snapshot一致
+    Checks --> GateFailed: nonzero・不在・timeout・モデル不一致・snapshot不一致
+    GateFailed --> SaveEvidence: 未実行/失敗の理由を保持
+    GatePassed --> SaveEvidence
+    SaveEvidence --> QualitySuccess: 全必須成功かつ保存成功 / exit0
+    SaveEvidence --> QualityFailure: 必須失敗 / exit1
+    SaveEvidence --> QualityFailure: 保存失敗 / exit1
+    QualitySuccess --> [*]
+    QualityFailure --> [*]
+```
+
+`validate_model`は第2節の全harness importとfixture3辺の過不足・循環、新moduleの図漏れを検査する。第5節の単独wrapper→fresh inspection、比較wrapper→_inspect_pair→fresh inspection、facade委譲をASTで検査する。図のレンダリングや全関数の制御フロー/意味の証明ではない。T-ID〜T-GATEや品質/統計の状態は全pytestと[品質導入対応表](../QUALITY_PROGRESS.md)で照合する。
+
+Windows venvのredirectorではPopen PIDとproducer PIDが異なる事象を確認した。正式identity照合を緩めず、このゲートはvenvランチャーではない直接CPythonを使う。別起動機構の正式対応は未実装であり、この制約を時刻の猶予やhash更新で回避しない。

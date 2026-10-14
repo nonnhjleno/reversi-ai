@@ -699,7 +699,6 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
         game['pair_reason'] = pair_failures.get(game['pair_id'])
     protocol_ok = all(game['protocol_status'] == 'verified' for game in all_games)
     budget_states = [game['budget_status'] for game in all_games]
-    budget_ok = all(state in ('verified', 'exempt') for state in budget_states)
     budget_status = contracts.aggregate_game_budget(budget_states, games)
     report['status'] = {
         'execution': 'complete' if all(game['game_status'] == 'complete' for game in all_games) else 'failed',

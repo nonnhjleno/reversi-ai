@@ -6,7 +6,7 @@ import math
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from harness.protocol import (clock_status, validate_command_record, temporal_order,
-                              temporal_match, temporal_result, MEASUREMENT_CONTRACT)
+                              temporal_match, temporal_result)
 
 KINDS = {'time', 'nodes', 'depth', 'none', 'unknown'}
 TRACE_VERSION = 4
@@ -589,7 +589,7 @@ def validate_trace(path, config, player_commands, target_sha256, expected_identi
     保存済み正式報告の再利用時は、contracts側でartifact hashと棋譜も照合する。
     """
     try:
-        normalized = normalize_config(config)
+        normalize_config(config)
         trace_path = Path(path)
         events = None if not trace_path.is_file() else [
             json.loads(line) for line in trace_path.read_bytes().decode('utf-8').splitlines() if line.strip()
