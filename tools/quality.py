@@ -3,7 +3,6 @@
 import ast
 import hashlib
 import importlib.metadata as metadata
-import json
 import os
 import platform
 import re
@@ -228,6 +227,9 @@ def run_step(step: Step, root: Path, log: Path) -> StepResult:
     )
     with log.open('x', encoding='utf-8') as stream:
         try:
+            for argument in step.command:
+                if argument.startswith('--junitxml=') and Path(argument.partition('=')[2]).exists():
+                    raise FileExistsError('JUnit output already exists')
             with subprocess.Popen(
                 step.command,
                 cwd=root,
@@ -256,7 +258,7 @@ def run_step(step: Step, root: Path, log: Path) -> StepResult:
     }
 
 
-def required_steps(root: Path) -> tuple[Step, ...]:
+def required_steps(root: Path, output: Path | None = None) -> tuple[Step, ...]:
     """省略不可の検査を返す。対局試験を並行させず全pytestの後に独立smokeを置く。"""
     python = sys.executable
     config = str(root / 'pyproject.toml')
@@ -272,6 +274,22 @@ def required_steps(root: Path) -> tuple[Step, ...]:
         '--strict-config',
         '--strict-markers',
     )
+
+    def test_command(name: str) -> tuple[str, ...]:
+        """owned stepへJUnitとjournalを出すargvを作る。既存テストの選択を変えない。"""
+        selected = (*pytest, '-m', 'smoke') if name == 'smoke' else pytest
+        if output is None:
+            return selected
+        return (
+            *selected,
+            '-p',
+            'tools.evidence_plugin',
+            '--junitxml=' + str(output / name / (name + '.xml')),
+            '--verification-evidence-dir=' + str(output / name),
+            '--verification-run-id=' + output.name,
+            '--verification-step=' + name,
+        )
+
     return (
         Step('dependencies', (python, '-B', '-m', 'pip', 'check'), 120.0),
         Step(
@@ -300,8 +318,8 @@ def required_steps(root: Path) -> tuple[Step, ...]:
             (python, '-B', '-m', 'mypy', '--no-incremental', '--config-file', config),
             300.0,
         ),
-        Step('pytest', pytest),
-        Step('smoke', (*pytest, '-m', 'smoke'), 120.0),
+        Step('pytest', test_command('pytest')),
+        Step('smoke', test_command('smoke'), 120.0),
     )
 
 
@@ -323,7 +341,13 @@ def _source_hashes(root: Path) -> dict[str, str]:
     """対象コード・設定・モデルをfingerprintする。大きな評価/学習資産は読み込まない。"""
     sources = [
         root / name
-        for name in ('pyproject.toml', 'requirements-dev.txt', 'pytest.ini', 'AGENTS.md')
+        for name in (
+            'pyproject.toml',
+            'requirements-dev.txt',
+            'pytest.ini',
+            'AGENTS.md',
+            'プログラム開発方法.md',
+        )
     ]
     sources.extend(
         root / 'docs' / name for name in ('harness_architecture.md', 'harness_contracts.md')
@@ -340,8 +364,28 @@ def _source_hashes(root: Path) -> dict[str, str]:
 
 def run_gate(root: Path, output: Path, runner: Runner = run_step) -> QualityReport:
     """全必須結果を集約し新規JSONへ保存する。既存出力は拒否、保存失敗は例外となる。"""
+    from tools import evidence
+
+    output = output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     hashes_before = _source_hashes(root)
+    steps = required_steps(root, output)
+    manifest_data = evidence.manifest(
+        root,
+        output,
+        hashes_before,
+        [
+            {
+                'name': step.name,
+                'step_id': output.name + ':' + step.name,
+                'command': list(step.command),
+                'timeout_seconds': step.timeout,
+            }
+            for step in steps
+        ],
+    )
+    for name in ('pytest', 'smoke'):
+        (output / name).mkdir(exist_ok=False)
     started = time.perf_counter()
     try:
         environment_errors = _environment_errors(root)
@@ -363,7 +407,6 @@ def run_gate(root: Path, output: Path, runner: Runner = run_step) -> QualityRepo
     results.append(
         _local_result('model', model_errors, output / 'model.txt', time.perf_counter() - started)
     )
-    steps = required_steps(root)
     for step in steps:
         log = output / f'{step.name}.txt'
         if environment_errors:
@@ -414,15 +457,59 @@ def run_gate(root: Path, output: Path, runner: Runner = run_step) -> QualityRepo
         'source_hashes': hashes_before,
         'source_hashes_end': hashes_after,
     }
-    with (output / 'quality.json').open('x', encoding='utf-8') as stream:
-        json.dump(report, stream, ensure_ascii=False, indent=2, allow_nan=False)
-        stream.flush()
-        os.fsync(stream.fileno())
+    manifest_data.update(
+        ended_at_utc=evidence.utc_now(),
+        environment=report['environment'],
+        source_hashes_end=hashes_after,
+    )
+    started = time.perf_counter()
+    try:
+        bundle = evidence.collect(output, manifest_data, [{**item} for item in results])
+        collection_errors = (
+            [str(item) for item in bundle['errors']]
+            if isinstance(bundle['errors'], list)
+            else ['evidence_errors_invalid']
+        )
+        evidence_result = _local_result(
+            'evidence', collection_errors, output / 'evidence.txt', time.perf_counter() - started
+        )
+        results.append(evidence_result)
+        report['planned_steps'].append('evidence')
+        report['passed'] = report['passed'] and evidence_result['passed']
+        prepared_quality = evidence.encoded_json(report)
+        bundle['quality_report_sha256'] = hashlib.sha256(
+            prepared_quality.encode('utf-8')
+        ).hexdigest()
+        bundle['quality_report'] = 'quality.json'
+        markdown = evidence.render_markdown(bundle)
+        evidence.save_new(output / 'evidence.md', markdown)
+        bundle['markdown_sha256'] = hashlib.sha256(markdown.encode('utf-8')).hexdigest()
+        evidence.save_new(output / 'evidence.json', evidence.encoded_json(bundle))
+    except (OSError, ValueError, TypeError) as failure:
+        print(f'EVIDENCE FAIL: {type(failure).__name__}: {failure}', file=sys.stderr)
+        failed_result: StepResult = {
+            'name': 'evidence',
+            'command': ['internal:evidence'],
+            'exit_code': 1,
+            'seconds': time.perf_counter() - started,
+            'log': 'evidence.txt',
+            'error': 'evidence_collection_or_save_failed',
+            'passed': False,
+        }
+        if results[-1]['name'] == 'evidence':
+            results[-1] = failed_result
+        else:
+            results.append(failed_result)
+            report['planned_steps'].append('evidence')
+        report['passed'] = False
+    evidence.save_new(output / 'quality.json', evidence.encoded_json(report))
     return report
 
 
 def main() -> int:
     """単一CLI入口。新規owned領域へ保存し、必須失敗/実行不能/保存不能では終了1を返す。"""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
     output = ROOT / 'evaluation_results' / ('quality-' + uuid.uuid4().hex)
     try:
         report = run_gate(ROOT, output)

@@ -8,6 +8,7 @@ import pytest
 
 from harness.protocol import Player
 from harness import referee
+from tools.evidence_plugin import record_expectation, record_observation
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'reversi_player' / 'reversi.py'
 INITIAL_BOARD = [
@@ -93,8 +94,16 @@ def test_live_initial_ask_for_both_colors_preserves_board(player):
     'play B -1 3', 'play W 8 4',
 ])
 def test_live_rejected_move_preserves_board(player, command):
-    assert player.command(command) == ['NG']
-    assert player.command('showboard') == INITIAL_BOARD
+    record_expectation('rejected-move', inputs={'command': command, 'initial_board': INITIAL_BOARD},
+                       expected={'response': ['NG'], 'board': INITIAL_BOARD}, expectation_kind='fixed',
+                       model='docs/harness_architecture.md:親Player/外部script',
+                       contract='プログラム開発方法.md:play/初期盤面', implementation='harness.protocol.Player.command')
+    response = player.command(command)
+    record_observation('rejected-move', {'response': response})
+    assert response == ['NG']
+    rows = player.command('showboard')
+    record_observation('rejected-move', {'board': rows})
+    assert rows == INITIAL_BOARD
 
 
 def test_live_all_commands_obey_response_deadlines(player):

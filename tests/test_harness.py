@@ -18,6 +18,7 @@ from harness.search_budget import board_sha256, canonical_json, normalize_config
 from harness.referee import INITIAL_ROWS
 from harness.statistics import confidence_interval, estimate_pair_scores
 from harness import analysis, contracts
+from tools.evidence_plugin import record_expectation, record_observation, record_harness_artifacts
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'reversi_player' / 'reversi.py'
@@ -33,7 +34,13 @@ BUDGET_FIXTURE = ROOT / 'tests' / 'fixtures' / 'budget_player.py'
 def test_response_contract_accepts_exact_wire_format_without_mutation(command, lines):
     """授業仕様の行形式を検証する。ここでは着手合法性や盤面遷移は判定しない。"""
     before = copy.deepcopy(lines)
-    assert validate_response(command, lines) is None
+    record_expectation('wire-format', inputs={'command': command, 'lines': lines},
+                       expected={'result': None, 'lines': before}, expectation_kind='fixed',
+                       model='docs/harness_architecture.md:protocol', contract='プログラム開発方法.md:コマンド仕様',
+                       implementation='harness.protocol.validate_response')
+    result = validate_response(command, lines)
+    record_observation('wire-format', {'result': result, 'lines': lines})
+    assert result is None
     assert lines == before
 
 
@@ -49,8 +56,13 @@ def test_response_contract_accepts_exact_wire_format_without_mutation(command, l
 def test_response_contract_rejects_malformed_output_without_mutation(command, lines):
     """余剰出力・誤った型や形式を通信失敗として保持し、正常応答へ補修しない。"""
     before = copy.deepcopy(lines)
+    record_expectation('wire-rejection', inputs={'command': command, 'lines': lines},
+                       expected={'kind': 'protocol_error', 'command': command, 'lines': before}, expectation_kind='fixed',
+                       model='docs/harness_architecture.md:protocol', contract='docs/harness_contracts.md:1',
+                       implementation='harness.protocol.validate_response')
     with pytest.raises(HarnessError) as failure:
         validate_response(command, lines)
+    record_observation('wire-rejection', {'kind': failure.value.kind, 'command': failure.value.command, 'lines': lines})
     assert failure.value.kind == 'protocol_error'
     assert failure.value.command == command
     assert lines == before
@@ -103,9 +115,16 @@ def test_schema5_decode_diagnostics(schema5_reference_reports, mutation, status)
         report['schema_version'] = 99
     else:
         report['conditions'] = []
+    record_expectation('schema-rejection', inputs={'mutation': mutation},
+                       expected={'input_status': status, 'interval': None}, expectation_kind='fixed',
+                       model='docs/harness_architecture.md:contracts共通検証', contract='docs/harness_contracts.md:9',
+                       implementation='harness.contracts.inspect_evaluation')
     inspected = contracts.inspect_evaluation(report)
+    record_observation('schema-rejection', {'input_status': inspected['input_status']})
     assert inspected['input_status'] == status
-    assert analysis.estimate(report)['interval'] is None
+    interval = analysis.estimate(report)['interval']
+    record_observation('schema-rejection', {'interval': interval})
+    assert interval is None
 
 
 def test_schema5_acquisition_failure_has_explicit_diagnostic():
@@ -325,18 +344,29 @@ def test_temporal_public_assessment_requires_original_source(integrity_report):
 
 def test_temporal_normal_schema5_reaches_all_formal_entries(integrity_report):
     """完全なtrace4は全時間軸を検証し、同じ原資料の単独・対応差を正式発行できる。"""
+    record_expectation('formal-eligibility', inputs={'source_schema': 5, 'population_size': 4, 'games': 2, 'seed': 73},
+                       expected={'inspection': 'verified', 'formal_eligibility': 'eligible', 'statistics': 'available'},
+                       expectation_kind='consistency', model='docs/harness_architecture.md:INS/AE/PROMOTE',
+                       contract='docs/harness_contracts.md:5/8/12', implementation='harness.analysis.assess_evaluation')
     inspected = contracts.inspect_evaluation(integrity_report)
+    record_observation('formal-eligibility', {'inspection': inspected['status'],
+                                           'timing': {axis: value['status'] for axis, value in inspected['timing'].items() if isinstance(value, dict) and 'status' in value}})
     assert inspected['status'] == 'verified', inspected['reasons']
     for axis in ('host_lifecycle', 'child_lifecycle', 'command_intervals', 'causal_order'):
         assert inspected['timing'][axis]['status'] == 'verified'
-    assert analysis.assess_evaluation(integrity_report)['formal_eligibility'] == 'eligible'
-    assert analysis.estimate(integrity_report)['status'] == 'available'
+    eligibility = analysis.assess_evaluation(integrity_report)['formal_eligibility']
+    record_observation('formal-eligibility', {'formal_eligibility': eligibility})
+    assert eligibility == 'eligible'
+    statistics_status = analysis.estimate(integrity_report)['status']
+    record_observation('formal-eligibility', {'statistics': statistics_status})
+    assert statistics_status == 'available'
     assert analysis.reanalysis_report(integrity_report)['statistics']['status'] == 'available'
     assert analysis.paired(integrity_report, integrity_report)['status'] == 'available'
     assert compare_reports(integrity_report, integrity_report)['pair_statistics_available']
     assert any(command.get('phase') == 'pass_probe' for game in integrity_report['games']
                for player in game['players'].values() for command in player['commands'])
     assert all(game['game_status'] == 'complete' for game in integrity_report['games'])
+    record_harness_artifacts(integrity_report)
 
 
 @pytest.mark.parametrize('mutation,expected', [
@@ -1362,6 +1392,11 @@ def test_population_size_requires_present_strict_positive_int(integrity_report, 
                                      'scope', 'clock', 'model', 'missing', 'extra', 'depth', 'fallback'])
 def test_saved_trace_semantics_block_formal_statistics_even_with_new_hash(integrity_report, tmp_path, mutation):
     """hashを更新した不正rawでも、旧verifiedを根拠に正式統計へ採用できない。"""
+    record_expectation('trace-rejection', inputs={'mutation': mutation, 'hash_recalculated': True},
+                       expected={'budget_status': 'unknown' if mutation in ('scope', 'clock') else 'failed',
+                                 'statistics': 'unavailable', 'eligible': False}, expectation_kind='fixed',
+                       model='docs/harness_architecture.md:INS/AE/NoFormal', contract='docs/harness_contracts.md:6/8',
+                       implementation='harness.contracts.inspect_evaluation/harness.analysis.estimate')
     report = _relocated_report(integrity_report, tmp_path)
 
     def mutate(events):
@@ -1387,9 +1422,16 @@ def test_saved_trace_semantics_block_formal_statistics_even_with_new_hash(integr
     # hashも合わせ、hash不一致検査だけによる拒否ではなく意味検証を試す。
     _rewrite_trace(report, mutate)
     inspection = contracts.inspect_evaluation(report)
+    record_observation('trace-rejection', {'budget_status': inspection['budget']['status'],
+                                         'reason_codes': sorted({reason['code'] for reason in inspection['reasons']}),
+                                         'reason_count': len(inspection['reasons']), 'reason_details': 'not_collected'})
     assert inspection['budget']['status'] == ('unknown' if mutation in ('scope', 'clock') else 'failed')
-    assert analysis.estimate(report)['status'] == 'unavailable'
-    assert not analysis.statistical_eligibility(report)[0]
+    statistics_status = analysis.estimate(report)['status']
+    record_observation('trace-rejection', {'statistics': statistics_status})
+    assert statistics_status == 'unavailable'
+    eligible = analysis.statistical_eligibility(report)[0]
+    record_observation('trace-rejection', {'eligible': eligible})
+    assert not eligible
     assert analysis.paired(report, integrity_report)['status'] == 'unavailable'
     assert not compare_reports(report, integrity_report)['budget_comparable']
 
@@ -1664,6 +1706,13 @@ def smoke_reports():
 def test_paired_complete_games_are_reproducible_and_serializable(smoke_reports):
     """同条件で棋譜が再現し、先後割当・A/B勝ち点率の補数関係・通信期限が保たれる。"""
     before, after = smoke_reports
+    record_expectation('paired-smoke', inputs={'seed': 31, 'games_per_run': 2, 'runs': 2},
+                       expected={'completed': 2, 'failed': 0, 'matching_moves_and_boards': True},
+                       expectation_kind='consistency', model='docs/harness_architecture.md:COL/REPORT',
+                       contract='docs/harness_contracts.md:4/7', implementation='harness.evaluate.evaluate')
+    record_observation('paired-smoke', {'completed': before['summary']['completed'], 'failed': before['summary']['failed'],
+                                      'positions_before': [[move['position'] for move in game['moves']] for game in before['games']],
+                                      'positions_after': [[move['position'] for move in game['moves']] for game in after['games']]})
     assert before['summary']['completed'] == 2
     assert before['summary']['failed'] == 0
     assert before['summary']['A']['black_games'] == before['summary']['A']['white_games'] == 1
@@ -1679,6 +1728,8 @@ def test_paired_complete_games_are_reproducible_and_serializable(smoke_reports):
                 if not command['startup_probe']:
                     assert command['seconds'] <= (10 if command['command'].startswith('genmove ') else 1)
     assert json.loads(json.dumps(before))['summary'] == before['summary']
+    for report in smoke_reports:
+        record_harness_artifacts(report)
 
 
 def test_comparison_rejects_changed_conditions_or_opponent(smoke_reports):

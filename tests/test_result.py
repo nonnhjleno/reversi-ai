@@ -12,6 +12,7 @@ from harness import referee
 from harness.protocol import Player
 from reversi_player.reversi import Board, Pos
 from reversi_player.web import Process, RequestHandler
+from tools.evidence_plugin import record_expectation, record_observation
 
 
 class BoundedWebProcess(Process):
@@ -216,6 +217,10 @@ def test_all_eight_directions_flip_together():
         'EEEEEEEE', 'EBEBEBEE', 'EEBBBEEE', 'EBBBBBEE',
         'EEBBBEEE', 'EBEBEBEE', 'EEEEEEEE', 'EEEEEEEE',
     )
+    record_expectation('eight-directions', inputs={'board': before, 'color': 'B', 'position': [3, 3]},
+                       expected={'board': expected, 'stdout': 'OK\nOK\n'}, expectation_kind='fixed',
+                       model='docs/harness_architecture.md:referee/外部script',
+                       contract='プログラム開発方法.md:リバーシのルール', implementation='reversi_player.reversi.Board.play')
     board = Board()
     board.cell = [list(row) for row in before]
     output = io.StringIO()
@@ -223,6 +228,7 @@ def test_all_eight_directions_flip_together():
         board.ask('B', Pos(3, 3))
         assert tuple(''.join(row) for row in board.cell) == before
         board.play('B', Pos(3, 3))
+    record_observation('eight-directions', {'board': tuple(''.join(row) for row in board.cell), 'stdout': output.getvalue()})
     assert output.getvalue() == 'OK\nOK\n'
     assert tuple(''.join(row) for row in board.cell) == expected
     assert referee.apply_move(before, 'B', (3, 3)) == expected

@@ -1,15 +1,19 @@
 """品質ゲートの失敗伝播とモデル漏れ検出。改変はpytestの一時領域だけに行う。"""
 
 import csv
+import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from xml.etree import ElementTree
 
 import pytest
 
 from tools import quality
+from tools import evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,6 +33,50 @@ def _model_copy(root: Path) -> None:
 def _fake_result(step: quality.Step, log: Path, code: int) -> quality.StepResult:
     """集約の単体試験用に既知の終了値を作る。実コマンド検証は別の試験で行う。"""
     log.write_text(f'exit={code}\n', encoding='utf-8')
+    if step.name in ('pytest', 'smoke'):
+        directory = log.parent / step.name
+        nodeid = 'tests/test_simulated.py::test_command'
+        payloads = [
+            {'kind': 'session_start'},
+            {'kind': 'selected', 'nodeids': [nodeid]},
+            {'kind': 'test_start', 'nodeid': nodeid},
+        ]
+        payloads.extend(
+            {
+                'kind': 'phase',
+                'nodeid': nodeid,
+                'when': when,
+                'outcome': 'failed' if code and when == 'call' else 'passed',
+                'duration': 0.0,
+            }
+            for when in ('setup', 'call', 'teardown')
+        )
+        payloads.extend(
+            [
+                {'kind': 'test_finish', 'nodeid': nodeid},
+                {'kind': 'session_finish', 'exit_code': code, 'capture_errors': []},
+            ]
+        )
+        events = [
+            {
+                **item,
+                'format_version': 1,
+                'sequence': index,
+                'run_id': log.parent.name,
+                'step': step.name,
+            }
+            for index, item in enumerate(payloads)
+        ]
+        (directory / 'events.jsonl').write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n', encoding='utf-8'
+        )
+        failure = '<failure message="simulated" />' if code else ''
+        (directory / (step.name + '.xml')).write_text(
+            '<testsuites><testsuite tests="1"><testcase classname="tests.test_simulated" name="test_command" time="0">'
+            + failure
+            + '</testcase></testsuite></testsuites>',
+            encoding='utf-8',
+        )
     return {
         'name': step.name,
         'command': list(step.command),
@@ -114,7 +162,8 @@ def test_gate_environment_unavailable_is_not_executed_or_successful(tmp_path, mo
     assert not report['passed']
     assert all(
         item['exit_code'] is None and item['seconds'] is None and not item['passed']
-        for item in report['steps'][2:-1]
+        for item in report['steps']
+        if item['name'] in {'dependencies', 'lint', 'format', 'typing', 'pytest', 'smoke'}
     )
 
 
@@ -189,8 +238,8 @@ def test_gate_detects_source_changes_between_required_checks(tmp_path):
     assert report['model_errors'] == []
     assert not report['passed']
     assert report['source_hashes'] != report['source_hashes_end']
-    assert report['steps'][-1]['name'] == 'snapshot'
-    assert not report['steps'][-1]['passed']
+    snapshot = next(item for item in report['steps'] if item['name'] == 'snapshot')
+    assert not snapshot['passed']
 
 
 @pytest.mark.parametrize('kind', ['nonzero', 'missing', 'timeout'])
@@ -284,6 +333,9 @@ def test_real_quality_cli_rejects_intentional_lint_type_and_test_failures(tmp_pa
     _model_copy(tmp_path)
     (tmp_path / 'tools').mkdir()
     shutil.copy2(ROOT / 'tools/quality.py', tmp_path / 'tools/quality.py')
+    shutil.copy2(ROOT / 'tools/__init__.py', tmp_path / 'tools/__init__.py')
+    shutil.copy2(ROOT / 'tools/evidence.py', tmp_path / 'tools/evidence.py')
+    shutil.copy2(ROOT / 'tools/evidence_plugin.py', tmp_path / 'tools/evidence_plugin.py')
     shutil.copy2(ROOT / 'requirements-dev.txt', tmp_path / 'requirements-dev.txt')
     (tmp_path / 'pyproject.toml').write_text(
         '[tool.ruff]\ninclude=["broken.py"]\n[tool.mypy]\nstrict=true\nfiles=["broken.py"]\n',
@@ -313,3 +365,655 @@ def test_real_quality_cli_rejects_intentional_lint_type_and_test_failures(tmp_pa
     for name in ('lint', 'format', 'typing', 'pytest', 'smoke'):
         item = next(item for item in report['steps'] if item['name'] == name)
         assert not item['passed'] and item['exit_code'] != 0
+
+
+def _sample_evidence(tmp_path, program, name='pytest', timeout=20.0):
+    """一時pytestを実OSプロセスで実行し、標準JUnitと同じrunのjournalを得る。"""
+    project = tmp_path / ('project-' + name)
+    project.mkdir()
+    (project / 'test_sample.py').write_text(program, encoding='utf-8')
+    output = tmp_path / 'bundle'
+    output.mkdir(exist_ok=True)
+    directory = output / name
+    directory.mkdir()
+    command = (
+        sys.executable,
+        '-B',
+        '-m',
+        'pytest',
+        '-q',
+        '-p',
+        'no:cacheprovider',
+        '--tb=short',
+        '-p',
+        'tools.evidence_plugin',
+        '--junitxml=' + str(directory / (name + '.xml')),
+        '--verification-evidence-dir=' + str(directory),
+        '--verification-run-id=bundle',
+        '--verification-step=' + name,
+    )
+    original = os.environ.get('PYTHONPATH')
+    os.environ['PYTHONPATH'] = str(ROOT)
+    try:
+        result = quality.run_step(
+            quality.Step(name, command, timeout), project, output / (name + '.txt')
+        )
+    finally:
+        if original is None:
+            os.environ.pop('PYTHONPATH', None)
+        else:
+            os.environ['PYTHONPATH'] = original
+    return output, result
+
+
+@pytest.mark.parametrize(
+    'program,expected,exit_code',
+    [
+        ('def test_pass():\n assert 1 == 1\n', 'passed', 0),
+        ('def test_fail():\n assert 1 == 2\n', 'failed', 1),
+        (
+            'import pytest\ndef test_skip():\n pytest.skip("not available")\ndef test_pass():\n assert True\n',
+            'skipped',
+            0,
+        ),
+        (
+            'import pytest\n@pytest.fixture\ndef broken():\n raise RuntimeError("setup")\ndef test_setup(broken):\n assert True\n',
+            'error',
+            1,
+        ),
+        (
+            'import pytest\n@pytest.fixture\ndef skipped():\n pytest.skip("setup")\ndef test_setup(skipped):\n assert True\ndef test_pass():\n assert True\n',
+            'skipped',
+            0,
+        ),
+        (
+            'import pytest\n@pytest.fixture\ndef broken():\n yield\n raise RuntimeError("teardown")\ndef test_teardown(broken):\n assert True\n',
+            'error',
+            1,
+        ),
+        (
+            'import pytest\n@pytest.fixture\ndef broken():\n yield\n raise RuntimeError("teardown")\ndef test_both(broken):\n assert False\n',
+            'error',
+            1,
+        ),
+    ],
+)
+def test_evidence_matches_real_pytest_phases_and_junit(tmp_path, program, expected, exit_code):
+    """call成功後のteardown失敗と負例を含み、元pytest結果と証拠の完全性を分離する。"""
+    output, result = _sample_evidence(tmp_path, program)
+    record = evidence.collect_step(output, 'bundle', {**result})
+    assert result['exit_code'] == exit_code
+    assert record['collection_status'] == 'complete', record['errors']
+    assert record['tests'][0]['outcome'] == expected
+
+
+@pytest.mark.parametrize(
+    'program,exit_code,outcome',
+    [
+        ('raise RuntimeError("collection")\n', 2, 'failed'),
+        ('import pytest\npytest.skip("module", allow_module_level=True)\n', 5, 'skipped'),
+    ],
+)
+def test_evidence_collection_failure_is_not_a_passing_test(tmp_path, program, exit_code, outcome):
+    """収集前の例外/skipも整合した証拠として保持し、正常callを補造しない。"""
+    output, result = _sample_evidence(tmp_path, program)
+    record = evidence.collect_step(output, 'bundle', {**result})
+    assert result['exit_code'] == exit_code
+    assert record['collection_status'] == 'complete', record['errors']
+    assert record['tests'] == []
+    assert record['collection'][0]['outcome'] == outcome
+
+
+@pytest.mark.parametrize('kind', ['crash', 'timeout'])
+def test_evidence_abrupt_pytest_preserves_partial_journal_and_log(tmp_path, kind):
+    """強制終了でJUnit/session終了が欠けても開始済み情報を保持し、完成とは呼ばない。"""
+    program = (
+        'import os\ndef test_crash():\n os._exit(7)\n'
+        if kind == 'crash'
+        else 'import time\ndef test_slow():\n time.sleep(20)\n'
+    )
+    output, result = _sample_evidence(tmp_path, program, timeout=2.0)
+    record = evidence.collect_step(output, 'bundle', {**result})
+    assert not result['passed']
+    assert record['collection_status'] == 'incomplete'
+    assert (output / 'pytest.txt').is_file()
+    assert record['errors']
+
+
+@pytest.mark.parametrize(
+    'mutation',
+    [
+        'missing_xml',
+        'broken_xml',
+        'wrong_count',
+        'wrong_outcome',
+        'missing_journal',
+        'broken_journal',
+        'wrong_run',
+        'wrong_sequence',
+    ],
+)
+def test_evidence_missing_or_mismatched_reports_never_become_complete(tmp_path, mutation):
+    """新しい正常成果物への改変で欠損・破損・集計・実行対応の不一致を検出する。"""
+    output, result = _sample_evidence(tmp_path, 'def test_pass():\n assert True\n')
+    xml = output / 'pytest/pytest.xml'
+    journal = output / 'pytest/events.jsonl'
+    if mutation == 'missing_xml':
+        xml.unlink()
+    elif mutation == 'broken_xml':
+        xml.write_text('<testsuites>', encoding='utf-8')
+    elif mutation == 'wrong_count':
+        xml.write_text(
+            xml.read_text(encoding='utf-8').replace('tests="1"', 'tests="2"'), encoding='utf-8'
+        )
+    elif mutation == 'wrong_outcome':
+        document = ElementTree.fromstring(xml.read_bytes())
+        case = next(document.iter('testcase'))
+        ElementTree.SubElement(case, 'failure').text = 'fake'
+        xml.write_bytes(ElementTree.tostring(document, encoding='utf-8'))
+    elif mutation == 'missing_journal':
+        journal.unlink()
+    elif mutation == 'broken_journal':
+        journal.write_text('{', encoding='utf-8')
+    else:
+        events = [json.loads(line) for line in journal.read_text(encoding='utf-8').splitlines()]
+        events[0]['run_id' if mutation == 'wrong_run' else 'sequence'] = 'other'
+        journal.write_text(
+            '\n'.join(json.dumps(event) for event in events) + '\n', encoding='utf-8'
+        )
+    assert evidence.collect_step(output, 'bundle', {**result})['collection_status'] == 'incomplete'
+
+
+def test_evidence_same_nodeid_in_different_steps_has_distinct_execution_ids(tmp_path):
+    """full/smokeで同じnodeidを使っても実行対応を上書きしない。"""
+    records = []
+    for name in ('pytest', 'smoke'):
+        output, result = _sample_evidence(tmp_path, 'def test_pass():\n assert True\n', name=name)
+        records.append(evidence.collect_step(output, 'bundle', {**result}))
+    assert records[0]['tests'][0]['test_id'] == records[1]['tests'][0]['test_id']
+    assert records[0]['tests'][0]['execution_id'] != records[1]['tests'][0]['execution_id']
+
+
+@pytest.mark.parametrize('target', ['evidence.json', 'evidence.md'])
+def test_evidence_save_failure_changes_gate_not_original_test_results(
+    tmp_path, monkeypatch, target
+):
+    """必須派生保存の障害を注入し、旧成功結果を残したままgateだけを失敗にする。"""
+    original = evidence.save_new
+
+    def denied(path, text):
+        """指定した派生証拠だけを保存不能にする。qualityの失敗記録は許可する。"""
+        if path.name == target:
+            raise PermissionError('injected evidence failure')
+        original(path, text)
+
+    def runner(step, root, log):
+        """旧必須検査と対応JUnit/journalの成功を模擬する。"""
+        return _fake_result(step, log, 0)
+
+    monkeypatch.setattr(evidence, 'save_new', denied)
+    report = quality.run_gate(ROOT, tmp_path / 'run', runner)
+    assert not report['passed']
+    assert all(item['passed'] for item in report['steps'] if item['name'] != 'evidence')
+    assert not report['steps'][-1]['passed']
+    assert (tmp_path / 'run/quality.json').is_file()
+    assert evidence.verify_publication(tmp_path / 'run')
+
+
+def test_evidence_publication_hashes_and_json_markdown_agree(tmp_path):
+    """最後のquality markerと派生・元step bytesが一致する正常保存を確認する。"""
+
+    def runner(step, root, log):
+        """集約正常系の既知結果を返す。"""
+        return _fake_result(step, log, 0)
+
+    output = tmp_path / 'run'
+    report = quality.run_gate(ROOT, output, runner)
+    assert report['passed']
+    assert evidence.verify_publication(output) == []
+    bundle = json.loads((output / 'evidence.json').read_text(encoding='utf-8'))
+    markdown = (output / 'evidence.md').read_text(encoding='utf-8')
+    assert bundle['manifest']['run_id'] == 'run'
+    assert 'test_command' in markdown
+    assert bundle['validation_passed']
+    assert len(bundle['manifest']['steps']) == 10
+    assert len(bundle['manifest']['checks']) == 9
+    before = (output / 'evidence.json').read_bytes()
+    with pytest.raises(FileExistsError):
+        evidence.save_new(output / 'evidence.json', 'changed')
+    assert (output / 'evidence.json').read_bytes() == before
+    (output / 'pytest/pytest.xml').write_text('changed', encoding='utf-8')
+    assert 'step_artifact_hash_mismatch' in evidence.verify_publication(output)
+    (output / 'typing.txt').write_text('changed', encoding='utf-8')
+    assert 'check_log_hash_mismatch' in evidence.verify_publication(output)
+
+
+def test_evidence_junit_preexisting_output_is_not_overwritten(tmp_path):
+    """標準JUnitのwモードを使う前に、既存ファイルを検知して子を起動しない。"""
+    path = tmp_path / 'pytest.xml'
+    path.write_text('protected', encoding='utf-8')
+    step = quality.Step(
+        'pytest', (sys.executable, '-c', 'raise SystemExit(0)', '--junitxml=' + str(path))
+    )
+    result = quality.run_step(step, tmp_path, tmp_path / 'step.txt')
+    assert not result['passed'] and result['exit_code'] is None
+    assert path.read_text(encoding='utf-8') == 'protected'
+
+
+@pytest.mark.parametrize('mutation', ['normal', 'hash', 'run'])
+def test_evidence_explicit_expectation_and_original_artifact_correspondence(tmp_path, mutation):
+    """期待・観測を明示登録し、原checkpointを変更せずrun/hash対応を照合する。"""
+    source = tmp_path / 'source'
+    source.mkdir()
+    checkpoint = source / 'run-state.json'
+    checkpoint.write_text(
+        json.dumps({'run_id': 'other' if mutation == 'run' else 'source-run', 'schema_version': 5}),
+        encoding='utf-8',
+    )
+    program = (
+        'from tools.evidence_plugin import record_expectation, record_observation, record_harness_artifacts\n'
+        'def test_record():\n'
+        ' record_expectation("check", inputs=[1], expected=2, expectation_kind="fixed", model="model", contract="contract", implementation="implementation")\n'
+        ' actual = 1 + 1\n'
+        ' record_observation("check", actual)\n'
+        ' assert actual == 2\n'
+        f' record_harness_artifacts({{"run_id":"source-run","schema_version":5,"evidence":{{"root":{str(source)!r}}}}})\n'
+    )
+    output, result = _sample_evidence(tmp_path, program)
+    if mutation == 'hash':
+        checkpoint.write_text('changed', encoding='utf-8')
+    record = evidence.collect_step(output, 'bundle', {**result})
+    assert result['passed']
+    assert record['tests'][0]['checks'][0]['expected'] == 2
+    assert record['tests'][0]['observations'][0]['actual'] == 2
+    assert record['collection_status'] == ('complete' if mutation == 'normal' else 'incomplete'), (
+        record['errors']
+    )
+
+
+def test_evidence_secret_metadata_failure_does_not_modify_pytest_pass(tmp_path):
+    """明示metadataの秘密キー拒否は証拠失敗とし、元assertの成功を変更しない。"""
+    program = 'from tools.evidence_plugin import record_observation\ndef test_pass():\n record_observation("x", {"api_key":"do-not-save"})\n assert True\n'
+    output, result = _sample_evidence(tmp_path, program)
+    record = evidence.collect_step(output, 'bundle', {**result})
+    assert result['passed']
+    assert record['collection_status'] == 'incomplete'
+    assert 'do-not-save' not in (output / 'pytest/events.jsonl').read_text(encoding='utf-8')
+
+
+@pytest.mark.parametrize(
+    'program,reason',
+    [
+        (
+            'def test_all_eight_directions_flip_together():\n assert True\n',
+            'important_evidence_missing',
+        ),
+        (
+            'from tools.evidence_plugin import record_observation\ndef test_pass():\n record_observation("missing", 2)\n assert True\n',
+            'observation_before_expectation',
+        ),
+        (
+            'import pytest\ndef test_skip():\n pytest.skip("only skipped")\n',
+            'successful_execution_not_demonstrated',
+        ),
+        (
+            'import os\ndef test_pass():\n os.fsync = lambda descriptor: (_ for _ in ()).throw(OSError("fsync denied"))\n assert True\n',
+            'plugin_save_error_in_log',
+        ),
+    ],
+)
+def test_evidence_missing_explicit_or_final_save_evidence_cannot_certify_pass(
+    tmp_path, program, reason
+):
+    """元pytestの終了0でも、期待/観測や最終保存の不足はgate用証拠へ昇格しない。"""
+    output, result = _sample_evidence(tmp_path, program)
+    record = evidence.collect_step(output, 'bundle', {**result})
+    assert result['passed']
+    assert record['collection_status'] == 'incomplete'
+    assert any(reason in error for error in record['errors'])
+
+
+def test_evidence_missing_junit_with_success_exit_fails_public_gate(tmp_path):
+    """終了0だけを返す公開runnerでも、必須JUnit不足をquality.jsonの失敗へ伝播する。"""
+
+    def runner(step, root, log):
+        """一つの生成済みJUnitを失わせ、旧検査の成功値はそのまま返す。"""
+        result = _fake_result(step, log, 0)
+        if step.name == 'pytest':
+            (log.parent / 'pytest/pytest.xml').unlink()
+        return result
+
+    report = quality.run_gate(ROOT, tmp_path / 'run', runner)
+    assert all(item['passed'] for item in report['steps'] if item['name'] != 'evidence')
+    assert not report['passed']
+    stored = json.loads((tmp_path / 'run/quality.json').read_text(encoding='utf-8'))
+    assert not stored['passed']
+    assert stored['steps'][-1]['name'] == 'evidence'
+
+
+def test_evidence_final_quality_save_failure_leaves_partial_not_publication(tmp_path, monkeypatch):
+    """派生JSONが書けても、最後のquality markerが書けない場合は完成としない。"""
+    original = evidence.save_new
+
+    def denied(path, text):
+        """最後のpublicationだけを失敗させ、取得済み派生証拠を保護する。"""
+        if path.name == 'quality.json':
+            raise PermissionError('publication denied')
+        original(path, text)
+
+    def runner(step, root, log):
+        """正常な旧検査と証拠を生成する。"""
+        return _fake_result(step, log, 0)
+
+    monkeypatch.setattr(evidence, 'save_new', denied)
+    with pytest.raises(PermissionError):
+        quality.run_gate(ROOT, tmp_path / 'run', runner)
+    assert (tmp_path / 'run/evidence.json').is_file()
+    assert not (tmp_path / 'run/quality.json').exists()
+    assert evidence.verify_publication(tmp_path / 'run')
+
+
+@pytest.mark.parametrize('name', ['quality.json', 'evidence.json', 'evidence.md'])
+def test_evidence_fsync_failure_never_publishes_complete_filename(tmp_path, monkeypatch, name):
+    """完成bytesを書いた後のfsync失敗でも、完成名のファイルが残る反例を防ぐ。"""
+
+    def denied(descriptor):
+        """書込後の実fsync呼出だけを失敗させる。"""
+        raise OSError('fsync denied')
+
+    monkeypatch.setattr(evidence.os, 'fsync', denied)
+    target = tmp_path / name
+    with pytest.raises(OSError, match='fsync denied'):
+        evidence.save_new(target, '{"passed":true}\n')
+    assert not target.exists()
+
+
+def test_evidence_link_failure_does_not_publish_or_replace(tmp_path, monkeypatch):
+    """排他公開が使えない保存先では、非排他的replaceにfallbackしない。"""
+
+    def denied(source, target):
+        """hardlink公開だけを保存不能にする。"""
+        raise OSError('hardlink unavailable')
+
+    monkeypatch.setattr(evidence.os, 'link', denied)
+    target = tmp_path / 'evidence.json'
+    with pytest.raises(OSError, match='hardlink unavailable'):
+        evidence.save_new(target, 'new')
+    assert not target.exists()
+
+
+def test_evidence_publication_race_preserves_winner(tmp_path, monkeypatch):
+    """preflight後に現れたwinnerを、pending公開時にも上書きしない。"""
+    original = evidence.os.link
+
+    def race(source, target):
+        """公開直前に別writerの完成ファイルを作る。"""
+        Path(target).write_text('winner', encoding='utf-8')
+        original(source, target)
+
+    monkeypatch.setattr(evidence.os, 'link', race)
+    target = tmp_path / 'quality.json'
+    with pytest.raises(FileExistsError):
+        evidence.save_new(target, 'new')
+    assert target.read_text(encoding='utf-8') == 'winner'
+
+
+def test_evidence_pending_of_another_writer_is_protected(tmp_path):
+    """新規作成に失敗したpendingをowned扱いで削除しない。"""
+    target = tmp_path / 'evidence.json'
+    pending = target.with_name(target.name + '.pending')
+    pending.write_text('protected', encoding='utf-8')
+    with pytest.raises(FileExistsError):
+        evidence.save_new(target, 'new')
+    assert pending.read_text(encoding='utf-8') == 'protected'
+    assert not target.exists()
+
+
+def test_evidence_real_fsync_failure_at_public_cli_cannot_leave_positive_marker(
+    tmp_path, monkeypatch
+):
+    """実run_gate→main経路でfsync障害後の偽完成markerを拒否する。"""
+    original_save = evidence.save_new
+    original_gate = quality.run_gate
+
+    def denied(descriptor):
+        """最終保存中のfsyncを失敗させる。"""
+        raise OSError('final fsync denied')
+
+    def save(path, text):
+        """qualityの最後のflush後だけで障害を起こす。"""
+        if path.name == 'quality.json':
+            with monkeypatch.context() as patch:
+                patch.setattr(evidence.os, 'fsync', denied)
+                original_save(path, text)
+        else:
+            original_save(path, text)
+
+    def runner(step, root, log):
+        """旧検査の成功はそのまま保存する。"""
+        return _fake_result(step, log, 0)
+
+    def gate(root, output):
+        """実公開集約と最終保存を使う。外部検査だけを模擬する。"""
+        return original_gate(ROOT, output, runner)
+
+    monkeypatch.setattr(evidence, 'save_new', save)
+    monkeypatch.setattr(quality, 'run_gate', gate)
+    monkeypatch.setattr(quality, 'ROOT', tmp_path)
+    assert quality.main() == 1
+    output = next((tmp_path / 'evaluation_results').glob('quality-*'))
+    assert not (output / 'quality.json').exists()
+    assert evidence.verify_publication(output)
+
+
+@pytest.fixture(scope='module')
+def journal_template(tmp_path_factory):
+    """実pytestでfixture内metadataと2つの直列testを記録し、改変前の原本にする。"""
+    program = (
+        'import pytest\n'
+        'from tools.evidence_plugin import record_expectation, record_observation\n'
+        '@pytest.fixture\n'
+        'def observed():\n'
+        ' record_expectation("fixture", inputs=1, expected=1, expectation_kind="fixed", '
+        'model="fixture lifecycle", contract="journal v1", implementation="observed")\n'
+        ' record_observation("fixture", 1)\n'
+        ' yield\n'
+        ' record_observation("fixture", 1)\n'
+        'def test_first(observed):\n assert True\n'
+        'def test_second():\n assert True\n'
+    )
+    return _sample_evidence(tmp_path_factory.mktemp('journal-template'), program)
+
+
+@pytest.fixture
+def journal_sample(tmp_path, journal_template):
+    """原本は変更せず、各改変ケース専用の新規領域へ複製する。"""
+    source, result = journal_template
+    output = tmp_path / 'bundle'
+    shutil.copytree(source, output)
+    return output, {**result}
+
+
+def _mutate_journal(path, mutation):
+    """元のphase結果とJUnitを変えず、連番を振り直して状態違反だけを作る。"""
+    events = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()]
+    start = next(index for index, event in enumerate(events) if event['kind'] == 'test_start')
+    finish = next(index for index, event in enumerate(events) if event['kind'] == 'test_finish')
+    nodeid = events[start]['nodeid']
+    if mutation == 'duplicate_finish':
+        events.insert(finish, dict(events[finish]))
+    elif mutation == 'early_finish':
+        event = events.pop(finish)
+        events.insert(start + 1, event)
+    elif mutation in ('late_teardown', 'late_observation'):
+        index = next(
+            index
+            for index, event in enumerate(events)
+            if (
+                event['kind'] == 'phase' and event.get('when') == 'teardown'
+                if mutation == 'late_teardown'
+                else event['kind'] == 'observation'
+            )
+        )
+        event = events.pop(index)
+        finish = next(index for index, item in enumerate(events) if item['kind'] == 'test_finish')
+        events.insert(finish + 1, event)
+    elif mutation == 'late_expectation':
+        event = dict(next(event for event in events if event['kind'] == 'expectation'))
+        events.insert(finish + 1, event)
+    elif mutation == 'late_artifact':
+        source = path.parent / 'referenced.json'
+        source.write_text('{"run_id":"source","schema_version":5}', encoding='utf-8')
+        events.insert(
+            finish + 1,
+            {
+                **events[start],
+                'kind': 'artifact',
+                'path': str(source),
+                'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                'artifact_kind': 'checkpoint',
+                'source_run_id': 'source',
+                'source_schema': 5,
+            },
+        )
+    elif mutation == 'overlap':
+        index = next(
+            index
+            for index, event in enumerate(events)
+            if event['kind'] == 'test_start' and index > start
+        )
+        event = events.pop(index)
+        events.insert(start + 1, event)
+    elif mutation == 'duplicate_session_start':
+        events.insert(1, dict(events[0]))
+    elif mutation == 'duplicate_session_finish':
+        events.insert(len(events) - 1, dict(events[-1]))
+    elif mutation == 'early_session_finish':
+        events.insert(start, events.pop())
+    elif mutation in ('duplicate_selected', 'late_selected'):
+        index = next(index for index, event in enumerate(events) if event['kind'] == 'selected')
+        if mutation == 'duplicate_selected':
+            events.insert(index, dict(events[index]))
+        else:
+            event = events.pop(index)
+            start = next(index for index, item in enumerate(events) if item['kind'] == 'test_start')
+            events.insert(start + 1, event)
+    elif mutation == 'late_collection':
+        events.insert(
+            finish + 1,
+            {**events[0], 'kind': 'collection', 'outcome': 'skipped', 'collection_nodeid': 'late'},
+        )
+    elif mutation == 'unknown_kind':
+        events.insert(1, {**events[0], 'kind': 'not_supported'})
+    elif mutation in ('unknown_version', 'missing_version', 'boolean_version'):
+        for event in events:
+            if mutation == 'missing_version':
+                event.pop('format_version', None)
+            else:
+                event['format_version'] = True if mutation == 'boolean_version' else 999
+    elif mutation == 'nodeless_phase':
+        event = dict(next(event for event in events if event['kind'] == 'phase'))
+        events.insert(finish, {**event, 'nodeid': None})
+    elif mutation == 'session_with_nodeid':
+        events[-1]['nodeid'] = nodeid
+    elif mutation == 'invalid_selected':
+        next(event for event in events if event['kind'] == 'selected')['nodeids'] = [{}]
+    elif mutation == 'after_session':
+        events.append(dict(events[finish]))
+    else:
+        raise AssertionError('unknown test mutation: ' + mutation)
+    for index, event in enumerate(events):
+        event['sequence'] = index
+    path.write_text('\n'.join(json.dumps(event) for event in events) + '\n', encoding='utf-8')
+
+
+JOURNAL_MUTATIONS = [
+    ('duplicate_finish', 'duplicate_test_finish'),
+    ('early_finish', 'test_finish_before_phases'),
+    ('late_teardown', 'event_outside_active_test'),
+    ('late_expectation', 'event_outside_active_test'),
+    ('late_observation', 'event_outside_active_test'),
+    ('late_artifact', 'event_outside_active_test'),
+    ('overlap', 'overlapping_test_start'),
+    ('duplicate_session_start', 'duplicate_session_start'),
+    ('duplicate_session_finish', 'duplicate_session_finish'),
+    ('early_session_finish', 'session_finish_before_end'),
+    ('duplicate_selected', 'duplicate_selected'),
+    ('late_selected', 'test_before_selection'),
+    ('late_collection', 'collection_after_selection'),
+    ('unknown_kind', 'unknown_event_kind'),
+    ('unknown_version', 'unsupported_journal_version'),
+    ('missing_version', 'unsupported_journal_version'),
+    ('boolean_version', 'unsupported_journal_version'),
+    ('nodeless_phase', 'event_outside_active_test'),
+    ('session_with_nodeid', 'session_nodeid_invalid'),
+    ('invalid_selected', 'invalid_selected_nodeids'),
+    ('after_session', 'event_outside_session'),
+]
+
+
+@pytest.mark.parametrize('mutation,reason', JOURNAL_MUTATIONS)
+def test_evidence_journal_lifecycle_rejects_resequenced_events(journal_sample, mutation, reason):
+    """正しい連番・phase/JUnit合格だけでは、不正な開始終了をcompleteにしない。"""
+    output, result = journal_sample
+    _mutate_journal(output / 'pytest/events.jsonl', mutation)
+    record = evidence.collect_step(output, 'bundle', result)
+    assert result['passed']
+    assert record['collection_status'] == 'incomplete'
+    assert any(reason in error for error in record['errors']), record['errors']
+
+
+def test_evidence_journal_lifecycle_accepts_fixture_metadata_and_serial_tests(journal_sample):
+    """setup報告前/teardown報告前のmetadataと同一checkの複数観測を正常受理する。"""
+    output, result = journal_sample
+    record = evidence.collect_step(output, 'bundle', result)
+    assert record['collection_status'] == 'complete', record['errors']
+    assert [test['outcome'] for test in record['tests']] == ['passed', 'passed']
+    assert len(record['tests'][0]['observations']) == 2
+
+
+@pytest.mark.parametrize('step_name', ['pytest', 'smoke'])
+@pytest.mark.parametrize('mutation', ['duplicate_finish', 'early_finish', 'unknown_version'])
+def test_evidence_journal_lifecycle_failure_reaches_public_gate(tmp_path, step_name, mutation):
+    """実公開集約で不正journalのhashを取得しても、元検査を保ってgateを失敗させる。"""
+
+    def runner(step, root, log):
+        """外部品質コマンドのみ模擬し、対象stepの新規journalを改変する。"""
+        result = _fake_result(step, log, 0)
+        if step.name == step_name:
+            _mutate_journal(log.parent / step_name / 'events.jsonl', mutation)
+        return result
+
+    output = tmp_path / 'run'
+    report = quality.run_gate(ROOT, output, runner)
+    assert all(item['passed'] for item in report['steps'] if item['name'] != 'evidence')
+    assert not report['steps'][-1]['passed']
+    assert not report['passed']
+    stored = json.loads((output / 'quality.json').read_text(encoding='utf-8'))
+    bundle = json.loads((output / 'evidence.json').read_text(encoding='utf-8'))
+    assert not stored['passed']
+    assert bundle['collection_status'] == 'incomplete'
+    assert evidence.verify_publication(output) == ['collection_incomplete']
+
+
+@pytest.mark.parametrize('mutation', ['duplicate_finish', 'early_finish'])
+def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, mutation):
+    """外部コマンド模擬でも実main→run_gate→保存を通し、不正証拠で終了0にしない。"""
+    original_gate = quality.run_gate
+
+    def runner(step, root, log):
+        """旧検査結果を成功のまま保ち、pytest journalだけに状態違反を作る。"""
+        result = _fake_result(step, log, 0)
+        if step.name == 'pytest':
+            _mutate_journal(log.parent / 'pytest/events.jsonl', mutation)
+        return result
+
+    def gate(root, output):
+        """実際のモデル/環境照合と集約を保ち、保存先のみ一時領域にする。"""
+        return original_gate(ROOT, output, runner)
+
+    monkeypatch.setattr(quality, 'ROOT', tmp_path)
+    monkeypatch.setattr(quality, 'run_gate', gate)
+    assert quality.main() == 1
+    output = next((tmp_path / 'evaluation_results').glob('quality-*'))
+    assert not json.loads((output / 'quality.json').read_text(encoding='utf-8'))['passed']

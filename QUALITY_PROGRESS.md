@@ -248,3 +248,172 @@ venv診断時と直接Python再検証の結果は別に記録した。初期base
 Goal 0の実行結果・固定seed参考対局を記録してからGoal 1へ進む。
 各段階の実コマンド・件数・時間・警告・未確認事項を追記する。
 同じ問題に3回取り組んでも進展がない、または安全に解決不能なら実装を止め、QUALITY_BLOCKERS.mdへ分析と再開手順を残す。
+
+## 検証証拠自動生成（2026-10-14、開始HEAD e1c55f4）
+
+今回のGoal 0〜6は先の品質基盤Goalとは別。開始時Git clean、未コミットなし。commit/push/branch操作をしない。旧成功JSONは現在のcontracts.py（空行追加）とhashが異なるため現在の成功へ流用しない。
+
+| Goal | 状態 | 証拠・完了条件 |
+|---|---|---|
+| 0 現状・計画 | PASS | 現行quality/JUnit/モデル/契約/27gate回帰を再読解。関連80件成功、26.64秒（外部27.479秒） |
+| 1 先行モデル | PASS | 品質2図と契約13.1を実装前に更新。責務・依存・保存hash・正常/不完全状態を内部照合 |
+| 2 個別結果 | PASS | 実pytestの正常/段階失敗/skip/collection、別step、crash/timeoutのJUnit/journal回帰 |
+| 3 自動集約 | PASS | run_gateでJSON/Markdownとquality完成markerを自動保存・照合。最終実統合はGoal 6 |
+| 4 重要証拠 | PASS | 重要48ケース成功、48明示期待/観測、原12参照、収集complete/errors=[] |
+| 5 異常回帰 | PASS | 証拠39＋既存27=66回帰成功。実fsync失敗の誤公開も修正し再現回帰成功 |
+| 6 統合照合 | PASS | 反例を回帰7件で再現・修正後、実gate全10成功。全434/独立smoke1、現行31hash・排他公開・原参照の再確認成功 |
+
+### Goal 0の分類と最小設計
+
+- A 既存自動: 各step argv/終了値/秒/log、環境/dev版、source hash、評価run/case/pair/seed/commands/raw/checkpoint。
+- B 小規模追加: 標準JUnit、軽量phase journal、実行/step/test対応、Git読取、JSON/Markdown集約・原hash対応。
+- C 明示登録: ルール・応答形式・拒否・schema/raw・正式資格の独立期待、観測、モデル/契約/実装参照、関連原成果物。
+- D 未取得: 任意local/全assertの自動意味抽出、全Hypothesis成功例、全stderr、強制停止/停電時の完全保存、原証跡認証、CI保管。
+
+変更候補はtools/quality.py、stdlib collector tools/evidence.py、限定pytest plugin tools/evidence_plugin.py、既存tests/test_quality.pyと少数重要test、strict対象の追加、現行2設計資料と操作説明。新依存なし、harness/本体/GUI/原データ/正式判定は変更しない。
+
+必須成果物は新規quality領域のquality.json・各log・step別JUnit/events.jsonl・evidence.json/evidence.md。quality v1のfieldを維持し必須evidence StepResultを追加。テストが失敗しても整合した証拠はcomplete、保存不能はgate失敗。最後のquality.jsonをpublication markerにして循環hashを避ける（qualityはevidence hashを保持せず、evidenceがquality予定bytes hashを参照）。
+
+### Goal 1の先行照合
+
+品質フロー/状態2図と契約13.1を先に更新した。評価第2〜6節・正式AND・schema5/trace4/validation3に変更なし。quality→collector、pytest/選定test→pluginだけを追加し、harness逆import/collectorの正式資格発行を禁止。
+XML集計だけではnodeid・段階・未完を証明できないためjournalを併用。setup失敗時にcallを要求せず、teardown失敗をcall成功で隠さない。欠損/別ID/未完は証拠不完全、負例の想定拒否はpytest成功。正常失敗を証拠保存失敗と混同しない。原参照は登録時hashと終了後bytesを照合し、正式意味検証の代用にしない。
+実装コードはまだ変更していない。図の責務・依存・状態と契約を照合してからGoal 2〜5へ進む。Mermaidの実レンダリングは未検証。
+
+先行照合完了: collectorはJUnit＋journalを同じstepで照合し、JSON/Markdownと最後のquality publicationを分離する。qualityは証拠hashを含めず、証拠が予定quality bytes hashを保持するため循環なし。XML/イベントが欠けた異常では部分証拠・gate失敗とし、テストの元終了値を保持する。重要テストの合否条件・harnessの正式ANDを変えない。新実装2ファイルはこの時点で未作成。
+
+基準保存先は一時領域reversi-evidence-baseline-c74sl0vs。baseline.xml / baseline.txt / command.json / tracked-hashes.jsonを新規保存。既存80件（品質27・ルール/GUI40・標準入出力13）は失敗0。新依存を導入しない。Goal 2〜5実装着手: toolsのcollector/pluginとquality接続、strict対象を3→5へ拡張する（ignore/設定緩和なし）。
+
+初回関連回帰80成功/0失敗20.46秒。新回帰追加後は50成功/3失敗45.68秒。2件は正常teardown失敗の標準JUnit件数規則をcollectorが要素数と誤認した新実装の不具合、1件は改変回帰がself-closing XMLへ実際の改変を行っていなかった試験生成不具合。pytest原実装・新規XML/phaseを照合し、契約へ正しい段階集計を先に追記して修正する。既存判定/期待値の緩和ではない。lint/format9file/strict5moduleは成功。
+
+同じ回帰の修正後は53成功/0失敗42.90秒。重要48ケースの実plugin/JUnit試行はpytest48成功/0失敗83.00秒、しかし収集はincomplete（原理由辞書が3ケースで64KiB上限を超過）。保存済みjournalからpair/missing/extraのbudget観測不足を特定した。上限は維持し、明示観測をbudget状態・理由コード集合・件数へ限定、詳細未収集を明記して再検証する。probe原参照のループ位置も訂正して正式fixtureのprobeを関連付ける。正常AI/正式条件やテスト期待値は変更しない。
+
+証拠異常回帰を追加した反復は59成功/0失敗59.39秒。setup/call/teardown（call＋teardown二重失敗含む）、skip/collection、crash/timeout、XML/journal欠損/破損/別ID、原run/hash、保存失敗、同nodeidのstep区別、秘密metadata拒否、最終fsync・marker不足、公開run_gate伝播を実行した。静的検査はlint成功、format9file成功、strict5module成功。重要48ケースの容量修正後の再検証と実統合gateはまだ未実行。
+
+重要48ケースの容量修正後の再検証: 48成功/0失敗/318除外91.44秒、収集complete/errors=[]、明示48件・原参照12件（checkpoint3・母集合1・対局raw4・probe raw4）。新規一時領域reversi-important-evidence-ryzpvxad/important-runのJUnit/events.jsonl/collection.jsonに保存した。3件の巨大理由辞書はcode集合/count・details未収集へ限定しただけで、元期待値/判定/64KiB上限を緩めていない。
+
+### 最終統合前の双方向照合
+
+| 図/契約 | 実装 | 回帰/実確認 |
+|---|---|---|
+| Q/MAN | quality.run_gate、evidence.manifest | Git read-only、source/設定/モデル/仕様hash、step ID/argv/timeout。未コミット再現はbytesを要する |
+| T/S→XML/JOURNAL | required_steps/run_step、pluginのpytest hook | 新規owned full/smoke、3phase/collection、nodeid/sequence/session、同testの別step |
+| XML/JOURNAL/原参照→EC | evidence.collect_step/collect、record_harness_artifacts | 標準JUnitの二重失敗補正、原run/hash、原12参照、異常32ケース |
+| EV→LOG/EXIT | render_markdown/save_new、qualityのevidence StepResult/最後のquality保存 | JSON/Markdown同一辞書、quality予定hash、保存失敗・既存ファイル保全、公開gate伝播 |
+| 旧評価境界 | harness変更なし | 選定正式fixture/不正raw/全公開入口の既存assertを維持。品質passedで正式資格を与えない回帰 |
+
+新構造→コードとコード→図の対応を読み、collectorが元pytest結果を再判定しないこと、原rawを改変しないこと、source hashに新toolを含むこと、追加strictを緩めないことを確認した。評価第2〜6節の責務/依存/条件は不変。manualなMermaidレンダリング・remoteCI・実ブラウザは未実行。
+これから最終static/59回帰を再検証した後、実 `python -B tools/quality.py` を直列実行する。実行中は対象source/config/modelを変更せず、進捗/生成物の読取だけにする。Goal 6は実gateと現在hash/保存証拠の検査が終わるまでPASSにしない。
+
+### Goal 6の実行結果・完成確認
+
+最終static: `python -B -m ruff check . --no-cache` / `python -B -m ruff format --check . --no-cache` / `python -B -m mypy --no-incremental` は成功（format9files、strict5source files）。直後の `python -B -m pytest -q tests/test_quality.py -p no:cacheprovider --tb=short` は59成功/0失敗45.34秒。
+
+**実際に `python -B tools/quality.py` だけで自動証拠まで生成し、終了0 / QUALITY PASS。**
+保存先: `evaluation_results/quality-b38f6817521a4f9a9cc134bb8aa16092/`。
+
+| 必須検査 | 終了 | 外部秒 |
+|---|---:|---:|
+| environment | 0 | 0.0213 |
+| model | 0 | 0.0891 |
+| dependencies | 0 | 0.4533 |
+| lint | 0 | 0.1216 |
+| format | 0 | 0.0882 |
+| typing | 0 | 3.1760 |
+| pytest | 0 | 265.8927 |
+| smoke | 0 | 3.2367 |
+| snapshot | 0 | 0.0052 |
+| evidence | 0 | 0.1548 |
+
+全pytest **427成功/0失敗/0error/0skip**（pytest内265.30秒）、独立smoke **1成功/0失敗/426除外**（pytest内2.84秒）。旧395件＋証拠回帰32件で427件。両JUnitの件数・エラー/失敗/skip数、journal/nodeid/段階・終了値、JSON結果が一致。pytestは明示48ケース/原参照12件、smokeは明示1ケース/原参照2件。JSON/Markdownは同じ辞書から再生成してbyte内容一致、全テストIDがMarkdownにあり、同じsmoke nodeidのexecution IDはstepで異なる。
+
+evidence.collect_step / verify_publicationを実成果物に実行し、collection_status=complete、errors=[]、publication照合=[]。quality予定hash、Markdown hash、元XML/journal/log、原checkpoint/trace/母集合の参照bytesを照合した。quality.json v1のfield構造は旧と同じで、必須evidence StepResultだけを追加した。原参照は意味的認証・正式資格の証明ではない。
+
+開始/終了31source hashが一致し、終了後の現在31fileのbytesとも完全一致。Gitは開始HEAD e1c55f4・dirty=Trueとして自動保存（承認済み今回変更を含む）。開始時65trackedのうち変更10件だけ、他55件は開始時hash一致。harness全コード、AI本体/GUI、fixture、既存性質試験、仕様/依存版/CI、配布データ/過去報告は未変更。追加はtools/__init__.py/evidence.py/evidence_plugin.pyの3件。commit/push/branch操作なし。
+
+副作用範囲は新規owned成果物・既存試験の新規一時/run生成物。証拠出力は17files、約1.84MB（実byte合計は後述の照合値）、大きな原rawは複製せず参照。collector計測0.1548秒は保存前集約の経過で、pytest中journalコストや全保存I/Oを含む値ではない。今回の全体時間と過去795秒との違いを性能改善と解釈せず、同条件の収集on/off性能比較は未実施。AI探索/通信期限へのコード変更なし。
+
+モデル→実装/実装→モデルは上の対応表と新32回帰＋既存全回帰で照合し、harnessの依存18辺/正式fresh10辺は維持。新3moduleのAST importと全関数/クラスの日本語docstring、設計7Mermaidのfence、内部リンクを読み取り確認。新しい重要設計矛盾は確認なし。実レンダリング、remoteCI、実ブラウザは未検証。
+
+### 保証範囲と後続課題
+
+- A 全テスト: nodeid/step/run/execution ID、phase結果・時間・失敗診断、JUnit/journal/hash、共通Git/環境/source/argv、未実行/中断/収集不足の区別。
+- B 重要テストのみ: ルール・形式・拒否・schema/raw・正式資格・smokeの明示input/独立期待/観測/モデル/契約/実装。成功48ケース、smoke再実行1ケース。巨大理由はcode/countで保存しdetails未収集を明示。
+- C 未取得/未保証: 任意assert/local・全Hypothesis成功例・全stderr、全証拠の真正性/完全匿名化、parallel worker収集、停電/OS障害/親強制停止時の完全保存、CI upload/保管、collector on/offの公平な性能比較。
+- 原参照は長期保管しないためpytest一時領域の削除後は再確認不能となり得る。新規品質領域と関連原runを必要に応じて保管する。古い証拠を修復・昇格しない。
+- toolsの明示package追加はmypyの同一ファイル二重module名診断の根本対処で、strict/ignoreを緩めたものではない。既存search_budget.validate_traceのnone/unknown読込docstringと実処理の説明差は範囲外として未修正（collectorはそのコメントを検証省略条件に使わない）。
+
+未解決の作業停止blockerはないためQUALITY_BLOCKERS.mdは作成しない。Goal 0〜6を上記範囲でPASSとする。最後の追記はこの記録だけで、実ゲート対象31fileは変更しない。今後は `python -B tools/quality.py` の新規UUID領域でevidence.md→evidence.json→原参照を読む。verify_publicationの[]とquality.passed/collection_statusを併せて確認し、正式AI評価は従来の独立共通入口を使う。
+
+### 最終監査での追加反例（再検証前）
+
+直前のPASS記述は初回runの記録であり、以下の反例発見により現在Goal 6をFAILへ戻す。save_newが完成名へ直接writeしてからfsyncするため、fsync失敗でも予定hashの全bytesが残るとverify_publicationが完成と誤認し得る。検査結果を緩めず、公開図・契約を先にowned pending fsync/close→排他hardlink→quality最後へ修正した。新規回帰で実fsync/link障害・race winner保護・公開gate/CLIの保存障害を検証してから再統合する。原評価writerには変更を加えない。
+初回容量の厳密値は1,834,014bytes（約1.83MB）である。全stepのID/結果/log hashも実行単位へ追加し、既存quality v1のfield構造は維持する。
+
+新7回帰を旧save_newで先に実行: **7失敗/59除外9.43秒**。3派生名にfsync後の全bytesが残る、link/race/pending契約が未対応、実run_gate→mainが終了1でもpositive quality markerが残る反例を実際に再現した。図/契約の先行修正後にpending→fsync/close→排他linkを実装し、作成成功したown pendingだけを回収する。原harness writer/評価schemaには手を加えない。Goal 6は修正後回帰と新しい実gateが成功するまでFAILのまま。
+
+公開修正後の静的検査はlint成功・format9file成功・strict5source成功。同じ新7回帰を含む全品質回帰 **66成功/0失敗95.15秒**。既存winnerと別writer pendingのbytesを保護、実fsync失敗でも完成名を生成しないこと、main終了1を確認した。判定条件を緩めず、NTFS上の排他hardlink公開を使う。現在の品質2図・契約・実装は一致し、これから新規UUIDの実qualityを再実行する。実行中はsource/config/modelを変更しない。
+
+### 確定した最終結果（公開修正後）
+
+`python -B tools/quality.py`: **終了0 / QUALITY PASS**。
+最新成果物は `evaluation_results/quality-777d1c21d3c94015a8228f306e45a721/`。
+初回b38f6817の427件成功は旧公開方式の途中結果であり、現在の成功として使わない。
+
+| 必須検査 | 終了 | 外部秒 |
+|---|---:|---:|
+| environment | 0 | 0.0459 |
+| model | 0 | 0.1507 |
+| dependencies | 0 | 0.8747 |
+| lint | 0 | 0.1990 |
+| format | 0 | 0.1901 |
+| typing | 0 | 7.7307 |
+| pytest | 0 | 482.1850 |
+| smoke | 0 | 5.7231 |
+| snapshot | 0 | 0.0113 |
+| evidence | 0 | 0.4250 |
+
+全pytest **434成功/0失敗/0error/0skip（480.72秒）**、独立smoke **1成功/0失敗/433除外（4.95秒）**。旧395＋証拠39回帰=434。JUnitとjournalとJSONの件数/段階/終了値が一致。pytest明示48・原12参照、smoke明示1・原2参照。全10stepのID、旧9検査の元結果と9log hashを共通manifestへ保存した。
+
+保存17files **1,866,000bytes（約1.87MB）**、owned pending残存0。evidence.json/evidence.mdは同じ辞書から再生成して内容一致、Markdownに全test IDが存在。`verify_publication` は **[]**。新公開mode、quality予定hash、Markdown、全log・JUnit/journal・原参照bytesを再確認した。NTFSの排他link成功を実gateで確認し、fsync失敗/公開raceは回帰で拒否する。directory永続化/停電までの完全性は保証しない。
+
+31sourceの開始/終了hashと検証後の現在bytesは一致、差分0。開始65trackedのうち意図した10件だけ変更、他55件（全harnessコード、AI/GUI、fixture、仕様、依存pin、CI、配布資産/過去報告等）はhash一致。新規3toolファイルのみ追加。Git HEAD=e1c55f4、dirty=Trueを自動記録し、commit/push/branch操作なし。モデル2図・契約の先行修正→7失敗再現→修正→66回帰→新実gate→保存再照合の順序を守った。全Goal 0〜6を明示したscopeでPASSへ確定する。
+
+時間/容量の影響: collector段階は0.4250秒、出力約1.87MB。pytest内journalや全fsyncコストまで分離したon/off比較ではない。過去runとの時間差を高速化と解釈しない。AI/正式判定/schema5/trace4/validation3/通信期限/探索予算は未変更。CI upload・実ブラウザ・他OS/GPU・parallel worker・全local/全成功生成例の記録・原証跡認証/長期保管は今回の追加範囲外。新方式未対応の保存先は安全に失敗し、旧直接writeの試作証拠を新しい完成証拠へ昇格しない。
+
+最終追記はこのファイルのみ（gateの31source対象外）。未解決の作業停止blockerはなく、QUALITY_BLOCKERS.mdは未作成。今後の実行は `python -B tools/quality.py` 一つで新規UUID領域へ自動生成され、手動報告は不要。evidence.md→evidence.json→原参照を読み、verify_publicationとquality.passedを確認する。
+
+## 追補：journal終了・状態遷移の検証漏れ修正
+
+過去の434件成功後のレビューで、終了重複・早期終了・終了後metadata・test間の交差等をcollectorがcompleteにすることを確認した。公開run_gateでも既存の模擬runnerを用いてpassed=trueまで到達した。過去の成功をこの検査の完成証拠として扱わず、本追補の回帰・実gateで再判定する。
+
+実装前にdocs/harness_architecture.mdの品質データフロー/状態図と11.2節、docs/harness_contracts.mdの13.2節を更新した。JLは既存evidence内のprivate検査とし、依存モジュール・AI/GUI・正式資格・保存v1を変えない。次に回帰を追加して修正前の失敗を記録し、その後実装する。commit/pushは行わない。既存未コミット13ファイルを保護し、変更前hashと関連テスト結果を新規一時領域へ保存する。
+
+開始時の関連既存15件は15成功・51除外14.14秒。モデル先行更新後、実pytest生成journalを原本とする21改変、正常fixture/直列1件、公開run_gateのfull/smoke各3改変、mainの2改変を追加した。旧実装で `python -B -m pytest -q tests/test_quality.py -k journal_lifecycle -p no:cacheprovider --tb=short` を実行し、**29失敗・1成功・66除外4.28秒**。重複/早期終了で公開mainがQUALITY PASS/終了0になることを再現した。invalid_selectedは構造化incompleteでなくTypeErrorになることも再現した。元JUnit/phase/終了値は改変せずsequenceのみ振り直し、単なる連番不正の検出を新検査の成功へ読み替えない。新規一時領域reversi-journal-fix-fp70vmtxへbaseline/redのlog/XMLと開始hashを保存した。この失敗記録後に実装を開始する。
+
+修正はevidence._journal_errorsの追加とcollect_stepからの呼出に限定した。session/選択/直列active test/phase/端点を検査し、unsupported形式も理由付きincompleteとする。selectedの不正型はエラーを保持したまま安全に診断集約する。模擬runnerのjournalにも実v1のformat_versionを明示した。plugin、qualityの判定コード、harness本体、AI/GUIは変更しない。setup skipとmodule-level collection skipの正常系2ケースを加え、**全品質回帰98成功・0失敗48.37秒**。新規32ケース（状態回帰30＋正常系2）で、元の66件のassertは維持した。
+
+lintとstrict5sourceは成功。Ruffが示した整形差分だけをapply_patchで反映した。モデル2図/契約13.2/実装/回帰の対応を照合した後、全品質ゲートを新規UUID領域で実行する。実行中は対象source・設定・モデルを変更しない。過去のquality-777d1c21の成功は今回の修正後証拠として流用しない。
+
+修正後の初回実gateはquality-4234d93dc49b4cefa3c64eca01bb8509へ新規保存し終了0。全466成功263.75秒、独立smoke1成功465除外2.82秒、必須10検査成功、publication照合[]、JSON/Markdown一致、31source開始/終了/現在hash一致、pending残存0を確認した。保存済み旧正常v1の2316イベント/full・12イベント/smokeも新状態検査のエラー0。既存68対象のうち今回変更は5ファイルだけで、他63件は開始hashと一致した。
+
+最終文面照合で設計11.2節の「現行collector」を「修正前collector」へ訂正した。状態モデルや実装の変更ではないが対象文書hashが変わるため、最終文面に対して実gateを再実行する。初回結果を最終文面のhash一致として報告しない。Mermaidは構造/コード対応を確認し、実レンダリングは未実施。原記録真正性、全ローカル変数、並列worker/rerunは保証対象外のまま。
+
+### journal修正の最終検証結果
+
+最終文面の `python -B tools/quality.py` は **終了0 / QUALITY PASS**。成果物は `evaluation_results/quality-4c0edb02f46a412881f353676b4ede6f/`。全pytest **466成功・0失敗652.36秒**、独立smoke **1成功・0失敗・465除外2.57秒**。この再実行は初回より遅かったが、時間制限を緩めたり検査を省略したりしていない。速度低下の根本原因は未特定で、性能改善/悪化の測定結果とは扱わない。
+
+| 検証 | 結果 |
+|---|---|
+| 修正前の新規状態回帰30件 | 29失敗・1成功4.28秒。公開mainの誤成功も再現 |
+| 修正後の全品質回帰 | 98成功48.37秒（元66＋新32） |
+| 必須品質ゲート10検査 | 全成功。environment/model/pip check/lint/format/strict typing/全pytest/独立smoke/snapshot/evidence |
+| 最終保存・再照合 | verify_publication=[]、Markdown再生成一致、full/smokeのcollection_status=complete、errors=[]、pendingなし |
+| 最終対象source | 31件の開始/終了/現在hash一致。最終追記は対象外の本ファイルだけ |
+| 既存変更の保全 | 開始68対象中、今回変更は本記録・設計2件・tests/test_quality.py・tools/evidence.pyの5件。他63件hash一致 |
+
+実行コマンドは、開始時の関連15件選択、`python -B -m pytest -q tests/test_quality.py -k journal_lifecycle -p no:cacheprovider --tb=short`、`python -B -m pytest -q tests/test_quality.py -p no:cacheprovider --tb=short`、`python -B -m ruff check .`、`python -B -m ruff format --diff tools/evidence.py tests/test_quality.py`（差分はapply_patchで適用）、`python -B -m mypy`、整形check、`python -B tools/quality.py`（修正後2回）、`git diff --check`。baseline/red/greenは新規一時領域にそれぞれJUnitとlogも保存した。
+
+モデルのJL→EC→evidence検査→quality失敗が、21改変の単体回帰、full/smoke双方の公開run_gate回帰6件、実main回帰2件に対応する。正常fixture内metadata/複数観測/直列test、setup失敗/skip・collection失敗/skip、既存crash/timeout/保存失敗の回帰は成功。元pytestの記録された合否と収集完全性を分離し、不正journalを正常へ修復していない。unsupported versionもincompleteにし、別の品質unknown/failed型を導入しない。
+
+現行の保存v1・AI正式評価schema5/trace4/validation3・正式入口・AI/GUIは不変。verify_publicationは引き続きbytes対応確認のみで、意味検証や真正性保証を発行しない。保存済み正常v1との状態契約互換性は確認したが、未対応形式・全plugin・並列/rerun・実Mermaidレンダリング・別OSは保証しない。ステージ・commit・push・branch操作なし。今回確認した検証漏れの修正と回帰は完了。

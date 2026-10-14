@@ -236,3 +236,48 @@ strict型範囲はpyproject.tomlの明示files、format未導入範囲と意図�
 実行不能な環境・異なるtool版は品質gate失敗として明示し、harnessのunknown/failed状態を変更しない。対応環境は直接CPython3.13.5/Windows、venvランチャーは未対応。CI未実行やブラウザ未確認をローカルgate成功から保証しない。
 
 source_hashesは開始時、source_hashes_endは終了時の対象コード・設定・モデル文書。変化はsnapshot検査の失敗として保持し、終了時の新しいhashだけで成功へ置き換えない。全時間・状態・呼出順の証明や、2観測間の改ざん認証ではない。実行中の編集を避ける。
+
+### 13.1 自動検証証拠（先行契約後に実装、2026-10-14）
+
+実装前に品質図と同時に確定する追加契約。旧9品質検査と判定は維持し、必須evidence検査を追加する。QualityReport v1のfield構造は変更しない。評価schema5、raw trace4、validation3、正式資格と無関係な開発証拠である。
+
+| データ | 契約 |
+|---|---|
+| Evidence manifest | evidence format_version=1。UUID run_id、step_id=run_id:name、Git commit/dirty、argv/選択/timeout、限定環境、開始終了source hash・設定/モデル/課題仕様hash、開始終了UTCを保存。Git不可はunknown理由、内容hashをcommitの代用保証にしない |
+| JUnit | pytest.xmlとsmoke.xmlは別step新規領域。標準pytestが生成した結果を使い、既存ファイルを上書きしない。error/failed/skipped、集計、時間、診断を保存。XMLだけから段階や未収集入力を推測しない |
+| Journal | tools.evidence_pluginによるrun/step/nodeid/sequence付きJSONL。開始、phase、明示期待/観測、原成果物参照、終了、session終了を記録。逐次flush、最終sessionはfsync。欠損/破損/重複/別run混入をcompleteにしない |
+| Test evidence | test_id=nodeid、execution_id=step_id:nodeid。同じtestのfull/smokeを分離。setup/call/teardownの最終outcomeとXMLを照合し、未完はinterrupted。skipはpassedと別で、全skipや未収集を成功の証明にしない |
+| 明示check | 期待を対象呼出より前に登録、観測はassertより前に登録。期待種別=fixed/mathematical/independent_referee/consistency。input/expected/observations、根拠のあるmodel/contract/implementation参照。collectorが再判定してpytest結果を変更しない |
+| 原成果物参照 | 明示登録したcheckpoint/run_id、母集合/rawのpath/hash。登録時と集約時のbytes・run対応を確認。保存flag/hashから正式資格を発行せず、原ファイルの修復/無条件複製をしない |
+| collection_status | complete/incomplete。正常失敗やskipでも整合した記録はcompleteにできる。実行されたstepのXML/journal欠損・破損・対応不一致、成功重要testの記録不足はincomplete。未実行はnot_executedで明示 |
+| publication | 派生JSON/Markdown/qualityは新規pendingをflush/fsync/closeした後にos.linkで排他公開し、qualityを最後に公開。証拠にquality予定bytes hashを記録し、その一致が完成条件。fsync失敗では完成名を生成しない。保存失敗時はevidence検査をfailedにしてqualityを書ける範囲で保存。hardlink不対応は失敗、既存winnerを置換しない。旧予定hash不一致/quality欠損は部分成果物 |
+
+原品質検査の成功、各テスト結果、収集完全性、保存成否、全体gate成功、AI正式資格は別である。証拠失敗はテスト結果を変えずgateを失敗にする。失敗テストの期待/観測が途中で欠けた場合は未取得理由を残し、成功理由や欠損時刻を推測で補わない。
+
+journal最終行の後のfsync/close障害はstepログの予約markerも照合して不完全とする。全skip/テストなしの終了0だけでは検証成功を証明しない。ログ/JUnit/journal/Markdownのhashとquality完成markerの照合APIは原bytesの対応確認であり認証・正式意味検証ではない。
+
+JUnitのtests件数は常にtestcase要素数とは一致しない。pytest8.4.2はcall成功＋teardown失敗でpassed/errorを加算し、call失敗＋teardown失敗には二重失敗補正を行う。collectorはjournal段階からこの標準集計を再構成し、XML要素数だけと比較して正常失敗を拒否しない。error/failure/skipped各数と実nodeid/段階の照合も維持する。
+
+完成名への直接write+fsyncは採用しない（fsync失敗でも予定hashの全bytesが残る反例）。pendingは新規作成に成功したownedファイルだけを回収し、回収不能は警告。os.link公開後のdirectory fsync/電源断まで保証しない。全step（内部検査含む）の識別・結果とlog hashを実行単位へ集約し、per-testへ重複させない。
+
+publicationはfsynced_pending_exclusive_link_then_matching_quality_jsonを記録する。旧直接write方式の試作証拠はこの新公開プロトコルの証拠として昇格せず、verify_publicationでpublication_protocol_unverifiedとする。原品質JSON v1/原評価schema5の読込契約は変更しない。
+
+collectorは容量制限を設け、診断を切り詰めた場合は原JUnit/log参照と切り詰めを明示する。全環境変数・任意localを収集しない。明示metadataは秘密キーを拒否しサイズ制限を適用する。既存原ログの無制限安全性や匿名性を保証しない。並列worker収集は現段階では未対応、qualityは従来どおり直列。直接pytestはplugin指定時だけ証拠収集する。
+
+回帰対象は成功/失敗/skip/setup/teardown/collection、crash/timeout、XML/journal欠損・破損・別ID、原hash/run不一致、保存不能、同test複数step、既存出力保全、正式資格非干渉である。モデル→実装と実装→モデルの対応表・実結果はQUALITY_PROGRESS.mdへ残す。
+
+### 13.2 journal状態遷移契約（先行確定後に実装）
+
+format_versionは厳密な整数1、kindはsession_start/session_finish/collection/selected/test_start/phase/test_finish/expectation/observation/artifactのいずれかとする。未対応形式を無視してcompleteにしない。未取得端点や終了を補完せず、元journalは保存したまま検査する。
+
+| 不変条件 | 検証規則 |
+|---|---|
+| session | 最初に開始1回、最後に終了1回。中間の再開始/終了、終了後イベントは不可 |
+| collection/selected | collectionは選択確定前のみ。selectedは1回、nodeidsは空でない文字列の重複なし配列（配列自体は空を許可）。全test開始はselected後、選択されたnodeidのみ |
+| 直列実行 | active testは最大1件。同一nodeidの開始/終了は各1回。別testとの交差や終了済みtestの再開は禁止 |
+| phase/終了 | setup→call→teardown後にtest_finish。setupがfailed/skippedならcallなしのsetup→teardownも許可。早期終了、終了後phase、開始前phaseを拒否 |
+| 明示metadata | expectation/observation/artifactは対象nodeidがactiveな区間内のみ。setup報告前等のfixture内登録や同一checkの複数観測は許可。観測が期待より後という既存規則も維持 |
+| 欠損・未知・矛盾 | 既存のrun/step/sequence・JUnit照合に加えて状態違反理由を保持しcollection_status=incomplete。旧version/未対応versionも証拠不足であり自動昇格しない |
+| 判定伝播 | collect_step→collect→run_gateの既存経路でevidence検査を失敗にする。記録されたpytest outcome/exitと証拠完全性を別に保ち、元assertや正式資格を変更しない |
+
+正常なテスト失敗、skip、collection失敗は記録が整合すればcompleteにできる。crash/timeoutの部分記録は診断用として保持しcompleteにしない。verify_publicationの空エラー配列はbytes対応であり、JL検査の合格や元記録の真正性を表さない。並列worker/rerunは既存どおり非対応。保存構造v1は維持し、従来正常なv1を受理して不正な状態遷移だけを排除する。

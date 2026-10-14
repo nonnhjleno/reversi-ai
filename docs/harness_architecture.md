@@ -307,7 +307,7 @@ flowchart TD
     DOC["現行設計図 / 契約"] --> M
     CODE["harness / fixture / 公開wrapperコード"] --> M
     Q --> L["Ruff lint / 限定format / strict mypy / pip check"]
-    Q --> T["全pytest<br/>既存回帰・通信形式・不変条件・ゲート負例"]
+    Q --> T["全pytest / tools.evidence_plugin<br/>既存回帰・明示観測・段階別journal"]
     T --> S["独立smoke<br/>既存の軽量参考対局"]
     M --> OUT["必須結果の集約<br/>全成功のみpassed"]
     L --> OUT
@@ -316,8 +316,21 @@ flowchart TD
     S --> SAME["終了時hashと照合<br/>観測した変更はgate失敗"]
     SNAP --> SAME
     SAME --> OUT
-    OUT --> LOG["新規owned領域<br/>各commandログ・品質JSON・環境/コードhash"]
-    LOG --> EXIT["保存も成功かつ全必須成功: exit0<br/>それ以外: exit1"]
+    T --> XML["step別JUnit XML<br/>pytestが判定・生成"]
+    S --> XML
+    T --> JOURNAL["step別events.jsonl<br/>開始/段階/終了・限定期待/観測"]
+    S --> JOURNAL
+    Q --> MAN["実行manifest<br/>run/step ID・Git・環境・source/model hash"]
+    XML --> EC["tools.evidence.collect<br/>JUnit/journal/終了値・原成果物対応を照合"]
+    JOURNAL --> JL["tools.evidence._journal_errors<br/>v1・session/選択の単一性・直列test開始/終了・区間内イベント"]
+    JL -->|"原journalと検査理由・補修なし"| EC
+    Q -->|"stepログの収集障害marker"| EC
+    MAN --> EC
+    ORIGINAL["既存checkpoint・raw trace・母集合<br/>変更/無条件複製しない"] -->|"明示登録した参照とhashのみ"| EC
+    EC --> EV["evidence.json / evidence.md<br/>テスト結果と収集完全性を別に保持"]
+    EV --> OUT
+    OUT --> LOG["最後にquality.jsonを排他公開<br/>pending fsync後のlink・予定hash一致"]
+    LOG --> EXIT["旧必須検査＋必須証拠＋保存成功: exit0<br/>それ以外: exit1"]
 ```
 
 各コマンドは直列で実行し、失敗を握り潰さない。環境が不適合なら後続を未実行として明記し成功にしない。時間上限による回収ではrunner所有の子プロセスだけを停止し、Windowsではそのtreeをtaskkillする。taskkill不在/失敗でも直接の子は回収し、tree未確認の失敗を報告する（完全回収済みとは扱わない）。既存評価結果を上書きせず、品質JSONは評価schema5入力ではない。
@@ -329,13 +342,19 @@ stateDiagram-v2
     [*] --> PrepareQuality
     PrepareQuality --> Checks: owned出力・対応環境
     PrepareQuality --> GateFailed: 設定/環境/準備不適合
-    Checks --> GatePassed: 全必須終了0・モデル照合成功・snapshot一致
+    Checks --> GatePassed: 旧必須終了0・モデル照合成功・snapshot一致
     Checks --> GateFailed: nonzero・不在・timeout・モデル不一致・snapshot不一致
     GateFailed --> SaveEvidence: 未実行/失敗の理由を保持
     GatePassed --> SaveEvidence
-    SaveEvidence --> QualitySuccess: 全必須成功かつ保存成功 / exit0
-    SaveEvidence --> QualityFailure: 必須失敗 / exit1
-    SaveEvidence --> QualityFailure: 保存失敗 / exit1
+    SaveEvidence --> JournalValidation: 原journalを順序どおり検査
+    JournalValidation --> EvidenceComplete: 状態遷移・JUnit対応・原参照・保存が正常
+    JournalValidation --> EvidenceIncomplete: 重複・早期終了・区間外・未知形式・欠損・不一致
+    SaveEvidence --> EvidenceIncomplete: 読取不能・保存不能
+    EvidenceComplete --> PublishQuality: evidence検査結果を追加
+    EvidenceIncomplete --> PublishQuality: evidence失敗を保持（テスト結果は不変）
+    PublishQuality --> QualitySuccess: 全必須成功・最後のquality保存成功 / exit0
+    PublishQuality --> QualityFailure: 検査/証拠失敗 / exit1
+    PublishQuality --> QualityFailure: 保存失敗・部分ファイル / exit1
     QualitySuccess --> [*]
     QualityFailure --> [*]
 ```
@@ -343,3 +362,38 @@ stateDiagram-v2
 `validate_model`は第2節の全harness importとfixture3辺の過不足・循環、新moduleの図漏れを検査する。第5節の単独wrapper→fresh inspection、比較wrapper→_inspect_pair→fresh inspection、facade委譲をASTで検査する。図のレンダリングや全関数の制御フロー/意味の証明ではない。T-ID〜T-GATEや品質/統計の状態は全pytestと[品質導入対応表](../QUALITY_PROGRESS.md)で照合する。
 
 Windows venvのredirectorではPopen PIDとproducer PIDが異なる事象を確認した。正式identity照合を緩めず、このゲートはvenvランチャーではない直接CPythonを使う。別起動機構の正式対応は未実装であり、この制約を時刻の猶予やhash更新で回避しない。
+
+### 11.1 検証証拠拡張（先行設計後に実装、2026-10-14）
+
+上記品質2図を実装に先行して拡張した。導入状態・実行証拠はQUALITY_PROGRESS.mdの「検証証拠自動生成」を参照する。第2〜6節の評価モデル・schema5/trace4/validation3・正式ANDは変更しない。
+
+依存方向はquality→evidence、pytest→evidence_plugin、選定テスト→pluginの明示記録APIである。pluginはpytest既存依存とstdlibを使い、collectorはstdlibだけで成果物を読む。harness→tools、collector→harnessの検証呼出、新しい正式資格入口を追加しない。新しい2moduleもstrict対象へ追加する。
+
+toolsは__init__.pyで明示packageにする。collectorをstrictの直接filesとtools.evidenceのimportから二重のmodule名で検査しないための最小package標識であり、新しい責務・判定・依存辺を持たない。
+
+| 要素 | 実装・責務 | 必須照合 |
+|---|---|---|
+| MAN | tools.evidence.manifest / quality.run_gate | UUID run/step、Git commit/dirty（読取のみ）、設定/環境/source/model hash、argv/timeout |
+| XML | quality.required_steps / run_step | 新規owned stepディレクトリのJUnit。既存XMLを拒否してから起動 |
+| JOURNAL | evidence_pluginのpytest hookと明示API | run/step/nodeid/sequence、setup/call/teardown、collection/session終了。flush逐次保存、保存障害はpytestの判定を変更せず収集エラー |
+| JL | evidence._journal_errors / collect_step | 順序どおりのsession/selected/active test/phase/終了を検査し、重複・区間外・未対応形式をincompleteへ伝播。正常なfixture内metadataやsetup失敗/skipを許可 |
+| EC | evidence.collect | JUnit集計とjournalの段階・nodeid/終了値を照合。call成功・teardown失敗、負例成功、skip、collection失敗、中断を混同しない |
+| ORIGINAL | pluginの明示原成果物登録→collector | 実行に関係するcheckpoint/runとraw/population hashだけを関連付ける。登録時hashと終了後bytesの差は不一致、意味検証済みという証明にはしない |
+| EV | evidence.render_markdown / quality保存 | JSONとMarkdownは同じ観測辞書から生成。期待値推測、任意local抽出、原証跡修復をしない |
+| LOG/EXIT | quality.run_gate / main | quality.json v1のfield構造を維持し必須evidence StepResultを追加。各派生ファイルはowned pendingへfsync/close後に排他hardlinkで公開し、最後のquality bytesが予定hashと一致して完成。保存不能ならstderr/終了1 |
+
+XMLだけでは開始したまま未完のテストや正確なnodeid/段階を保証できないため、軽量journalを併用する。成功した重要テストの明示記録欠落も証拠不足とする。通常のpytestをpluginなしで実行した場合は明示APIをno-opにし、既存合否を維持する。
+
+証拠完全性は取得範囲の完了であり、全local変数・全Hypothesis例・全AI stderr・原証拠真正性を意味しない。未実行と中断には理由を残す。JUnitはsession終了時の出力で、強制停止では欠損し得る。run領域の準備以前や書込不能、OS障害、停電で完全な証拠を保証しない。参照先の後日の消失は再確認失敗として扱い、原traceを無条件にコピーしない。
+
+初回証拠導入時の品質回帰は旧27＋証拠39の66件。重要48ケースは実plugin/JUnitで期待先行・観測・原12参照を確認した。11.2節の後続修正・回帰を含む最新結果はQUALITY_PROGRESS.mdで確認する。正式評価の既存18import/10fresh呼出は不変。追加品質依存はquality→evidence、選定test/pytest→pluginで、collectorのharness逆依存はない。
+
+### 11.2 journal状態遷移の修正モデル（先行確定後に実装）
+
+11節の品質2図を先に更新し、ECの前提にJLを追加した。修正前collectorがphaseだけを抽出しfinishedをboolに潰していたため、終了重複・早期終了・終了後イベント・test間の交差を見落としていた問題への修正モデルである。実装・回帰完了の状態はQUALITY_PROGRESS.mdの追記を正本とし、過去66件の成功を本検査の証拠にしない。
+
+JLは同じevidenceモジュール内のprivate関数_journal_errorsとして実装し、collect_stepが集約前に呼ぶ。元journalを変更せずエラーをECへ返す。開始session→collection→selected→直列test区間→終了sessionを検査する。各testは開始→必要phase報告→終了の順序を守り、期待/観測/原参照は同じtestの開始から終了までに限る。phase報告は段階の実行後なので、fixture内metadataはsetup報告前やteardown報告前にも正常に発生する。setup失敗/skipはcallなしのsetup→teardown→終了を許可する。複数観測や失敗の整合した証拠は拒否しない。
+
+session/selected/testの重複、実行区間の交差、終了後イベント、未知kind/format_versionはincompleteへ伝播し、gateを失敗にする。途中停止は不足を記録し、終了イベントを補造しない。元pytest結果、評価schema5/trace4/validation3、正式資格入口、公開hash確認の責務は変更しない。verify_publicationは保存bytes対応だけを確認し、この状態検査の代用にも記録真正性の証明にもしない。
+
+最終監査で、完成名へ直接書き込むとfsync失敗後にも全bytesが残り得ることを確認し、先に公開モデルを修正した。pendingからos.linkによる排他公開を使い、同名winnerを置換しない。hardlink未対応の保存先は失敗にし、危険なreplaceへfallbackしない。own pendingの回収失敗は警告で保持し、公開済みの保存成功を巻き戻さない。停電/OS障害・directoryの永続性まで保証するものではない。
