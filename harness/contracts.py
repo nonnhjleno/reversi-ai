@@ -1484,6 +1484,7 @@ def reduce_observations(games, measurements_by_leg=None):
 
 def _inspection_errors(inspection):
     """inspectionを互換用エラー配列へ変換する。正式/deploymentではunknownも拒否理由に含める。"""
+
     errors = list(inspection['integrity_errors'])
     if inspection.get('decoded', {}).get('requested_profile') in ('confirmatory', 'deployment'):
         errors.extend(item['code'] for item in inspection['reasons'] if item['status'] == 'unknown')
