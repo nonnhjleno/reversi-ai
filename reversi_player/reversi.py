@@ -1,31 +1,37 @@
+from __future__ import annotations
+
 import random
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any, Literal
 
 
 class Pos(object):
     """盤面上の座標を表す。x は列、y は行で、左上を (0, 0) とする。"""
 
-    def __init__(self, x, y):
+    def __init__(self, x: int, y: int) -> None:
         """座標を初期化する。盤面内かどうかの判定は is_valid() で行う。"""
         self.x = x
         self.y = y
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         """座標が 8×8 の盤面内にあれば True を返す。"""
         return 0 <= self.x < 8 and 0 <= self.y < 8
 
-    def add(self, p):
+    def add(self, p: Pos) -> Pos:
         """別の座標または方向 p を加えた新しい Pos を返す。自身は変更しない。"""
         return Pos(self.x + p.x, self.y + p.y)
 
-    def __add__(self, p):
+    def __add__(self, p: Pos) -> Pos:
         """+ 演算子で座標を加算し、新しい Pos を返す。"""
         return Pos(self.x + p.x, self.y + p.y)
 
-    def __eq__(self, p):
-        """x と y の両方が等しい Pos 同士を等しいと判定する。"""
+    def __eq__(self, p: Any) -> Any:
+        """座標を直接比較する既存の動的境界。非bool結果・短絡・属性例外も保持する。"""
         return self.x == p.x and self.y == p.y
 
-    def __str__(self):
+    def __str__(self) -> str:
         """GUIとの通信で使う「x y」形式の文字列を返す。"""
         return '{} {}'.format(self.x, self.y)
 
@@ -45,15 +51,15 @@ class Board(object):
     result() は現在の盤面だけから対局状態と勝敗を返す。
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """空きマスで盤面を作り、リバーシの初期配置を置く。"""
-        self.cell = [['E' for _ in range(8)] for _ in range(8)]
+        self.cell: list[list[str]] = [['E' for _ in range(8)] for _ in range(8)]
         self.cell[3][4] = 'B'
         self.cell[4][3] = 'B'
         self.cell[3][3] = 'W'
         self.cell[4][4] = 'W'
 
-    def ask(self, color, pos):
+    def ask(self, color: str, pos: Pos) -> None:
         """着手可能かを検査し、GUI向けに OK または NG を出力する。
 
         color は 'B'（黒）または 'W'（白）、pos は候補座標。
@@ -73,7 +79,7 @@ class Board(object):
         else:
             print('NG', flush=True)
 
-    def play(self, color, pos):
+    def play(self, color: str, pos: Pos) -> None:
         """指定した合法手を盤面に反映し、GUI向けに結果を出力する。
 
         color は 'B'（黒）または 'W'（白）、pos は着手座標。
@@ -93,7 +99,7 @@ class Board(object):
         else:
             print('NG', flush=True)
 
-    def genmove(self, color):
+    def genmove(self, color: str) -> None:
         """指定色の合法手からランダムに1手を選び、着手結果を出力する。
 
         合法手がある場合は盤面を更新して座標を出力する。
@@ -112,11 +118,11 @@ class Board(object):
         else:
             print('NG', flush=True)
 
-    def showboard(self):
+    def showboard(self) -> None:
         """現在の盤面を8行の文字列にして標準出力へ表示する。"""
         print(self, flush=True)
 
-    def result(self):
+    def result(self) -> Literal['B', 'W', 'D', 'NG']:
         """現在の盤面から対局状態または勝敗を返す。
 
         どちらかに合法手があれば 'NG'、両色とも合法手がなければ
@@ -135,7 +141,7 @@ class Board(object):
         else:
             return 'D'
 
-    def _get_reverse_pos(self, color, pos, direction):
+    def _get_reverse_pos(self, color: str, pos: Pos, direction: Pos) -> Pos | None:
         """1方向を調べ、石を挟める場合は自色の終点座標を返す。
 
         pos から direction へ進み、最初に相手の石があり、その先に
@@ -163,7 +169,7 @@ class Board(object):
             elif self.cell[current.y][current.x] == color:
                 return current
 
-    def _play(self, color, pos):
+    def _play(self, color: str, pos: Pos) -> bool:
         """合法性を確認して着手し、成功したかを返す。
 
         合法手なら _update() で盤面を更新して True、置けなければ
@@ -178,7 +184,7 @@ class Board(object):
 
         return True
 
-    def _ask(self, color, pos):
+    def _ask(self, color: str, pos: Pos) -> bool:
         """空きマスで、少なくとも1方向に相手の石を挟めるか判定する。
 
         True は合法手、False は着手不可を表す。盤面は変更しない。
@@ -195,7 +201,7 @@ class Board(object):
 
         return False
 
-    def _has_legal_move(self, color):
+    def _has_legal_move(self, color: str) -> bool:
         """指定色に合法手が1つでもあるかを返す。
 
         全マスを調べ、合法手が見つかった時点で True を返す。
@@ -208,7 +214,7 @@ class Board(object):
 
         return False
 
-    def _update(self, color, pos):
+    def _update(self, color: str, pos: Pos) -> None:
         """合法手 pos に石を置き、挟んだ相手の石を自色に変える。
 
         pos は事前に _ask() で合法と確認済みであること。
@@ -230,13 +236,13 @@ class Board(object):
                 self.cell[current.y][current.x] = color
                 current += direction
 
-    def _genmove(self, color):
+    def _genmove(self, color: str) -> Pos | None:
         """合法手をすべて列挙してランダムに1手を着手し、その座標を返す。
 
         合法手がない場合は None を返す。着手が成功した場合は盤面も
         更新される。候補選択は一様なランダム順序に依存する。
         """
-        candidates = []
+        candidates: list[Pos] = []
 
         for y in range(8):
             for x in range(8):
@@ -254,12 +260,12 @@ class Board(object):
 
         return candidates[0]
 
-    def __str__(self):
+    def __str__(self) -> str:
         """盤面を1行8マス、改行区切りの文字列にして返す。"""
         return '\n'.join(''.join(r) for r in self.cell)
 
 
-def main():
+def main() -> None:
     """GUIとの標準入出力プロトコルを読み取り、盤面操作を実行する。
 
     1行ずつコマンドを受け取り、quit で終了する。name、ask、play、

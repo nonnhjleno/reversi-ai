@@ -491,3 +491,71 @@ git diff --check
 未解決の作業blockerはない。ただし得点収集ローカルのlist[Any]は、既存any(...)値域検査の型絞り込み限界と動作維持のための明示的動的境界として残す。任意の非JSON数値/独自オブジェクトまでの静的保証や、結果の全状態を区別する精密な型化は今回行わない。JSON boolを0/1相当とする既存挙動も、型付けを理由に修正しない。将来の型introspection、全本番の自動対象化、残り8本番ファイル、全テストのstrict化は未実施。性能比較は未測定であり、実行時間差を改善/悪化と解釈しない。
 
 次の第一候補はopenings（依存するrefereeが既に型付きで、プロセス/時計契約へ手を広げずに進められるため）。再開時は本6対象のstrict成功と対応済み証拠を確認し、公開入力/戻り値と母集合IDの契約を調査する。データ契約を変更するなら必ずモデル先行で合意する。今回は**Phase 0 PASS・Phase 1 PASSで終了し、Phase 2以降の実装へ進まない**。
+
+## mypy strict拡大 Phase 2（指定対象reversi_player/reversi.py）
+
+### 開始確認・型付け方針（実装前）
+
+今回の指定はAI本体であり、前回記録の次候補openingsは変更しない。開始HEAD=a199ab0、mainはorigin/mainより1commit先、作業ツリーclean。AGENTS、現在のPhase 1 PASS記録、設定、仕様の入出力、architecture/contractsを確認。QUALITY_BLOCKERS.mdは存在しない。専用一時領域reversi-strict-phase2-m1883whcへ全tracked開始hash・元reversi.py・診断logを新規保存した。既存6対象の通常strictは成功。前段階のquality-26c2ba70645344f1aaad11da22119b1cはpassed=true、31source開始/終了/現在hash一致、publication照合[]。過去の記述だけで開始可否を決めていない。
+
+本体単独の修正前strictは47件。20関数の注釈と呼出先型の不足が中心で、現行依存はrandomだけ。Pos座標/盤面はint/list[list[str]]、無効色を拒否するcolor引数はstr、反転終点と内部genmoveはPos|None、標準出力専用関数/mainはNone、resultは既存4文字列のLiteralとして表現する。探索・shuffle回数・ルール・例外・通信処理は変えず、注釈以外の実行AST/bytecodeを比較する。
+
+設計判断：型注釈だけの変更で、AIがreferee/予算traceをimportする設計へ変えない。GUIからのPopen、seed adapter経由runpy、harnessからの外部通信という図の境界、schema5/trace4/validation3、name/ask/play/genmove/showboard/result/quitは不変。よってモデル図/データ契約の変更は不要と判断し、実装前に理由を記録する。常設対象の追加と型検査用の名前解決設定だけは更新し、実行時package構造や__init__.pyを変更しない。
+
+#### Pos.__eq__の限定的な動的境界
+
+既存比較はp.x/p.yを直接参照し、同じ座標を持つ別型を受け付ける。x不一致ならyを読まず、欠損時はAttributeErrorとなる。さらに他方の座標オブジェクトの比較が文字列を返す場合は、andがその文字列を返すことを実測した。単純にboolへ宣言すると既存の動的戻り値を偽る。Pos引数に狭める案はobject.__eq__とのoverride違反、object引数案は属性アクセス違反となる。Any引数＋bool戻り値案もno-any-returnとなり、Any引数＋Any戻り値だけが実際の任意比較結果を正確に記述する。
+
+したがってAnyは__eq__の引数/戻り値2注釈だけに限定し、他の19関数・座標・盤面へ拡大しない。既存のduck typing、短絡、非bool結果、例外を回帰固定し、ASTベースでAnyを他の位置へ追加すると失敗するguardも用意する。全関数をAnyへ逃がす/検査を除外する方針ではない。isinstance/NotImplemented/bool()/castを追加する案は実行時の比較・例外を変えるため不採用。型文字列プローブの最初の-c実行は自動検出filesと競合したため、プローブだけ--config-file=として再解析した。既存プロジェクトのstrict設定を無効化したわけではない。
+
+単独strict成功後に本体だけをfilesへ追加する。既知のreversi/reversi_player.reversi二重名を避けるためexplicit_package_bases=trueを採用し、既存6対象と新本体の解析graph、runtime import不変を確認する。これはmypyのmodule名解決だけの設定で、Python実行時importを変えない。Phase 2以外へ対象拡大しない。型付けが完了するまで既存成功証拠を新しい実装の証拠として流用しない。
+
+本体変更前の新Pos回帰21件は21成功・40除外0.69秒。常設scope回帰をstatistics/本体のパラメータ化へ拡張し、元statisticsのcaseと動的境界guardは成功したが、本体の未注釈shadow probeだけは「6source成功」で1失敗・2成功・98除外7.35秒となった。対象漏れを先に実測し、期待値を緩めずに常設追加する。20関数、盤面と候補listへ注釈を追加し、__eq__docstringは実際の動的挙動に合わせた。単独strictは47→0で成功したため、本体だけを7件目へ追加しexplicit_package_basesを有効化した。既存の6対象・strict=true・format除外・runner/timeoutは変更していない。
+
+通常mypyも7source成功、関連lint成功。Ruffが示したtest_qualityの整形だけapply_patchで反映し、既存format scope9files成功。本体/GUI接続/標準入出力/不変条件の3既存testファイルは76成功2.48秒。常設scope2ケースと動的境界guard・その5改変（引数Any、別alias、type ignore、cast、no_type_check）は8成功・98除外7.02秒。guardはast.parse(type_comments=True)でignoreも検出し、元ソースを変更せず検査自身の有効性を確認した。
+
+処理互換確認では20関数の注釈/docstringを除いたASTと実行bytecode/定数/参照名がすべて一致。固定seed 0/1/2/17/42の5完走対局は全着手出力・各盤面・勝敗・最終random状態が変更前後で一致した。これは棋力評価ではなく、shuffle呼出や選択の不変性確認である。実seed adapterを使った別プロセスstdin比較も正常一連コマンド、EOF、不正整数、空行、未知コマンドの5ケースでstdout/exit/末尾例外情報が一致した。注釈で変わるtracebackのファイル/行番号の一致は要求しない。
+
+実graphの明示7件にはreversi_player.reversiが含まれ、旧6件は同じmodule名でstrict有効/ignore_all=Falseを維持。加えてdocstringだけのharness/toolsの__init__と、ソース本体を持たないreversi_player namespaceが解決される。reversiという二重名も__init__.py追加もない。validate_model=[]、AIからharnessへの新importなし。from __future__とTYPE_CHECKING内の型はper-callの処理を増やさず、20関数の実行命令同一を確認した。型introspection利用や任意外部オブジェクトの完全静的保証は対象外である。
+
+対象scriptのsource hashは注釈でも変わるため、新評価のtarget識別/fingerprintは契約どおり変化する。旧source hashや評価データは書き換えず、同じ強さ/同じbytecodeを同じコード版と偽らない。これから通常の統合品質ゲートを新規UUIDへ実行し、最終sourceと証拠の一致を確認する。実行中は対象source/config/modelを変更しない。
+
+### Phase 2：PASS / 最終証拠と完了監査
+
+`python -B tools/quality.py` は終了0 / QUALITY PASS。新規証拠は `evaluation_results/quality-a3dea815f3c4439fb5464dcdd4992b1a/`。全pytest **525成功・0失敗272.93秒**、独立smoke **1成功・0失敗524除外2.99秒**。旧497＋Pos21＋scopeパラメータ追加1＋境界guard1＋guard改変5=525。typing.txtは7source成功を記録し、依存/lint/format/strict/model/全pytest/独立smoke/snapshot/evidenceを含む必須10検査がすべて成功した。
+
+| 要件 | 現在の根拠 |
+|---|---|
+| 前段階のPASS・現行状態 | Phase 1証拠と開始31sourceが一致。開始時の通常6対象strict成功。HEAD/作業ツリーを実確認 |
+| 診断・依存の分析 | 本体47診断、randomだけの元依存と20関数、Noneを返す経路、動的比較を調査 |
+| 最小型付け・既存動作 | 単独47→0。20関数の実行AST/bytecodeが一致、5固定seed完走対局と5実stdinケースが一致 |
+| 常設scope・既存品質 | 明示6→7、既存6件/strict=true維持。explicit_package_basesで本体の正規名を確定。型検査用__init__追加なし |
+| 回帰・guard | 本体関連76件、scope/限定Any/guard改変8件成功。追加前には本体scope漏れを1失敗で再現 |
+| 統合・証拠 | 全525＋独立smoke1成功。full/smokeともcomplete・errors=[]、publication照合[]、Markdown再生成一致、pendingなし |
+| モデル双方向整合 | validate_model=[]。外部script/GUI/seed adapter境界・random選択・正式契約・schema5/trace4/validation3は不変 |
+| 最終ソース対応 | 31source開始/終了/現在hash一致。最終追記は対象外の本進捗記録だけ |
+| 保全・範囲 | 変更6ファイル、他62trackedは開始hash一致。HEAD=a199ab0のまま、ステージ/commit/push/branch操作なし。次フェーズ未実装 |
+
+変更した6ファイル：reversi_player/reversi.py（20関数・盤面/候補の注釈と比較docstring）、pyproject.toml（本体追加/名前解決）、tests/test_result.py（既存比較/座標21回帰）、tests/test_quality.py（scope拡張と動的境界/guard自身の回帰）、ハーネス.md（7対象・制約の操作説明）、QUALITY_PROGRESS.md（本記録）。ハーネス本体・statistics・web.py・学習/対局資産は編集していない。モデル/データ契約に意味変更がないため図を変更しない判断を先に記録し、実装後に依存/処理/公開境界を照合した。
+
+主要な実行コマンド：
+
+```powershell
+python -B -m mypy --no-incremental --config-file pyproject.toml
+python -B -m mypy --no-incremental --config-file pyproject.toml reversi_player/reversi.py
+python -B -m ruff check reversi_player/reversi.py tests/test_result.py tests/test_quality.py --no-cache --config pyproject.toml
+python -B -m ruff format --diff tests/test_quality.py --config pyproject.toml
+python -B -m ruff format --check . --no-cache --config pyproject.toml
+python -B -m pytest -q tests/test_result.py -k pos_typing -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_quality.py -k 'promoted_modules or reversi_dynamic_annotations' -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_quality.py -k 'promoted_modules or reversi_dynamic' -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_result.py tests/test_stdin_commands.py tests/test_invariants.py -p no:cacheprovider --tb=short
+python -B tools/quality.py
+git diff --check
+```
+
+個別mypyは一時領域へ--cache-dirを追加し、個別pytestは同領域へJUnit/logを保存した。mypyの文字列プローブはmypy.api.runで実行し、比較契約と宣言型の診断をequality-design-isolated.json/equality-runtime-evidence.jsonへ保存。互換性・解析graphはcompatibility-and-graph.jsonに記録。別プロセス比較はsys.executable -B harness/seeded_player.py <元/現在script> 17を使用した。初回の整形差分はapply_patchで適用し、既存のformat除外は広げたり狭めたりしていない。
+
+残る制約：Pos.__eq__の引数/戻り値2注釈だけは既存の任意比較値を正確に表すAnyであり、完全な静的保証の外に残る。これをbool()/isinstance/NotImplementedで変更することは今回は禁止された実行時変更となるため行わない。単なる型検査の抑制や全関数のAny化ではなく、正常/異常/非bool/短絡を回帰で保護し、他位置へのAny/ignore/cast/no_type_check追加はguardで拒否する。ただしguardは任意の悪意ある隠蔽を証明する認証器ではない。既存statisticsの局所動的境界も今回変更していない。型introspection、ブラウザ実操作、CI実行、別OSや実行性能の比較は未確認で、ローカルgate成功から保証しない。実行速度の差を棋力/探索性能改善としない。
+
+未解決の作業blockerはなく、QUALITY_BLOCKERS.mdは新設していない。残りの本番型付け/全本番自動対象化は次の承認対象である。再開時は7対象の通常strictと対応済み証拠を再確認し、新しい対象を明示してから着手する。今回は**指定されたPhase 2のみPASSで終了**し、次のフェーズ・commit・pushには進まない。

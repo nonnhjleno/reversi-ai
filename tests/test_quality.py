@@ -1,5 +1,6 @@
 """品質ゲートの失敗伝播とモデル漏れ検出。改変はpytestの一時領域だけに行う。"""
 
+import ast
 import csv
 import hashlib
 import json
@@ -1019,10 +1020,11 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
     assert not json.loads((output / 'quality.json').read_text(encoding='utf-8'))['passed']
 
 
-def test_statistics_is_checked_by_configured_strict_gate(tmp_path):
-    """通常のgate argvで統計の未注釈関数を拒否し、filesからの対象漏れを検出する。"""
-    source = ROOT / 'harness/statistics.py'
-    shadow = tmp_path / 'statistics.py'
+@pytest.mark.parametrize('relative_path', ['harness/statistics.py', 'reversi_player/reversi.py'])
+def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
+    """通常のgate argvで昇格済moduleの未注釈関数を拒否し、対象漏れを検出する。"""
+    source = ROOT / relative_path
+    shadow = tmp_path / source.name
     shadow.write_text(
         source.read_text(encoding='utf-8')
         + '\n\ndef _strict_scope_probe(value):\n'
@@ -1047,5 +1049,58 @@ def test_statistics_is_checked_by_configured_strict_gate(tmp_path):
         timeout=60,
     )
     assert result.returncode == 1, result.stdout + result.stderr
-    assert 'statistics.py:' in result.stdout
+    assert source.name + ':' in result.stdout
     assert '[no-untyped-def]' in result.stdout
+
+
+def _check_reversi_dynamic_boundary(source):
+    """本体の限定的動的境界を検査する。type ignoreもASTへ取り込んで拒否する。"""
+    tree = ast.parse(source, type_comments=True)
+    position = next(
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'Pos'
+    )
+    equality = next(
+        node
+        for node in position.body
+        if isinstance(node, ast.FunctionDef) and node.name == '__eq__'
+    )
+    allowed = [equality.args.args[1].annotation, equality.returns]
+    assert all(
+        node in allowed
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Name) and node.id == 'Any'
+    )
+    assert not tree.type_ignores
+    assert not any(
+        isinstance(node, ast.Name)
+        and node.id in ('cast', 'no_type_check')
+        or isinstance(node, ast.Attribute)
+        and node.attr in ('cast', 'no_type_check')
+        for node in ast.walk(tree)
+    )
+
+
+def test_reversi_dynamic_annotations_stay_at_legacy_comparison_boundary():
+    """比較の既存動的境界以外へAnyや検査回避を広げる変更を検出する。"""
+    _check_reversi_dynamic_boundary(
+        (ROOT / 'reversi_player/reversi.py').read_text(encoding='utf-8')
+    )
+
+
+@pytest.mark.parametrize('mutation', ['argument', 'alias', 'ignore', 'cast', 'decorator'])
+def test_reversi_dynamic_boundary_guard_rejects_mutated_source(mutation):
+    """制限guard自体が無効になっていないことを、原本を変えずに検証する。"""
+    source = (ROOT / 'reversi_player/reversi.py').read_text(encoding='utf-8')
+    if mutation == 'argument':
+        modified = source.replace('color: str', 'color: Any', 1)
+    elif mutation == 'alias':
+        modified = source + '\n_unbounded_type: Any\n'
+    elif mutation == 'ignore':
+        modified = source.replace('import random', 'import random  # type: ignore', 1)
+    elif mutation == 'cast':
+        modified = source + '\n_unbounded_value = typing.cast(object, None)\n'
+    else:
+        modified = source.replace('    def __eq__', '    @no_type_check\n    def __eq__', 1)
+    assert modified != source
+    with pytest.raises(AssertionError):
+        _check_reversi_dynamic_boundary(modified)

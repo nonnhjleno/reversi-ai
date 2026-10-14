@@ -5,6 +5,7 @@ import io
 import random
 from contextlib import redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -275,6 +276,71 @@ def test_genmove_without_legal_moves_preserves_fixed_board(color, rows):
         board.genmove(color)
     assert output.getvalue() == 'NG\n'
     assert tuple(''.join(row) for row in board.cell) == rows
+
+
+@pytest.mark.parametrize('other,expected', [
+    (Pos(1, 2), True), (Pos(0, 2), False), (Pos(1, 3), False),
+    (SimpleNamespace(x=1, y=2), True), (SimpleNamespace(x=1, y=3), False),
+    (SimpleNamespace(x=0), False),
+])
+def test_pos_typing_preserves_equality_and_duck_short_circuit(other, expected):
+    """Pos以外でも座標を比較し、x不一致では欠損yを読まない既存挙動を固定する。"""
+    result = Pos(1, 2).__eq__(other)
+    assert result is expected
+
+
+@pytest.mark.parametrize('other', [None, object(), SimpleNamespace(x=1)])
+def test_pos_typing_preserves_missing_coordinate_errors(other):
+    """型付けを理由にNotImplemented/Falseを返して元のAttributeErrorを隠さない。"""
+    with pytest.raises(AttributeError):
+        Pos(1, 2).__eq__(other)
+
+
+class _LegacyComparisonValue:
+    """比較が非bool値を返す既存の動的入力を再現し、アクセス順を記録する。"""
+
+    def __init__(self, label, value, calls):
+        """ラベル・戻り値・共有記録先を保持する。"""
+        self.label = label
+        self.value = value
+        self.calls = calls
+
+    def __eq__(self, other):
+        """比較対象を変換せず、指定の値そのものを返す。"""
+        self.calls.append(self.label)
+        return self.value
+
+
+@pytest.mark.parametrize('expected', ['legacy-result', [], 0, False, 2])
+def test_pos_typing_preserves_non_boolean_comparison_values(expected):
+    """andは最後に評価した値を返すので、bool()での正規化は互換性を壊す。"""
+    calls = []
+    other = SimpleNamespace(
+        x=_LegacyComparisonValue('x', expected, calls),
+        y=_LegacyComparisonValue('y', expected, calls),
+    )
+    assert Pos(1, 2).__eq__(other) is expected
+    assert calls == (['x', 'y'] if expected else ['x'])
+    calls.clear()
+    assert (Pos(1, 2) != other) is (not bool(expected))
+    assert calls == (['x', 'y'] if expected else ['x'])
+
+
+@pytest.mark.parametrize('coordinates,valid', [
+    ((0, 0), True), ((7, 7), True), ((-1, 0), False),
+    ((8, 0), False), ((0, 8), False), ((0, -1), False),
+])
+def test_pos_typing_preserves_coordinate_bounds(coordinates, valid):
+    position = Pos(*coordinates)
+    assert position.is_valid() is valid
+    assert str(position) == '{} {}'.format(*coordinates)
+
+
+def test_pos_typing_preserves_addition_without_mutating_inputs():
+    first = Pos(3, 4)
+    second = Pos(-1, 2)
+    assert str(first.add(second)) == str(first + second) == '2 6'
+    assert (first.x, first.y, second.x, second.y) == (3, 4, -1, 2)
 
 
 if __name__ == '__main__':
