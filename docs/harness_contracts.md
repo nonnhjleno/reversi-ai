@@ -104,6 +104,16 @@ CSはOS死亡時刻ではなく、EOもabort全体の完了点とは違う。単
 
 親はready前にnameを送ってpipe待ちになってよい。Popen戻り前の子開始も正常にあり得る。異常終了・timeout/killでは正常quitの証拠を補造せず、取得済み点と診断を残す。子の終了後イベントと、終了後の親による既存pipe出力の回収を混同しない。
 
+### 5.1 Phase 5の型境界（設計先行・実装反映済み）
+
+承認された最小変更の設計をコードより先に記録し、現在のprotocol.pyへ反映した。検証の到達状態はQUALITY_PROGRESS.mdのPhase 5を参照する。
+
+- PIPE指定の成功時不変条件を型だけで断定せず、readline/write/flush/closeの各境界で非Noneを確認する。欠損は既存と同じ操作名のAttributeError（message/name/objを維持）であり、Noneのskip・成功への置換・新しい正常終了状態を認めない。tracebackの行/フレームは注釈・helper導入によって変わり得る。
+- SP/PR、既存の全perf_counter(_ns)呼出、EOとcleanup_endの順序・所属・計測範囲は維持する。境界確認は採時せず、送信側の処理時間は外部/wire区間に含める。整数nsの実測値完全一致や性能不変を要求する契約ではない。
+- OS条件をsys.platformで表現し、Windowsは従来のtaskkill/必要時kill、それ以外は既存POSIX停止分岐とする。実Windowsの回収と模擬POSIX分岐を区別し、POSIX実機や未知OSの正式対応まで保証しない。
+- 未検証のcontext/lifecycleは自由拡張のobject辞書として保持し、型付けのために再構築・正規化・キー削除しない。終了観測後の転記1か所のcastは通常生成形状の静的ビューであって、原時刻が検証済みという証明ではない。旧データ・改変データは従来どおり共通正式入口で再検証する。
+- 時計登録・整数端点・正の有限期限の型ガードは既存の判定値域と短絡拒否を維持する。v1で未検証の周波数/patch metadataをintと過剰保証しない。bool端点や非有限期限を受理せず、QPC曖昧幅・unknown/failed・schema5/trace4/validation3・正式ANDを変更しない。
+
 clock/QPCの根拠は[Python 3.13 time](https://docs.python.org/3.13/library/time.html#time.perf_counter_ns)、[QPCの比較前提](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps)。登録時の検討は[旧時系列計画](archive/ハーネス時系列整合性修正計画.md)に保管する。
 
 ## 6. 探索予算・model load・trace

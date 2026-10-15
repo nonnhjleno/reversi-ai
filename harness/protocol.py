@@ -1,5 +1,7 @@
 """AI標準入出力の形式・外部期限・回収を担い、合法手判定と内部探索時間から分離する。"""
 
+from __future__ import annotations
+
 import os
 import json
 import math
@@ -13,15 +15,112 @@ import time
 import uuid
 from collections import deque
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from os import PathLike
+    from types import TracebackType
+    from typing import IO, Literal, NotRequired, TypeGuard, TypedDict
+
+    _Status = Literal['verified', 'unknown', 'failed']
+    _PipeOperation = Literal['readline', 'write', 'flush', 'close']
+
+    class _ClockDescriptor(TypedDict):
+        """時計の通常形状。旧v1が検査しない周波数/patchはobjectのまま保持する。"""
+
+        measurement_contract: str
+        clock: str
+        implementation: str
+        monotonic: bool
+        adjustable: bool
+        resolution: float
+        python_implementation: str
+        python_version: list[int]
+        executable: str
+        platform: str
+        qpc_frequency_hz: NotRequired[object]
+        python_patch_version: NotRequired[object]
+
+    class _TemporalReason(TypedDict):
+        """原値を保持する時間検査理由。型は検証状態や証拠真正性の証明ではない。"""
+
+        status: _Status
+        code: str | None
+        path: str
+        before: NotRequired[object]
+        after: NotRequired[object]
+
+    class _TemporalResult(TypedDict):
+        """時間検査の状態と理由。同じ理由listを返し、正常値へ補修しない。"""
+
+        status: _Status
+        reasons: list[_TemporalReason]
+
+    class _Identity(TypedDict, total=False):
+        """現在のsession/generationと実測thread。原lifecycleの値は未検証である。"""
+
+        process_session_id: object
+        process_generation: object
+        measurement_thread_id: int
+
+    class _CommandRecord(_Identity, total=False):
+        """生成中・失敗時も含む通常のhost要求形状。形式/意味の検証は別途必要。"""
+
+        command: str
+        startup_probe: bool
+        command_index: int
+        command_id: str
+        exchange_start_ns: int
+        send_start_ns: int
+        response_read_end_ns: int
+        validation_end_ns: int
+        exit_observed_ns: int
+        spawn_before_ns: int
+        limit_ns: int
+        clock: _ClockDescriptor
+        clock_domain_id: object
+        error: str
+        failure_observed_ns: int
+        external_response_ns: int
+        wire_envelope_ns: int
+        seconds: float
+        response: list[str]
+
+    class _HostEvidence(TypedDict, total=False):
+        """親証拠の通常形状。自由拡張lifecycleを検証済みの型へ置き換えない。"""
+
+        commands: list[_CommandRecord]
+        name: str | None
+        exit_code: int | None
+        spawn_before_ns: int
+        startup_end_ns: int | None
+        startup_seconds: float | None
+        clock: _ClockDescriptor | None
+        clock_domain_id: object
+        lifecycle: dict[str, object] | None
+
+    class _Conditions(TypedDict):
+        """取得条件の通常期限。入力形式と正数条件は既存の入口/境界で確認する。"""
+
+        startup_timeout: float
+        command_timeout: float
+        genmove_timeout: float
+
+    class _LaunchOptions(TypedDict, total=False):
+        """OS別Popenオプション。kwargsの型付けだけで、起動設定は増やさない。"""
+
+        creationflags: int
+        start_new_session: bool
 
 LEGACY_MEASUREMENT_CONTRACT = 'local_cpython313_perf_ns_enclosed_v1'
 MEASUREMENT_CONTRACT = 'local_cpython313_perf_ns_lifecycle_v2'
 
 
-def clock_descriptor():
+def clock_descriptor() -> _ClockDescriptor:
     """実際のperf_counter時計とruntimeを記録する。resolutionは精度保証ではない。"""
     information = time.get_clock_info('perf_counter')
-    frequency = None
+    frequency: int | None = None
     if sys.platform == 'win32':
         import ctypes
         value = ctypes.c_longlong()
@@ -36,16 +135,16 @@ def clock_descriptor():
             'platform': sys.platform}
 
 
-def command_id(context, index):
+def command_id(context: Mapping[str, object], index: int) -> str:
     """run/pair/leg/roleと全要求indexを含む識別子を返す。genmove連番とは区別する。"""
-    keys = ('run_id', 'pair_id', 'leg', 'player')
+    keys: tuple[str, ...] = ('run_id', 'pair_id', 'leg', 'player')
     if 'process_session_id' in context:
         keys = ('run_id', 'purpose', 'pair_id', 'leg', 'player', 'process_session_id', 'process_generation')
     return json.dumps([context.get(key) for key in keys] + [index],
                       separators=(',', ':'))
 
 
-def clock_status(descriptor):
+def clock_status(descriptor: object) -> _Status:
     """対応時計かを区別する。未対応/欠損はunknown、既知属性の矛盾はfailed。"""
     if not isinstance(descriptor, dict):
         return 'unknown'
@@ -77,20 +176,59 @@ def clock_status(descriptor):
     return 'verified'
 
 
-def temporal_result(reasons):
+def _registered_clock(value: object) -> TypeGuard[_ClockDescriptor]:
+    """既存の時計登録判定だけを型ガードへ接続する。未検証metadataは絞らない。"""
+    return clock_status(value) == 'verified'
+
+
+def _optional_integer(value: object) -> TypeGuard[int | None]:
+    """既存端点条件と同じく、Noneまたは厳密なintだけを認める。boolは除外する。"""
+    return value is None or type(value) is int
+
+
+def _integer_points(values: list[object]) -> TypeGuard[list[int]]:
+    """局所端点listの既存の全要素検査を表す。値や順番を変えない。"""
+    return not any(type(value) is not int for value in values)
+
+
+def _positive_timeout(value: object) -> TypeGuard[int | float]:
+    """従来と同じ有限・正・厳密int/floatの期限を認める。変換や既定値補充はしない。"""
+    return (type(value) is int or type(value) is float) and math.isfinite(value) and value > 0
+
+
+def _deadline_matches(limit: object, timeout: object, startup: bool) -> bool:
+    """既存の期限alias条件を型の絞り込みとともに判定する。初回だけ残り時間を許す。"""
+    if _positive_timeout(timeout):
+        return type(limit) is int and limit >= 0 and (
+            limit <= int(timeout * 1e9) if startup else limit == int(timeout * 1e9))
+    return False
+
+
+def _required_pipe(pipe: IO[str] | None, operation: _PipeOperation) -> IO[str]:
+    """Noneなら既存属性アクセスと同じAttributeErrorを送り、同じpipeを返す。採時しない。"""
+    if pipe is None:
+        raise AttributeError("'NoneType' object has no attribute '{}'".format(operation),
+                             name=operation, obj=pipe)
+    return pipe
+
+
+def temporal_result(reasons: list[_TemporalReason]) -> _TemporalResult:
     """既知矛盾を優先し、欠損・比較不能の理由を失わずに時間検査を集約する。"""
     return {'status': 'failed' if any(item['status'] == 'failed' for item in reasons)
             else 'unknown' if reasons else 'verified', 'reasons': reasons}
 
 
-def temporal_order(before, after, clock, path, cross_process=False):
+def temporal_order(before: object, after: object, clock: object, path: str,
+                   cross_process: bool = False) -> list[_TemporalReason]:
     """同threadは厳密、親子はQPCの曖昧幅を考慮する。端点は変更しない。"""
+    status: _Status
+    code: str | None
     status, code = 'verified', None
-    if any(point is not None and type(point) is not int for point in (before, after)):
+    if not _optional_integer(before) or not _optional_integer(after):
         status, code = 'failed', 'temporal_endpoint_invalid'
     elif before is None or after is None:
         status, code = 'unknown', 'temporal_endpoint_missing'
-    elif clock_status(clock) != 'verified':
+    elif not _registered_clock(clock):
         status, code = clock_status(clock), 'temporal_clock_unverified'
     elif cross_process:
         frequency = clock.get('qpc_frequency_hz')
@@ -109,7 +247,7 @@ def temporal_order(before, after, clock, path, cross_process=False):
         {'status': status, 'code': code, 'path': path, 'before': before, 'after': after}]
 
 
-def temporal_match(actual, expected, path):
+def temporal_match(actual: object, expected: object, path: str) -> list[_TemporalReason]:
     """欠損と既知のidentity/alias矛盾を分ける。boolを整数と同一視しない。"""
     if actual is None or expected is None:
         return [{'status': 'unknown', 'code': 'temporal_identity_missing', 'path': path}]
@@ -118,13 +256,15 @@ def temporal_match(actual, expected, path):
     return []
 
 
-def validate_process_timeline(player, commands, expected_context, conditions, require_lifecycle=True,
-                              require_normal=True, require_command_identity=True):
+def validate_process_timeline(player: _HostEvidence, commands: list[_CommandRecord],
+                              expected_context: Mapping[str, object], conditions: _Conditions,
+                              require_lifecycle: bool = True, require_normal: bool = True,
+                              require_command_identity: bool = True) -> _TemporalResult:
     """保存hostの生存区間と全要求を検査する。旧4も確認可能な逆転は拒否する。
 
     失敗取得には正常quitを要求せずunknownを残す。未知時計/計測threadの順序を推測しない。
     """
-    reasons = []
+    reasons: list[_TemporalReason] = []
     lifecycle = player.get('lifecycle')
     if lifecycle is None:
         lifecycle = {}
@@ -198,10 +338,7 @@ def validate_process_timeline(player, commands, expected_context, conditions, re
             except (ValueError, TypeError) as error:
                 reasons.append({'status': 'failed', 'code': 'temporal_' + str(error), 'path': path})
         limit = record.get('limit_ns')
-        valid_timeout = type(timeout) in (int, float) and math.isfinite(timeout) and timeout > 0
-        valid_limit = type(limit) is int and limit >= 0 and valid_timeout
-        if valid_limit:
-            valid_limit = limit <= int(timeout * 1e9) if index == 0 else limit == int(timeout * 1e9)
+        valid_limit = _deadline_matches(limit, timeout, index == 0)
         if not valid_limit:
             reasons.append({'status': 'unknown' if limit is None else 'failed',
                             'code': 'temporal_deadline_invalid', 'path': path})
@@ -236,25 +373,26 @@ def validate_process_timeline(player, commands, expected_context, conditions, re
     return temporal_result(reasons)
 
 
-def validate_command_record(record, timeout):
+def validate_command_record(record: _CommandRecord, timeout: object) -> int:
     """成功host要求の実測端点・派生秒・期限を検査する純粋関数。
 
     欠損/順序/単位違反はValueError。失敗要求の値を成功envelopeに流用しない。
     """
     if 'error' in record:
         raise ValueError('host_command_failed')
+    keys: tuple[str, ...]
     if record.get('command') == 'quit':
         keys = ('exchange_start_ns', 'send_start_ns', 'exit_observed_ns')
     else:
         keys = ('exchange_start_ns', 'send_start_ns', 'response_read_end_ns', 'validation_end_ns')
-    points = [record.get(key) for key in keys]
-    if any(type(point) is not int for point in points) or points != sorted(points):
+    points: list[object] = [record.get(key) for key in keys]
+    if not _integer_points(points) or points != sorted(points):
         raise ValueError('host_interval_invalid')
     elapsed = points[-1] - points[0]
     if (type(record.get('external_response_ns')) is not int or record['external_response_ns'] != elapsed
             or type(record.get('seconds')) not in (int, float) or record['seconds'] != elapsed / 1e9):
         raise ValueError('host_elapsed_alias_mismatch')
-    if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
+    if not _positive_timeout(timeout):
         raise ValueError('host_deadline_invalid')
     if elapsed > int(timeout * 1e9):
         raise ValueError('host_deadline_exceeded')
@@ -269,16 +407,16 @@ def validate_command_record(record, timeout):
 
 class HarnessError(RuntimeError):
     """通信/対局検証の失敗種別・要求・候補役割・診断情報を運ぶ例外。"""
-    def __init__(self, kind, message, command=None):
+    def __init__(self, kind: str, message: str, command: str | None = None) -> None:
         """失敗種別とメッセージを保存し、候補役割と診断情報を後付け可能にする。"""
         super().__init__(message)
         self.kind = kind
         self.command = command
-        self.player = None
-        self.diagnostics = None
+        self.player: str | None = None
+        self.diagnostics: dict[str, object] | None = None
 
 
-def validate_response(command, lines):
+def validate_response(command: str, lines: list[str]) -> None:
     """改行を除いた応答行listのコマンド別形式を検査し、不正ならHarnessErrorを送出する。
 
     showboardは8行のB/W/E、座標はx y、quitは0行。合法性や盤面遷移は検証せず、
@@ -315,10 +453,12 @@ class Player:
     盤面の合法性はreferee側の責務。起動は別期限、通常要求とgenmoveは別期限を使う。
     stdinは1要求ずつの同期利用を前提とし、読取threadはstdout/stderrを回収する。
     """
-    def __init__(self, script, seed=None, startup_timeout=5.0,
-                 command_timeout=1.0, genmove_timeout=10.0,
-                 evaluation_config=None, evaluation_trace=None,
-                 evaluation_context=None):
+    def __init__(self, script: str | PathLike[str], seed: int | None = None,
+                 startup_timeout: float = 5.0, command_timeout: float = 1.0,
+                 genmove_timeout: float = 10.0,
+                 evaluation_config: str | PathLike[str] | None = None,
+                 evaluation_trace: str | PathLike[str] | None = None,
+                 evaluation_context: Mapping[str, object] | None = None) -> None:
         """子プロセスと読取threadを起動し、最初のname応答までを起動時間として記録する。
 
         seedはPython randomとPYTHONHASHSEEDに設定するが、他の乱数源は保証しない。
@@ -327,9 +467,9 @@ class Player:
         self.script = Path(script).resolve()
         self.command_timeout = command_timeout
         self.genmove_timeout = genmove_timeout
-        self.commands = []
-        self.stderr_tail = deque(maxlen=100)
-        self._output = queue.Queue(maxsize=512)
+        self.commands: list[_CommandRecord] = []
+        self.stderr_tail: deque[str] = deque(maxlen=100)
+        self._output: queue.Queue[str | None] = queue.Queue(maxsize=512)
         self._overflow = threading.Event()
         self._closed = False
         self.clock = clock_descriptor()
@@ -358,9 +498,11 @@ class Player:
             environment['PYTHONHASHSEED'] = str(seed % (2 ** 32))
             command = [sys.executable, str(Path(__file__).with_name('seeded_player.py')),
                        str(self.script), str(seed)]
-        options = {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == 'nt' else {
-            'start_new_session': True,
-        }
+        options: _LaunchOptions
+        if sys.platform == 'win32':
+            options = {'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP}
+        else:
+            options = {'start_new_session': True}
         self.spawn_before_ns = time.perf_counter_ns()
         self.lifecycle['spawn_before_ns'] = self.spawn_before_ns
         started = self.spawn_before_ns / 1e9
@@ -405,11 +547,11 @@ class Player:
                 }
             raise
 
-    def _read_stdout(self):
+    def _read_stdout(self) -> None:
         """stdoutを制限付きqueueへ取り込み、EOFと過剰出力を親の通信処理へ通知する。"""
         try:
             while True:
-                line = self.process.stdout.readline(4097)
+                line = _required_pipe(self.process.stdout, 'readline').readline(4097)
                 try:
                     self._output.put_nowait(line if line else None)
                 except queue.Full:
@@ -420,18 +562,18 @@ class Player:
         except (OSError, ValueError):
             return
 
-    def _read_stderr(self):
+    def _read_stderr(self) -> None:
         """stderrを読み捨てつつ末尾100行を保持する。全診断ログを保存する処理ではない。"""
         try:
             while True:
-                line = self.process.stderr.readline(4097)
+                line = _required_pipe(self.process.stderr, 'readline').readline(4097)
                 if not line:
                     return
                 self.stderr_tail.append(line.rstrip('\r\n'))
         except (OSError, ValueError):
             return
 
-    def _exchange(self, command, timeout, startup=False):
+    def _exchange(self, command: str, timeout: float, startup: bool = False) -> list[str]:
         """送信前から応答受信・形式確認までを整数nsで実測し、派生秒とcommandsへ記録する。
 
         timeoutはこの処理全体の期限で、内部探索時間ではない。失敗時は子プロセスを停止し
@@ -440,7 +582,7 @@ class Player:
         started_ns = time.perf_counter_ns()
         started = started_ns / 1e9
         index = len(self.commands)
-        record = {'command': command, 'startup_probe': startup, 'command_index': index,
+        record: _CommandRecord = {'command': command, 'startup_probe': startup, 'command_index': index,
                   'command_id': command_id(self.evaluation_context, index),
                   'exchange_start_ns': started_ns, 'clock': self.clock,
                   'clock_domain_id': self.clock_domain_id}
@@ -455,8 +597,8 @@ class Player:
                 raise HarnessError('abnormal_exit', 'Player exited before command', command)
             try:
                 record['send_start_ns'] = time.perf_counter_ns()
-                self.process.stdin.write(command + '\n')
-                self.process.stdin.flush()
+                _required_pipe(self.process.stdin, 'write').write(command + '\n')
+                _required_pipe(self.process.stdin, 'flush').flush()
             except (BrokenPipeError, OSError) as error:
                 raise HarnessError('abnormal_exit', str(error), command) from error
             lines = []
@@ -495,11 +637,11 @@ class Player:
         finally:
             record.setdefault('seconds', (time.perf_counter_ns() - started_ns) / 1e9)
 
-    def _validate(self, command, lines):
+    def _validate(self, command: str, lines: list[str]) -> None:
         """共通の純粋形式検査へ委譲する。読取や盤面更新は行わない。"""
         validate_response(command, lines)
 
-    def command(self, command):
+    def command(self, command: str) -> list[str]:
         """改行を含まない1要求を送り、genmoveまたは通常要求の期限で応答を返す。
 
         通信履歴を更新する。不正な要求文字列はValueError、通信違反はHarnessErrorとする。
@@ -509,7 +651,7 @@ class Player:
         timeout = self.genmove_timeout if command.split()[0] == 'genmove' else self.command_timeout
         return self._exchange(command, timeout)
 
-    def finish(self):
+    def finish(self) -> None:
         """quitを送り、正常終了・余分なstdoutなしを確認して通信履歴を追加する。
 
         quit秒はexchange開始から終了観測までで、thread/pipe回収の総時間とは異なる。
@@ -520,7 +662,7 @@ class Player:
         started_ns = time.perf_counter_ns()
         started = started_ns / 1e9
         index = len(self.commands)
-        record = {'command': 'quit', 'startup_probe': False, 'command_index': index,
+        record: _CommandRecord = {'command': 'quit', 'startup_probe': False, 'command_index': index,
                   'command_id': command_id(self.evaluation_context, index),
                   'exchange_start_ns': started_ns, 'clock': self.clock,
                   'clock_domain_id': self.clock_domain_id}
@@ -532,12 +674,12 @@ class Player:
                 self._observe_exit('unexpected_exit')
                 raise HarnessError('abnormal_exit', 'Player exited before quit', 'quit')
             record['send_start_ns'] = time.perf_counter_ns()
-            self.process.stdin.write('quit\n')
-            self.process.stdin.flush()
+            _required_pipe(self.process.stdin, 'write').write('quit\n')
+            _required_pipe(self.process.stdin, 'flush').flush()
             remaining = self.command_timeout - (time.perf_counter() - started)
             self.process.wait(timeout=max(remaining, 0.0))
             self._observe_exit('normal_quit' if self.process.returncode == 0 else 'unexpected_exit')
-            record['exit_observed_ns'] = self.lifecycle['exit_observed_ns']
+            record['exit_observed_ns'] = cast(int, self.lifecycle['exit_observed_ns'])
             record['external_response_ns'] = record['exit_observed_ns'] - started_ns
             record['seconds'] = record['external_response_ns'] / 1e9
             if record['seconds'] > self.command_timeout:
@@ -568,19 +710,19 @@ class Player:
             record.setdefault('seconds', (time.perf_counter_ns() - started_ns) / 1e9)
             self.abort()
 
-    def _command_identity(self):
+    def _command_identity(self) -> _CommandRecord:
         """今回要求の実際のthreadとsessionを記録する。thread変更を黙って吸収しない。"""
         return {'process_session_id': self.lifecycle['process_session_id'],
                 'process_generation': self.lifecycle['process_generation'],
                 'measurement_thread_id': threading.get_ident()}
 
-    def _observe_exit(self, kind):
+    def _observe_exit(self, kind: str) -> None:
         """終了を確認した最初の観測を保持し、後の回収で上限を広げない。"""
         if 'exit_observed_ns' not in self.lifecycle:
             self.lifecycle.update(exit_observed_ns=time.perf_counter_ns(),
                                   exit_code=self.process.returncode, termination_kind=kind)
 
-    def evidence(self):
+    def evidence(self) -> _HostEvidence:
         """game/probe共通の親証拠を返す。時刻を再測定せず取得した値を複写する。"""
         return {'commands': self.commands, 'name': getattr(self, 'name', None),
                 'exit_code': self.process.returncode, 'spawn_before_ns': self.spawn_before_ns,
@@ -588,7 +730,7 @@ class Player:
                 'startup_seconds': getattr(self, 'startup_seconds', None), 'clock': self.clock,
                 'clock_domain_id': self.clock_domain_id, 'lifecycle': dict(self.lifecycle)}
 
-    def abort(self):
+    def abort(self) -> None:
         """未終了processをOS別の停止手段で回収し、thread/pipeを閉じて_closedを設定する。
 
         Windowsではtaskkillのツリー停止を試み、残存時は直接killする。回収の全失敗や
@@ -598,7 +740,7 @@ class Player:
             return
         if self.process.poll() is None:
             self.lifecycle.setdefault('abort_requested_ns', time.perf_counter_ns())
-            if os.name == 'nt':
+            if sys.platform == 'win32':
                 try:
                     subprocess.run(
                         ['taskkill', '/PID', str(self.process.pid), '/T', '/F'],
@@ -620,15 +762,16 @@ class Player:
         for reader in self._readers:
             reader.join(timeout=1)
         for pipe in (self.process.stdin, self.process.stdout, self.process.stderr):
-            pipe.close()
+            _required_pipe(pipe, 'close').close()
         self._closed = True
         self.lifecycle['cleanup_end_ns'] = time.perf_counter_ns()
 
-    def __enter__(self):
+    def __enter__(self) -> Player:
         """起動済みの自身を返す。ここでは新たなプロセスを起動しない。"""
         return self
 
-    def __exit__(self, exception_type, exception, traceback):
+    def __exit__(self, exception_type: type[BaseException] | None,
+                 exception: BaseException | None, traceback: TracebackType | None) -> None:
         """通常終了ならquitを確認し、例外終了なら強制停止する。元の例外は抑制しない。"""
         if exception_type is None:
             self.finish()

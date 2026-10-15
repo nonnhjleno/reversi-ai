@@ -658,3 +658,126 @@ git diff --check
 Phase 4に未解決の実装blockerはないためQUALITY_BLOCKERS.mdを新設していない。Phase 3のGUIは依然保留であり、今回のPASSへ含めない。通信/report等の残り本番コード・全テストのstrict化、型introspection、ブラウザ実操作、remote CI、別OS、実行性能比較は未実施。
 履歴positionの要素型/長さ、入力JSONの完全な静的検証、生成metadataの真正性までは型だけで保証しない。既存の実行時検証と正式入口の検証は引き続き必要である。生成source hashが変わるため、過去の評価条件と同一コードであるとは主張しない。棋力や探索性能の改善も主張しない。
 再開時はこの8対象のstrictと対応する最新証拠を再確認し、次の指定moduleを明示してから調査する。**今回承認されたPhase 4のみPASSとして終了し、次フェーズ・commit・pushには進まない。**
+
+## mypy strict拡大 Phase 5（指定対象harness/protocol.py）
+
+### 開始条件・診断・実装前の安全性照合
+
+2026-10-15、開始HEAD=5329275、mainはorigin/mainより3commit先、作業ツリーclean。`\harness\protocol.py`はリポジトリ相対として扱う。AGENTS、進捗、設定、現行architecture/contractsを確認した。QUALITY_BLOCKERS.mdは開始時に存在しなかった。
+Phase 4のquality-a0408e7ff61d4136a53bd24b747d4624を実際に読み、passed=true、31sourceの開始/終了/現在hash一致、verify_publication=[]を確認。現在の通常strictも8source成功、validate_model=[]。コミット前後で検証対象sourceが変わっていないことを確認しており、過去のPASS文だけで判断していない。Phase 3のGUI保留は継続する。
+
+対象の単独strictは107診断（未注釈23・未注釈呼出69・tuple推論2・local容器3・operator1・nullable pipe7・OS属性2）。依存はstdlibのみで、上流利用者はevaluate/search_budget/contracts。時計・command/lifecycle・unknown/failed・期限/回収・正式資格への伝播を確認した。
+23定義へ注釈し、tuple/queue/deque/辞書形状を記述する方針自体は立てられるが、pipeとOS分岐は注釈だけでは解消しない。全定義注釈済みの最小プローブでも、Popen[str]のIO[str]|None参照5件と、os.name分岐のPOSIX API属性2件を再現した。
+
+### 実装保留と再開案
+
+通常の実Playerでは3pipeが存在し、name/ask/play/showboard/正常quit/reader停止を確認できた。今回のpipe問題は型定義の引数依存表現の限界であり、正常起動で実際にpipe欠損を観測したという不具合報告ではない。
+一方、模擬pipe=Noneではreader/abortのAttributeErrorと_closed=Falseを確認したため、assertやNoneをskipするcloseは異常系の例外・終了状態を変更する。OS分岐条件の書換えや局所castも「型注釈のみ」と同じではない。
+現在の実行時ロジック変更禁止を無断で緩めず、**コード修正前に停止**した。3回の実装修正が失敗したわけではない。コード・テスト・設定・図・契約は無変更、常設strictは8対象のまま、protocolは未追加。
+
+QUALITY_BLOCKERS.mdへ根拠・解決案2案・副作用・図/契約との関係・第一推奨・再開条件を保存した。
+第一推奨はpipeの境界検査とOS条件の必要最小限の変更について、異常時の例外/ログ/終了状態・採時位置の維持条件を先に定めて明示承認してから再開すること。第二案は限定的なcast/interfaceであり、保証が弱く別途承認が必要。どちらも今回は実装していない。
+SP/Popen/PRやHE0/HS/HR/HE1の間へ処理を追加するなら時刻契約を先に照合し、図・契約の変更要否を決める。現状は実装を変更していないため、既存図と契約を変更する理由はない。新しい時刻・正常状態を補造せず、schema5/trace4/validation3・正式ANDを維持する。
+
+### 実行済み検証と未検証事項
+
+既存関連回帰は45成功・0失敗・320除外、3.83秒。通信形式、異常終了/timeout/余分stdout/quit timeout時の停止、起動期限、genmoveの別期限、形式検査まで含む全応答期限、QPC順序曖昧区間、不正端点を検証した。新しい回帰テストは追加していない。
+直接CPythonのmypy（現在のpyproject.toml、--no-incremental、一時cache-dir）で通常8対象とprotocol単独を調べた。独立プローブだけ--strict/--config-file=を使い、常設設定を変更していない。
+pytestは `python -B -m pytest -q tests/test_harness.py -k 'response_contract or bad_player_is_terminated or startup_has_its_own_timeout or genmove_uses_its_longer_deadline or total_response_time_is_checked_after_validation or temporal_qpc_boundaries or temporal_bad_type_survives_missing_clock_or_endpoint' -p no:cacheprovider --tb=short --junitxml=<新規一時領域>`。
+Windowsでの検索にharness/*.pyを渡した最初のrgはglob構文エラーになったため、harnessディレクトリへ-g '*.py'を指定し直して利用箇所を確認した。ソース/検査設定を変更したものではない。
+新規一時領域reversi-strict-phase5-ga0igynyへ元protocol・全tracked開始hash・診断・JUnit・実/模擬process観測を保存した。
+
+**Phase 5は未完了・PASSではない**。POSIX実回収、注釈後の全診断、変更後の正常/異常/正式資格/性能は未検証。次の手順は停止記録の方針を確定し、必要なモデル先行更新・回帰・注釈/承認済み最小変更・単独strict・常設9対象化・全品質検証の順とする。次フェーズ・commit・pushには進まない。
+
+### 停止時の全体品質再検証
+
+`python -B tools/quality.py` を新規UUIDで実行し、終了0 / QUALITY PASS。保存先は `evaluation_results/quality-b3c1e184f354462f992400f1f8ae74fb/`。
+全pytest **549成功・0失敗、355.56秒**、独立smoke **1成功・0失敗・548除外、2.54秒**。typingは既存8source成功。
+必須10検査すべて終了0、full/smokeの収集complete・errors=[]、証拠全体complete・errors=[]、31sourceの開始/終了/現在hash一致、verify_publication=[]、validate_model=[]、保存Markdown再生成一致、pendingなし。
+本進捗と新規QUALITY_BLOCKERS.md以外を変更せず、他67trackedは開始hash一致。HEAD=5329275、ステージ/commit/push/branch操作なし。
+**既存環境の正常性は確認できたが、protocolはstrict未追加であり、Phase 5未完了の判断を変更しない。** 保留の継続または限定変更の承認について確認し、無断で実装を再開しない。
+
+### 承認後の再開設計（実装前）
+
+ユーザーが「境界検査・OS条件の最小変更を、互換条件の設計と回帰を先行する条件で許可する」と回答したため、Phase 5を再開する。既存の未コミット停止記録を保全し、Phase 3へは進まない。docs/harness_architecture.mdの既存sequence図と説明、docs/harness_contracts.md第5.1節を実装より先に更新した。
+pipe helperは毎回の属性アクセスの直後で非Noneを確認し、NoneのAttributeErrorのmessage/name/obj・伝播・回収状態を維持する。pipeをcacheしない。tracebackの位置/追加helperフレームは同一とはしない。採時位置/回数を動かさず、guardは時計を呼ばない。送信guardの時間は従来の外部/wire区間内で計測される。OSはsys.platform条件へ最小変更し、実CPython上の整合したOS識別を互換対象とする。
+未検証lifecycleはdict[str, object]を維持する。contextの複製/unpackをTypedDictへ直接代入する案はmypyが拒否することを2つの独立プローブで確認し、構築方式を変更する案は採用しない。正常な終了観測後にcommandへ時刻を転記する1か所だけ局所castを許し、通常の生成形状の記述に限定する。保存時刻が検証済みとはせず、原値を変換せず共通正式入口の再検証を維持する。モジュール全体・raw全体へのAny/cast化はしない。
+時計登録、整数端点/list、有限正数と期限の既存述語を型ガード/小さな境界関数として記述し、mypyが証明できないbool変数間の関係を表す。述語の値域・unknown/failed・QPC誤差を変更しない。clock v1で型検査しないpatch/周波数はobjectとする。
+実装前にpipe欠損/正常I/O/OS回収・採時列・context aliasと未検証値の扱いを既存test_harnessへ追加し、元コードで成功を確認する。対象漏れと型境界の過剰保証は失敗を先に再現する。単独strict成功後だけ既存8を維持して9対象へ追加し、関連/全pytest・独立smoke・正式入口/再解析/CLI・source/publication/modelを再確認する。
+
+#### 承認済みOS境界の補足（変更前）
+
+Windowsの単独/常設strictは成功したが、補助的な--platform linux検査では、Popenオプションの条件式中にあるWindows専用CREATE_NEW_PROCESS_GROUPをmypyが検査して1診断となった。同じsys.platform条件を通常のif/elseへ表現し、静的OS分岐を認識させる。分岐値・評価回数・kwargs・SP前という位置を変えない。先に固定したWindows/Linux/macOSの正常/起動失敗6回帰と採時列で互換性を再確認する。この変更は既に承認されたOS条件の表現範囲内で、モデルの意味・図のイベント・契約に追加変更はない。
+
+### 承認後の実装・個別検証（全体ゲート実行前）
+
+protocolの既存23定義と必要な局所容器を注釈し、通常の辞書形状をTYPE_CHECKING内で定義した。未検証context/lifecycleはobjectを維持する。時計v1が検査しない周波数/patchはNotRequired[object]とし、型だけで検証済みにしない。pipeは各属性アクセスで確認し、OS分岐はsys.platformのif/elseとした。既存述語を型ガード等へ表現し直した箇所以外で時系列・期限・正式資格の規則を変更していない。
+
+局所castはfinishの終了観測時刻をcommandへ転記する1か所のみ。int変換ではなく、float/boolを含む原値を同一のまま転記することと、既存検証がそれらを拒否することを回帰で確認した。Any/type: ignore/no_type_checkやmodule全体のcastは追加していない。
+
+- 新しい互換回帰25ケースは本体修正前に25成功（0.88秒）。常設対象漏れ回帰は修正前に1失敗・3成功（12.30秒）で、protocol未登録を検出した。
+- 単独strictの診断は107→4→2→0。部分identityのTypedDictとupdate互換を精緻化したもので、除外・ignoreによる解消ではない。その後、既存8対象を維持して9対象へ常設追加した。
+- 最終OS表現に対する新規互換回帰は27成功・0失敗・365除外（0.87秒）。型境界/対象漏れの関連回帰は11成功・0失敗・105除外（21.93秒）。関連通信・正式評価回帰は143成功・0失敗（JUnit 178.570秒）。
+- 最終Windowsの常設strictは9source成功、補助的なLinux設定でのprotocol単独strictも1source成功。後者は静的検査であり、POSIX実機での起動・回収検証ではない。
+- 開始時との比較は、注釈と承認済みpipe/cast/OS表現を正規化すると既存20/23定義のASTが一致する。残り3述語はtemporal_order 1210ケース、validate_command_record 1170ケース、validate_process_timeline 112ケースで戻り値・例外を照合した。実測時刻・実行性能の完全一致を示すものではない。
+- seed固定の実Playerの通常コマンド列は旧/新で一致。開始時hashに一致する独立baseline-workspaceで生成した旧schema5の正式最終報告は、現行の検査/採用/推定/再解析/ペア比較入口で受理された。同じ報告の起動前通信への改変は不適格・区間非計算となり、再解析CLIも正常は終了0、不正は終了1だった。既存の評価結果は上書きしていない。
+- 途中の診断用run-state.jsonは最終正式報告と同義ではない。参考checkpointのsummary不一致を黙って修復せず、上記の比較には正規の最終出力を生成して使用した。
+
+個別検査・差分証拠は開始時と同じ新規一時領域reversi-strict-phase5-ga0igynyへ保存。compatibility-final.jsonに最終ソースのAST照合とhashを記録した。validate_model=[]。図/契約は先行設計を実装反映済みとして明示した。これから変更を固定して全品質ゲートを実行し、成功と証拠確認が揃うまでPhase 5をPASSにしない。
+
+### Phase 5 最終監査・PASS
+
+2026-10-15、承認されたPhase 5のみ完了した。protocolの単独107診断を0へ解消し、常設strictは従来8対象を維持して9対象となった。Phase 3のGUI保留は継続する。
+
+最終ソース固定後に `python -B tools/quality.py` を実行し、終了0 / QUALITY PASS。新規保存先は `evaluation_results/quality-0604dc9258ae432ead2a48b894884236/`。停止時のquality-b3c1e184f354462f992400f1f8ae74fbとは別の、変更後の実行証拠である。
+
+| 必須検査 | 実結果 |
+|---|---|
+| environment / model / dependencies | すべて終了0、model_errors=[] |
+| lint / 限定format | 終了0 / 終了0。既存scopeを維持 |
+| strict型 | 終了0、9source成功 |
+| 全pytest | **584成功・0失敗、354.33秒**（ゲート計測354.845秒） |
+| 独立smoke | **1成功・0失敗・583除外、2.46秒**（ゲート計測2.859秒） |
+| snapshot / evidence | 終了0 / 終了0 |
+
+開始時の549ケースを保全し、互換回帰27・対象漏れ1・限定cast境界1・その違反改変4・未検証metadataの静的過剰保証防止2の計35ケースを追加した。新規取得の正常/不正時系列、通信失敗/timeout/回収、保存traceの意味検証、全正式入口の判定、対局・勝敗・予算・統計の既存回帰を含む全584ケースが成功した。
+
+保存されたquality/evidenceを読み直し、必須10検査すべてpassed=true・exit_code=0・error=None、証拠全体およびpytest/smoke収集がcomplete・errors=[]、verify_publication=[]、validate_model=[]、Markdownの再生成一致、pendingなしを確認した。31sourceは開始/終了/現在hashが一致する。証拠completeは全テストの期待値/観測詳細が明示登録済みという意味ではなく、未登録詳細は従来どおりmissing_informationへ残る。
+
+| 完了条件 | 根拠 |
+|---|---|
+| 開始条件 | 前段階PASSの保存証拠・現在hashと旧8対象strictを再確認して開始 |
+| 先行設計・回帰 | architectureのsequenceと契約5.1を先に更新。元実装で互換25成功、protocol対象漏れは1失敗を再現 |
+| 型・承認範囲 | 23既存定義と通常形状を注釈。承認済みpipe/OS境界、既存述語の表現のみ変更。rawはobject、局所castは1か所、禁止する型逃げの回帰あり |
+| 実行互換性 | 固定I/O/時計呼出/欠損pipe/可変stdin/OS正常・失敗回帰、正規化AST20定義、3述語2492比較、旧/新Playerの通常出力一致 |
+| 正式入口・旧データ | baselineソースで生成した旧最終報告をAPI/CLIで受理し、起動前通信へ改変した報告を正式不適格と確認。hash一致を意味検証の代替にしていない |
+| 図・契約 | 現在のpipe境界と型の保証限界を正本へ反映。責務・依存方向・状態・schema5/trace4/validation3・正式ANDは不変、モデル検査成功 |
+| 全体品質・証拠 | 上記の全584、独立smoke、9strict、必須10検査、保存証拠・現在source照合が成功 |
+| 保全 | 開始時68tracked中、対象の8変更以外の60は開始hash一致。新規QUALITY_BLOCKERS.mdは停止/解消記録。HEAD=5329275、ステージなし。commit/push/branch操作なし |
+
+変更ファイルは9件:
+
+- `harness/protocol.py`: 関数/容器/通常辞書の注釈、型ガード、各pipeアクセス境界、OS条件の限定変更、終了時刻転記の局所ビュー。
+- `pyproject.toml`: protocolを9件目の常設strict対象へ追加。他の厳格設定・format scopeは維持。
+- `tests/test_harness.py`: 型導入に伴う互換回帰27ケース。
+- `tests/test_quality.py`: 常設対象漏れ、局所castの限定、違反改変、未検証metadataの過剰保証防止。
+- `docs/harness_architecture.md` / `docs/harness_contracts.md`: 先行設計と実装を対応付け、計測/例外/信頼境界の制約を明記。
+- `ハーネス.md`: 現行9strict対象と残る未型付け範囲、保証限界。
+- `QUALITY_PROGRESS.md` / 新規`QUALITY_BLOCKERS.md`: 停止・承認・再開・検証・完了の根拠。停止履歴を破棄せず現在状態と区別。
+
+実行した主なコマンド（個別検査の一時cache/JUnit/log保存先などの補助引数は省略。品質ゲートの正確なargvはquality.jsonのstepsを参照）:
+
+```powershell
+python -B -m mypy --no-incremental --config-file pyproject.toml harness/protocol.py
+python -B -m mypy --no-incremental --config-file pyproject.toml
+python -B -m mypy --no-incremental --platform linux --config-file pyproject.toml harness/protocol.py
+python -B -m ruff check . --no-cache --config pyproject.toml
+python -B -m ruff format --check . --no-cache --config pyproject.toml
+python -B -m pytest -q tests/test_harness.py -k protocol_typing -p no:cacheprovider --tb=short
+python -B tools/quality.py
+git diff --check
+```
+
+新たな依存・循環依存や責務の移動はない。pipe guardは時計を呼ばず、採時位置/回数と期限の意味を維持するが、実行コスト0や実測ns不変は保証しない。traceback位置/追加helperフレームは変わり得る。TYPE_CHECKINGと遅延注釈の導入後の型introspectionは互換保証の対象外である。Windowsの対応直接CPythonで検証し、Linux設定の静的検査と模擬POSIX分岐を実機成功と混同しない。GUIのブラウザ実操作・POSIX実回収・remote CI・性能比較・棋力向上は未検証であり、本PASSの主張に含めない。
+
+通常のコード変更に伴いsource hashは変わるため、過去と同一コード条件と偽装しない。保存済み評価資産・AI本体・GUI・他の本番モジュールは変更していない。未解決のPhase 5 blockerはない。次回は現在の9strictと最新証拠を再確認し、別途指定された対象だけを調査する。**今回のPhase 5のみPASSとして停止し、次フェーズ・commit・pushには進まない。**

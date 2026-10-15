@@ -96,6 +96,7 @@ flowchart TD
 ## 4. プロセス起動・初期化・通信・探索・終了
 
 これは**現行budget_playerの正常系**に着目した図。reversi.pyがtrace4を出すという図ではない。親子時刻は対応clock/domain/session/threadを照合してから比較し、正常fixtureの計測範囲と将来の実AI選択器の範囲を同一視しない。
+以下のpipe境界注記はPhase 5の承認後に設計を先行更新し、現在のprotocol.pyへ反映したものである。検証の到達状態はQUALITY_PROGRESS.mdのPhase 5を参照し、図の存在だけで完了としない。
 
 ```mermaid
 sequenceDiagram
@@ -110,6 +111,7 @@ sequenceDiagram
     par 親の起動経路
         H->>H: PR / stdout・stderr reader起動
         H->>H: HE0_name / HS_name
+        H->>H: stdin境界確認（write/flushごと、採時なし）
         H->>C: name送信（ready前でもよい）
     and 子の初期化経路
         C->>C: CE（最初の計測hook）
@@ -126,6 +128,7 @@ sequenceDiagram
     H->>H: HR_name / 形式検査 / HE1_name = startup_end
     loop quit以外の各要求
         H->>H: HE0 / HS
+        H->>H: stdin境界確認（write/flushごと、採時なし）
         H->>C: stdin要求
         C->>C: CC / 要求を解釈
         alt genmove
@@ -141,12 +144,13 @@ sequenceDiagram
         H->>H: HR / 形式検査 / HE1
     end
     H->>H: HE0_quit / HS_quit
+    H->>H: stdin境界確認（write/flushごと、採時なし）
     H->>C: quit（stdout応答なし）
     C->>C: CC_quit / command traceを追記
     C->>C: CSを採時 / process_exit_ready追記 / trace close
     C-->>H: プロセス終了（実終了点は計測しない）
     H->>H: wait後EO / quit external=EO-HE0_quit
-    H->>H: reader・pipe回収 / cleanup_end
+    H->>H: reader回収 / 各pipeのclose境界確認 / cleanup_end
     E->>H: evidenceを取得
     H-->>E: 親lifecycle・全commands
     E->>I: report context・親証拠・原rawを共通coreへ
@@ -159,6 +163,11 @@ sequenceDiagram
 fixtureのSS〜SEは合法手列挙・盤面適用も含む。startup load・trace書込・stdoutはこの探索区間の外である。現行fixtureはcommand loadを行わない。検証器にはcommand loadの区間検査があるが、headerの初期loadも別に満たす必要があり、lazy loadをそのまま正式対応済みとしない。
 
 起動失敗/timeout/異常終了ではこの正常列を完遂せず、abortや診断へ進む。正常quit/子CSを補造しない。CSは終了準備、EOは親の最初の終了観測で、cleanup全体とも異なる。正確な時計条件・不変条件は[契約第5節](harness_contracts.md#temporal-invariants)、要求と保存の分岐は第6節を参照する。
+
+Phase 5の境界設計: readerは各readline直前、送信はwrite/flushごと、回収は各close直前にpipeの非Noneを確認する。pipeをcacheせず、公開process属性を読む順序を維持する。Noneなら既存と同じ操作名のAttributeErrorを送出し、skipや正常値への置換、新しい正常終了状態を追加しない。close失敗後に_closedやcleanup_endを補造しない。例外の型・メッセージ・name/obj・伝播は維持するが、helper導入によるtracebackの位置/フレームは同一とはしない。
+SP/PR/HE0/HS/HR/HE1/EOと既存のperf_counter呼出位置・回数は維持し、境界helper自身は採時しない。送信側確認の処理コストは既存の外部/wire区間内に含まれる。値の完全一致や無コストを保証せず、期限・単位・区間の定義は変えない。
+OS条件は実CPythonのWindowsをsys.platform=='win32'、その他を既存POSIX経路とする。未対応OSの正式資格を増やさず、OSを偽装した不整合なos.name/sys.platformの組合せを互換性の保証対象にしない。
+生のlifecycleは自由拡張dict[str, object]のまま保持・複写する。終了観測後にcommandへ転記する時刻だけの局所castは値の検査・修復・正式資格を意味せず、保存値は共通検証が再確認する。時計/整数/期限の型ガードは既存の述語と同じ値域を表し、unknown/failedの条件・データフロー・状態図は維持する。
 
 
 ## 5. 正式公開入口と信頼境界

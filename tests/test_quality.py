@@ -1022,7 +1022,12 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
 
 @pytest.mark.parametrize(
     'relative_path',
-    ['harness/statistics.py', 'reversi_player/reversi.py', 'harness/openings.py'],
+    [
+        'harness/statistics.py',
+        'reversi_player/reversi.py',
+        'harness/openings.py',
+        'harness/protocol.py',
+    ],
 )
 def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
     """通常のgate argvで昇格済moduleの未注釈関数を拒否し、対象漏れを検出する。"""
@@ -1085,6 +1090,95 @@ def test_openings_typing_keeps_unchecked_generator_metadata_opaque(tmp_path):
     assert result.returncode == 1, result.stdout + result.stderr
     assert 'openings.py:' in result.stdout
     assert '[index]' in result.stdout
+
+
+def _check_protocol_type_boundaries(source):
+    """動的な型逃げを、承認した終了時刻転記のcast1か所以外へ拡大させない。"""
+    tree = ast.parse(source, type_comments=True)
+    assert not tree.type_ignores
+    assert not any(
+        isinstance(node, ast.Name)
+        and node.id in ('Any', 'no_type_check')
+        or isinstance(node, ast.Attribute)
+        and node.attr in ('Any', 'cast', 'no_type_check')
+        for node in ast.walk(tree)
+    )
+    calls = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'cast'
+    ]
+    assert len(calls) == 1
+    assert ast.unparse(calls[0]) == "cast(int, self.lifecycle['exit_observed_ns'])"
+    player = next(
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'Player'
+    )
+    finish = next(
+        node for node in player.body if isinstance(node, ast.FunctionDef) and node.name == 'finish'
+    )
+    assert calls[0] in list(ast.walk(finish))
+
+
+def test_protocol_typing_limits_cast_to_observed_exit_view():
+    _check_protocol_type_boundaries((ROOT / 'harness/protocol.py').read_text(encoding='utf-8'))
+
+
+@pytest.mark.parametrize('mutation', ['any', 'cast', 'ignore', 'decorator'])
+def test_protocol_typing_boundary_guard_rejects_mutations(mutation):
+    """原本を変えずにguardへ改変を与え、抑制の追加を見逃さないことを確かめる。"""
+    source = (ROOT / 'harness/protocol.py').read_text(encoding='utf-8')
+    if mutation == 'any':
+        changed = source + '\n_opaque: Any\n'
+    elif mutation == 'cast':
+        changed = source + '\n_other = cast(int, 1)\n'
+    elif mutation == 'ignore':
+        changed = source.replace('import os', 'import os  # type: ignore', 1)
+    else:
+        changed = source.replace('    def finish', '    @no_type_check\n    def finish', 1)
+    assert changed != source
+    with pytest.raises(AssertionError):
+        _check_protocol_type_boundaries(changed)
+
+
+@pytest.mark.parametrize('overclaim', [False, True])
+def test_protocol_typing_legacy_frequency_is_not_certified(tmp_path, overclaim):
+    """旧v1の未検証周波数をintとする型の過剰保証を、実gate argvで検出する。"""
+    source = ROOT / 'harness/protocol.py'
+    text = source.read_text(encoding='utf-8')
+    if overclaim:
+        changed = text.replace(
+            'qpc_frequency_hz: NotRequired[object]', 'qpc_frequency_hz: NotRequired[int | None]', 1
+        )
+        assert changed != text
+        text = changed
+    shadow = tmp_path / 'protocol.py'
+    shadow.write_text(
+        text
+        + '\n\ndef _unchecked_frequency_probe(clock: _ClockDescriptor) -> int:\n'
+        + '    frequency = clock.get("qpc_frequency_hz")\n'
+        + '    if frequency is None:\n        return 0\n'
+        + '    return frequency\n',
+        encoding='utf-8',
+    )
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [
+            *step.command,
+            '--cache-dir',
+            str(tmp_path / 'mypy-cache'),
+            '--shadow-file',
+            str(source),
+            str(shadow),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    assert result.returncode == (0 if overclaim else 1), result.stdout + result.stderr
+    if not overclaim:
+        assert '[return-value]' in result.stdout
 
 
 def _check_reversi_dynamic_boundary(source):

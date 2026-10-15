@@ -2,11 +2,15 @@
 
 import copy
 import hashlib
+import io
 import json
+import queue
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path, PurePath
+from types import SimpleNamespace
 
 import pytest
 import harness.evaluate as evaluate_module
@@ -17,7 +21,7 @@ from harness.protocol import HarnessError, Player, validate_response
 from harness.search_budget import board_sha256, canonical_json, normalize_config, validate_trace
 from harness.referee import INITIAL_ROWS
 from harness.statistics import confidence_interval, estimate_pair_scores
-from harness import analysis, contracts, openings
+from harness import analysis, contracts, openings, protocol
 from tools.evidence_plugin import record_expectation, record_observation, record_harness_artifacts
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1751,6 +1755,297 @@ def test_evaluation_requires_balanced_game_count(games):
     """先後2legのペアを構成できない局数指定は取得前に拒否する。"""
     with pytest.raises(ValueError, match='even'):
         evaluate(SCRIPT, SCRIPT, games=games)
+
+
+def _protocol_typing_player():
+    """実プロセスなしの通信fixture。pipe/stateは元Playerと同じ公開属性で差し替える。"""
+    player = object.__new__(Player)
+    player.commands = []
+    player.stderr_tail = []
+    player._output = queue.Queue()
+    player._overflow = threading.Event()
+    player._closed = False
+    player._readers = []
+    player.clock = {}
+    player.clock_domain_id = 'scope'
+    player.evaluation_context = {'process_session_id': 'session', 'process_generation': 0}
+    player.lifecycle = dict(player.evaluation_context)
+    player.command_timeout = 1.0
+    player.genmove_timeout = 1.0
+    player.process = SimpleNamespace(
+        stdin=io.StringIO(), stdout=io.StringIO(), stderr=io.StringIO(),
+        poll=lambda: None, returncode=None, pid=123,
+    )
+    return player
+
+
+@pytest.mark.parametrize('operation,pipe_name,attribute', [
+    ('_read_stdout', 'stdout', 'readline'),
+    ('_read_stderr', 'stderr', 'readline'),
+    ('_exchange', 'stdin', 'write'),
+    ('finish', 'stdin', 'write'),
+    ('abort', 'stdin', 'close'),
+])
+def test_protocol_typing_preserves_missing_pipe_failure(operation, pipe_name, attribute):
+    """Noneをskip/AssertionErrorへ変えず、例外属性と未完了cleanupを維持する。"""
+    player = _protocol_typing_player()
+    setattr(player.process, pipe_name, None)
+    calls = []
+    if operation == 'finish':
+        player.abort = lambda: calls.append('abort')
+    elif operation == 'abort':
+        player.process.poll = lambda: 0
+        player.lifecycle['exit_observed_ns'] = 1
+    with pytest.raises(AttributeError) as failure:
+        if operation == '_exchange':
+            player._exchange('ask B 2 3', 1.0)
+        else:
+            getattr(player, operation)()
+    assert str(failure.value) == "'NoneType' object has no attribute '{}'".format(attribute)
+    assert failure.value.name == attribute and failure.value.obj is None
+    assert player._closed is False and 'cleanup_end_ns' not in player.lifecycle
+    assert calls == (['abort'] if operation == 'finish' else [])
+
+
+@pytest.mark.parametrize('operation', ['_exchange', 'finish'])
+def test_protocol_typing_does_not_cache_mutable_stdin(operation):
+    """writeが公開stdin属性を変えたとき、旧実装と同じく次のflushで再参照する。"""
+    player = _protocol_typing_player()
+    player.abort = lambda: None
+
+    class ReplacingWriter(io.StringIO):
+        """書込後に次の属性参照先を消す診断用pipe。"""
+
+        def write(self, value):
+            """書込値は保持し、次のflushでNoneを観測させる。"""
+            count = super().write(value)
+            player.process.stdin = None
+            player._output.put('OK\n')
+            return count
+
+    player.process.stdin = ReplacingWriter()
+    with pytest.raises(AttributeError) as failure:
+        if operation == '_exchange':
+            player._exchange('ask B 2 3', 1.0)
+        else:
+            player.finish()
+    assert failure.value.name == 'flush' and failure.value.obj is None
+
+
+def test_protocol_typing_preserves_exchange_measurement_call_order(monkeypatch):
+    """guardの採時追加や端点移動を検出する。setdefaultのdefault式も必ず評価される。"""
+    player = _protocol_typing_player()
+    events = []
+    stamps = iter([100, 110, 140, 150, 160])
+
+    def nanoseconds():
+        """固定の採時列を返し、呼出位置を記録する。"""
+        value = next(stamps)
+        events.append(('ns', value))
+        return value
+
+    class Writer(io.StringIO):
+        """要求書込後だけ応答queueへ行を供給する。"""
+
+        def write(self, value):
+            """実際の書込イベントと合法な応答を記録する。"""
+            events.append(('write', value))
+            player._output.put('OK\n')
+            return super().write(value)
+
+        def flush(self):
+            """flushの採時相対位置を記録する。"""
+            events.append(('flush',))
+
+    player.process.stdin = Writer()
+    player.process.poll = lambda: events.append(('poll',))
+    player._validate = lambda command, lines: events.append(('validate', command, lines))
+    monkeypatch.setattr(protocol, 'time', SimpleNamespace(
+        perf_counter_ns=nanoseconds,
+        perf_counter=lambda: events.append(('seconds',)) or 120 / 1e9,
+    ))
+    assert player._exchange('ask B 2 3', 1.0) == ['OK']
+    assert events == [
+        ('ns', 100), ('poll',), ('ns', 110), ('write', 'ask B 2 3\n'),
+        ('flush',), ('seconds',), ('ns', 140),
+        ('validate', 'ask B 2 3', ['OK']), ('ns', 150), ('ns', 160),
+    ]
+    record = player.commands[0]
+    assert record['external_response_ns'] == 50 and record['wire_envelope_ns'] == 30
+    assert record['seconds'] == 50 / 1e9
+
+
+@pytest.mark.parametrize('platform,os_name', [('win32', 'nt'), ('linux', 'posix'), ('darwin', 'posix')])
+def test_protocol_typing_preserves_os_abort_and_cleanup(monkeypatch, platform, os_name):
+    """OSを模擬し、実PIDへ停止命令を出さずに既存のtree/kill/回収順を固定する。"""
+    player = _protocol_typing_player()
+    events = []
+    stamps = iter([100, 200, 300])
+    player.process.poll = lambda: player.process.returncode
+    player.process.wait = lambda timeout: events.append(('wait', timeout))
+
+    def kill():
+        """Windowsのfallback停止を模擬する。"""
+        events.append(('kill',))
+        player.process.returncode = -9
+
+    def kill_group(pid, signal):
+        """POSIX停止は模擬だけで行い、実OSへ送信しない。"""
+        events.append(('killpg', pid, signal))
+        player.process.returncode = -9
+
+    player.process.kill = kill
+    monkeypatch.setattr(protocol, 'sys', SimpleNamespace(platform=platform))
+    monkeypatch.setattr(protocol, 'os', SimpleNamespace(name=os_name, killpg=kill_group))
+    monkeypatch.setattr(protocol, 'signal', SimpleNamespace(SIGKILL=9))
+    monkeypatch.setattr(protocol, 'time', SimpleNamespace(perf_counter_ns=lambda: next(stamps)))
+    monkeypatch.setattr(protocol, 'subprocess', SimpleNamespace(
+        run=lambda command, **kwargs: events.append(('taskkill', command, kwargs)),
+        TimeoutExpired=subprocess.TimeoutExpired,
+    ))
+    player.abort()
+    expected = ([('taskkill', ['taskkill', '/PID', '123', '/T', '/F'],
+                  {'capture_output': True, 'timeout': 3}), ('kill',)]
+                if platform == 'win32' else [('killpg', 123, 9)])
+    assert events == expected + [('wait', 3)]
+    assert player._closed and all(pipe.closed for pipe in (
+        player.process.stdin, player.process.stdout, player.process.stderr,
+    ))
+    assert player.lifecycle['abort_requested_ns'] == 100
+    assert player.lifecycle['exit_observed_ns'] == 200
+    assert player.lifecycle['cleanup_end_ns'] == 300
+    assert player.lifecycle['termination_kind'] == 'killed'
+
+
+@pytest.mark.parametrize('platform,os_name', [('win32', 'nt'), ('linux', 'posix'), ('darwin', 'posix')])
+@pytest.mark.parametrize('spawn_error', [False, True])
+def test_protocol_typing_preserves_spawn_endpoints_context_and_options(
+        monkeypatch, platform, os_name, spawn_error):
+    """Popenの前/戻り採時・失敗診断を固定し、contextを型付けで再構築しない。"""
+    events = []
+    stamps = iter([100, 200])
+    extension = {'retain': [1]}
+    context = {'clock_domain_id': 'domain', 'extension': extension}
+    supplied = {}
+
+    class ScriptPath:
+        """実OSを変更せず、constructorに必要なパス操作だけを模擬する。"""
+
+        def resolve(self):
+            """同じ仮想パスを返す。"""
+            return self
+
+        @property
+        def parent(self):
+            """仮想cwdとして自身を返す。"""
+            return self
+
+        def __str__(self):
+            """実ファイルを指さない文字列を返す。"""
+            return 'virtual-player'
+
+    def spawn(command, **kwargs):
+        """起動を記録するだけで、実プロセスは作らない。"""
+        events.append('spawn')
+        supplied.update(kwargs)
+        if spawn_error:
+            raise OSError('spawn fixture')
+        return SimpleNamespace(pid=7)
+
+    def nanoseconds():
+        """SP/PRまたはspawn_failureの順に固定値を返す。"""
+        value = next(stamps)
+        events.append(('ns', value))
+        return value
+
+    def exchange(self, command, timeout, startup=False):
+        """nameの終了点だけを供給し、他の採時を追加しない。"""
+        events.append(('name', command, startup))
+        self.commands.append({'validation_end_ns': 400})
+        return ['fixture']
+
+    monkeypatch.setattr(protocol, 'Path', lambda value: ScriptPath())
+    monkeypatch.setattr(protocol, 'sys', SimpleNamespace(platform=platform, executable='python'))
+    monkeypatch.setattr(protocol, 'os', SimpleNamespace(name=os_name, environ={}))
+    monkeypatch.setattr(protocol, 'clock_descriptor', lambda: {'opaque': 'clock'})
+    monkeypatch.setattr(protocol, 'time', SimpleNamespace(
+        perf_counter_ns=nanoseconds, perf_counter=lambda: 300 / 1e9,
+    ))
+    monkeypatch.setattr(protocol, 'threading', SimpleNamespace(
+        Event=threading.Event, get_ident=lambda: 777,
+        Thread=lambda **kwargs: SimpleNamespace(start=lambda: events.append('reader')),
+    ))
+    monkeypatch.setattr(protocol, 'subprocess', SimpleNamespace(
+        Popen=spawn, PIPE=-1, CREATE_NEW_PROCESS_GROUP=512,
+    ))
+    monkeypatch.setattr(Player, '_exchange', exchange)
+    if spawn_error:
+        with pytest.raises(HarnessError) as failure:
+            Player('virtual', evaluation_context=context)
+        assert failure.value.kind == 'abnormal_exit'
+        assert str(failure.value) == 'spawn fixture'
+        assert failure.value.diagnostics['lifecycle']['spawn_failure_ns'] == 200
+        assert failure.value.diagnostics['lifecycle']['termination_kind'] == 'spawn_failed'
+        assert events == [('ns', 100), 'spawn', ('ns', 200)]
+    else:
+        player = Player('virtual', evaluation_context=context)
+        assert events == [('ns', 100), 'spawn', ('ns', 200), 'reader', 'reader',
+                          ('name', 'name', True)]
+        assert player.lifecycle['popen_return_ns'] == 200
+        assert player.startup_end_ns == 400 and player.startup_seconds == 300 / 1e9
+        assert player.lifecycle['extension'] is extension
+        assert player.lifecycle['measurement_thread_id'] == 777
+    assert context == {'clock_domain_id': 'domain', 'extension': extension}
+    assert supplied['stdin'] == supplied['stdout'] == supplied['stderr'] == -1
+    assert supplied['text'] is True and supplied['encoding'] == 'utf-8'
+    assert supplied['errors'] == 'replace' and supplied['bufsize'] == 1
+    if platform == 'win32':
+        assert supplied['creationflags'] == 512 and 'start_new_session' not in supplied
+    else:
+        assert supplied['start_new_session'] is True and 'creationflags' not in supplied
+
+
+@pytest.mark.parametrize('timeout', [None, True, '1', 0, -1, float('nan'), float('inf')])
+def test_protocol_typing_preserves_raw_deadline_rejection(timeout):
+    """host区間の前提が正しくても、bool/非有限/欠損期限を正常化して通さない。"""
+    record = {
+        'command': 'ask B 2 3', 'command_index': 0, 'exchange_start_ns': 0,
+        'send_start_ns': 1, 'response_read_end_ns': 2, 'validation_end_ns': 3,
+        'external_response_ns': 3, 'wire_envelope_ns': 1, 'seconds': 3 / 1e9,
+    }
+    with pytest.raises(ValueError, match='host_deadline_invalid'):
+        protocol.validate_command_record(record, timeout)
+
+
+@pytest.mark.parametrize('observed', [150.5, True])
+def test_protocol_typing_exit_view_does_not_normalize_saved_value(monkeypatch, observed):
+    """castは転記値を整数化しない。不正な元時刻は保存し、既存の意味検証が拒否する。"""
+    player = _protocol_typing_player()
+    stamps = iter([100, 110, 160])
+    player.lifecycle['exit_observed_ns'] = observed
+    player._observe_exit = lambda kind: None
+    player.process.wait = lambda timeout: setattr(player.process, 'returncode', 0)
+    player.abort = lambda: None
+    monkeypatch.setattr(protocol, 'time', SimpleNamespace(
+        perf_counter_ns=lambda: next(stamps), perf_counter=lambda: 120 / 1e9,
+    ))
+    player.finish()
+    record = player.commands[0]
+    assert record['exit_observed_ns'] is observed
+    assert record['external_response_ns'] == observed - 100
+    with pytest.raises(ValueError, match='host_interval_invalid'):
+        protocol.validate_command_record(record, 1.0)
+
+
+def test_protocol_typing_legacy_clock_metadata_remains_unverified():
+    """v1で未検証の周波数/patchを型付けで修復せず、親子比較はunknownにする。"""
+    clock = protocol.clock_descriptor()
+    clock.update(measurement_contract=protocol.LEGACY_MEASUREMENT_CONTRACT,
+                 qpc_frequency_hz='opaque', python_patch_version=['unchecked'])
+    assert protocol.clock_status(clock) == 'verified'
+    result = protocol.temporal_order(1, 1000, clock, 'legacy-edge', cross_process=True)
+    assert result[0]['status'] == 'unknown'
+    assert result[0]['code'] == 'temporal_frequency_missing'
 
 
 @pytest.mark.parametrize('mode', ['timeout', 'abnormal_exit', 'protocol_error', 'illegal_move', 'board_mismatch'])
