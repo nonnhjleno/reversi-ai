@@ -22,6 +22,8 @@
 
 protocolからcontracts/analysis/evaluateへ逆importしない。contractsからstatisticsへ直接依存せず、検証と算術を分離する。現在のimport DAGに循環はない。canonical JSON等の小さな表現処理は複数箇所に残るが、正式判定・比較条件・集計を別々に再定義しない。
 
+Phase 6の型境界（先行設計を実装反映済み）: search_budgetの型付けでは既存の数値/端点検査を型ガードへ接続し、検査済みの局所値を再束縛する。原traceやsearch metadataを正常値へ再構築せず、未知値はobjectとして残す。型だけでrawを検証済みにしない。既存述語の値域・短絡順序・例外・unknown/failed/exempt、別々の探索/load/外部応答の区間と正式入口への伝播は維持する。依存図・データフロー図・sequence・状態図の新しい経路は不要であり、変更するのは同じ検査内部の型境界だけである。検証の到達状態はQUALITY_PROGRESS.mdのPhase 6を参照する。
+
 
 ## 2. モジュール依存と主要呼出
 

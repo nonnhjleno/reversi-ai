@@ -133,6 +133,16 @@ search_onlyという名称だけで実AIの純粋な探索範囲を保証しな�
 
 モデルなしは明示not_required。trace4 headerのload検査窓はCE〜IR、command eventのload検査窓はCC〜CRで、command loadにはload_end≤SSも要求する。fixtureが実際に行うのはstartup read_bytesであり、command loadではない。headerの初期load証拠も別に必要なため、初回genmoveで初めてloadするlazy方式を、そのまま正式対応済みとしない。未知scope/background/GPUは必要な証拠・同期契約・テストなしにverifiedへしない。
 
+### 6.1 Phase 6の型境界（設計先行・実装反映済み）
+
+search_budgetの厳格型付けは、新しい測定・検証規則ではない。既存の厳密int（boolを含めない）、有限正数、欠損と不正の優先順、loadと探索の非重複を、型ガードと検査後の局所再束縛へ表現する。v1→v2の厳密ns変換、search辞書の共有参照、理由文字列と例外の扱いを維持する。
+
+原traceの未知fieldやsearch metadataはobjectであり、TypedDictの通常形状や局所的な型ビューを正式検証の証拠としない。未検証値を数値へ変換・補充せず、既存の不正入力を同じ失敗へ導く。必要な局所castは、既存の検査後の型関係または既存の演算要求だけに限定し、原辞書全体を有効traceへcastしない。型のために新しい正常化・許容差・例外握り潰しを導入しない。
+
+実装のcastは6か所に限定する。temporal_orderが生成した不成立理由codeのstrビュー1、kindと対応済みwork limitキー1、既存load/search演算の端点ビュー4である。後者は原値のint変換や検査完了の宣言ではなく、既存の比較演算の入力制約を表すだけ。不正なraw operandによるTypeErrorも従来どおり直接呼出では伝播し、trace wrapperではfailedとなる。型のために新たな成功状態へ変えない。
+
+全公開入口は従来どおりfresh検証を通る。取得/保存再解析・schema5/trace4/validation3・正式AND・予算policyの適用範囲は変更しない。正常系に加え、bool/欠損/逆転/不正search区間/過剰metadata保証の回帰と元ソースとの出力・例外比較で照合する。型introspectionや不正な辞書subclassの副作用までは新たな互換保証に加えない。
+
 ## 7. 観測・集計・状態
 
 contracts.inspect_evaluationは原report snapshotと同一呼出内のartifact bytes cacheを使い、母集合/棋譜/両通信/rawと保存cache/summaryを再照合する。取得summary前だけprivate _acquisition_summaryが保存summary照合なしのcoreを使う。公開skip flagはない。原証拠や不正summaryを正しい派生値で黙って置き換えない。

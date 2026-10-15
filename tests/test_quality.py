@@ -1027,6 +1027,7 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
         'reversi_player/reversi.py',
         'harness/openings.py',
         'harness/protocol.py',
+        'harness/search_budget.py',
     ],
 )
 def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
@@ -1090,6 +1091,94 @@ def test_openings_typing_keeps_unchecked_generator_metadata_opaque(tmp_path):
     assert result.returncode == 1, result.stdout + result.stderr
     assert 'openings.py:' in result.stdout
     assert '[index]' in result.stdout
+
+
+def _check_budget_type_boundaries(source):
+    """raw全体の型逃げを認めず、局所演算と既存検査後の6ビューへ限定する。"""
+    tree = ast.parse(source, type_comments=True)
+    assert not tree.type_ignores
+    assert not any(
+        isinstance(node, ast.Name)
+        and node.id in ('Any', 'no_type_check')
+        or isinstance(node, ast.Attribute)
+        and node.attr in ('Any', 'cast', 'no_type_check')
+        or isinstance(node, ast.alias)
+        and node.name in ('Any', 'no_type_check')
+        for node in ast.walk(tree)
+    )
+    actual = sorted(
+        ast.unparse(node)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'cast'
+    )
+    expected = [
+        "cast(str, status['reasons'][0]['code'])",
+        'cast(int, search_interval[0])',
+        'cast(int, search_interval[1])',
+        "cast('_WorkLimitKey', limit_key)",
+        "cast(int, event['model_load_end_ns'])",
+        "cast(int, event['search_start_ns'])",
+    ]
+    assert actual == sorted(expected)
+
+
+def test_budget_typing_limits_cast_to_documented_local_views():
+    _check_budget_type_boundaries((ROOT / 'harness/search_budget.py').read_text(encoding='utf-8'))
+
+
+@pytest.mark.parametrize('mutation', ['any', 'cast', 'ignore'])
+def test_budget_typing_boundary_guard_rejects_mutations(mutation):
+    source = (ROOT / 'harness/search_budget.py').read_text(encoding='utf-8')
+    additions = {
+        'any': '\nfrom typing import Any\n',
+        'cast': '\nfrom typing import cast\n_extra = cast(object, None)\n',
+        'ignore': '\n_extra = None  # type: ignore\n',
+    }
+    with pytest.raises(AssertionError):
+        _check_budget_type_boundaries(source + additions[mutation])
+
+
+@pytest.mark.parametrize('field', ['search', 'measurement'])
+@pytest.mark.parametrize('result_type', ['object', 'int'])
+def test_budget_typing_does_not_certify_opaque_metadata(tmp_path, field, result_type):
+    """原値をobjectとして使うことは許し、静的int保証だけを拒否する。"""
+    source = ROOT / 'harness/search_budget.py'
+    if field == 'search':
+        signature = 'config: _BudgetConfig'
+        expression = "config['search']['model_id']"
+    else:
+        signature = 'validation: _TraceValidation'
+        expression = "validation['measurements'][0]['nodes']"
+    shadow = tmp_path / source.name
+    shadow.write_text(
+        source.read_text(encoding='utf-8')
+        + f'\n\ndef _unchecked_budget_probe({signature}) -> {result_type}:\n'
+        + '    """未検証metadataの過剰な保証を検出する静的プローブ。"""\n'
+        + f'    return {expression}\n',
+        encoding='utf-8',
+    )
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [
+            *step.command,
+            '--cache-dir',
+            str(tmp_path / 'mypy-cache'),
+            '--shadow-file',
+            str(source),
+            str(shadow),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    if result_type == 'int':
+        assert result.returncode == 1 and '[return-value]' in result.stdout, (
+            result.stdout + result.stderr
+        )
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
 
 
 def _check_protocol_type_boundaries(source):

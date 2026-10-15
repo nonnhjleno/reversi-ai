@@ -1757,6 +1757,113 @@ def test_evaluation_requires_balanced_game_count(games):
         evaluate(SCRIPT, SCRIPT, games=games)
 
 
+@pytest.mark.parametrize('budget,version,expected', [
+    ({'kind': 'nodes', 'limit_nodes': 100.0}, 1, {'kind': 'nodes', 'limit_nodes': 100}),
+    ({'kind': 'depth', 'limit_depth': 3.0}, 2, {'kind': 'depth', 'limit_depth': 3}),
+    ({'kind': 'time', 'limit_ms': 0.001}, 1, {'kind': 'time', 'limit_ns': 1000}),
+    ({'kind': 'time', 'limit_ns': 1}, 2, {'kind': 'time', 'limit_ns': 1}),
+    ({'kind': 'unknown'}, 2, {'kind': 'unknown'}),
+    ({'kind': 'none'}, 2, {'kind': 'none'}),
+])
+def test_budget_typing_preserves_normalization_and_opaque_search(budget, version, expected):
+    """上限は手計算値を使い、未検証metadataをコピーや型変換で有効値にしない。"""
+    marker = object()
+    search = {'model_id': marker, 'extension': [None, True, {'opaque': marker}]}
+    config = {'format_version': version, 'budget': budget, 'search': search}
+    before = copy.deepcopy(budget)
+    normalized = normalize_config(config)
+    assert normalized == {'format_version': 2, 'budget': expected, 'search': search}
+    assert normalized is not config and normalized['budget'] is not budget
+    assert normalized['search'] is search and normalized['search']['model_id'] is marker
+    assert budget == before
+
+
+@pytest.mark.parametrize('kind,key,value,version,reason', [
+    ('time', 'limit_ms', True, 1, 'positive finite number'),
+    ('time', 'limit_ms', None, 1, 'positive finite number'),
+    ('time', 'limit_ms', float('nan'), 1, 'positive finite number'),
+    ('time', 'limit_ms', float('inf'), 1, 'positive finite number'),
+    ('time', 'limit_ms', 0.0000001, 1, 'integer nanoseconds'),
+    ('time', 'limit_ns', True, 2, 'positive integer'),
+    ('time', 'limit_ns', 1.0, 2, 'positive integer'),
+    ('nodes', 'limit_nodes', 1.5, 2, 'must be an integer'),
+    ('depth', 'limit_depth', -1, 1, 'positive finite number'),
+])
+def test_budget_typing_preserves_limit_rejection(kind, key, value, version, reason):
+    with pytest.raises(ValueError, match=reason):
+        normalize_config({'format_version': version, 'budget': {'kind': kind, key: value}})
+
+
+def test_budget_typing_preserves_exemption_identity_and_overflow():
+    config = {'format_version': 2, 'budget': {'kind': 'none', 'exemption': {
+        'reason': ' fixture ', 'target_sha256': 'AB' * 32}}, 'search': {}}
+    result = normalize_config(config)
+    assert result['budget']['exemption'] == {'reason': ' fixture ', 'target_sha256': 'ab' * 32}
+    assert config['budget']['exemption']['target_sha256'] == 'AB' * 32
+    with pytest.raises(OverflowError):
+        normalize_config({'format_version': 1, 'budget': {'kind': 'nodes', 'limit_nodes': 10 ** 1000}})
+
+
+@pytest.mark.parametrize('field,value,expected', [
+    ('model_load_start_ns', None, ('unknown', 'model_load_endpoint_missing')),
+    ('model_load_start_ns', True, ('failed', 'model_load_interval_invalid')),
+    ('model_load_end_ns', 9, ('failed', 'model_load_interval_not_enclosed')),
+    ('model_load_elapsed_ns', 9, ('failed', 'model_load_interval_not_enclosed')),
+    ('model_id', None, ('failed', 'model_load_without_model')),
+    ('model_load_status', 'unregistered', ('unknown', 'model_load_contract_unsupported')),
+])
+def test_budget_typing_preserves_model_load_states(field, value, expected):
+    from harness.search_budget import _model_load_contract
+
+    info = {'model_id': 'model', 'model_load_status': 'startup', 'model_load_start_ns': 10,
+            'model_load_end_ns': 20, 'model_load_elapsed_ns': 10}
+    info[field] = value
+    before = copy.deepcopy(info)
+    assert _model_load_contract(info, 0, 30, (21, 30)) == expected
+    assert info == before
+
+
+def test_budget_typing_preserves_model_overlap_and_raw_operand_failure():
+    """局所的な型ビューが未検証区間を数値へ変換したり成功へ補修したりしない。"""
+    from harness.search_budget import _model_load_contract
+
+    info = {'model_id': 'model', 'model_load_status': 'startup', 'model_load_start_ns': 10,
+            'model_load_end_ns': 20, 'model_load_elapsed_ns': 10}
+    assert _model_load_contract(info, 0, 30, (20, 30)) == ('verified', None)
+    assert _model_load_contract(info, 0, 30, (19, 30)) == ('failed', 'model_load_overlaps_search')
+    with pytest.raises(TypeError):
+        _model_load_contract(info, 0, 30, ('invalid', 30))
+
+
+@pytest.mark.parametrize('field,value,expected', [
+    ('search_start_ns', 3000, ('verified', None)),
+    ('search_start_ns', None, ('unknown', 'search_interval_endpoint_missing')),
+    ('search_start_ns', True, ('failed', 'search_interval_order_invalid')),
+    ('search_start_ns', 2500, ('failed', 'search_interval_elapsed_mismatch')),
+    ('search_end_ns', 7000, ('failed', 'search_interval_order_invalid')),
+    ('search_elapsed_ns', 2000.0, ('failed', 'search_interval_elapsed_mismatch')),
+])
+def test_budget_typing_preserves_search_interval_and_inputs(field, value, expected):
+    """同thread順序と親子包絡は別条件。期待nsは固定した整数から手計算する。"""
+    from harness.search_budget import validate_search_interval
+
+    clock = protocol.clock_descriptor()
+    header = {'format_version': 4, 'clock_descriptor': clock, 'host_clock': clock,
+              'clock_domain_id': 'typing-domain'}
+    event = {'command_index': 0, 'command_id': 'typing-command', 'command_received_ns': 2000,
+             'search_start_ns': 3000, 'search_end_ns': 5000, 'response_ready_ns': 6000,
+             'search_elapsed_ns': 2000}
+    record = {'clock': clock, 'clock_domain_id': 'typing-domain', 'command': 'genmove B',
+              'command_index': 0, 'command_id': 'typing-command', 'exchange_start_ns': 0,
+              'send_start_ns': 1000, 'response_read_end_ns': 9000, 'validation_end_ns': 10000,
+              'external_response_ns': 10000, 'wire_envelope_ns': 8000, 'seconds': 0.00001,
+              'limit_ns': 1_000_000_000}
+    event[field] = value
+    before = copy.deepcopy((header, event, record))
+    assert validate_search_interval(header, event, record) == dict(zip(('status', 'reason'), expected))
+    assert (header, event, record) == before
+
+
 def _protocol_typing_player():
     """実プロセスなしの通信fixture。pipe/stateは元Playerと同じ公開属性で差し替える。"""
     player = object.__new__(Player)
