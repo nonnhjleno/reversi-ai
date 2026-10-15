@@ -22,4 +22,4 @@ exclude = [
 python_version = "3.13"
 strict = true
 explicit_package_bases = true
-files = ["harness/referee.py", "harness/seeded_player.py", "tools/quality.py", "tools/evidence.py", "tools/evidence_plugin.py", "harness/statistics.py", "reversi_player/reversi.py"]
+files = ["harness/referee.py", "harness/seeded_player.py", "tools/quality.py", "tools/evidence.py", "tools/evidence_plugin.py", "harness/statistics.py", "reversi_player/reversi.py", "harness/openings.py"]

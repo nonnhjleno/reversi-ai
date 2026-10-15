@@ -2,14 +2,62 @@
 合法手歩行による生成分布と、生成済み有限母集合内の抽出分布を区別する。
 """
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import json
 import random
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from harness import referee
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+    from os import PathLike
+    from typing import NotRequired, TypedDict
+
+    class _OpeningMove(TypedDict):
+        """履歴の入力形状。positionの値域・形状は既存の実行時検証が確認する。"""
+
+        color: str
+        position: object
+
+    class _OpeningEntry(TypedDict):
+        """履歴付き序盤の辞書形状。型だけではIDや合法性の検証済み状態を表さない。"""
+
+        case_id: str
+        orbit_id: str
+        moves: list[_OpeningMove]
+        board: list[str]
+        to_move: str
+
+    class _Population(TypedDict):
+        """母集合の通常形状。自己hashは追記後に照合し、生成metadataは未検証とする。"""
+
+        format_version: int
+        rules_version: str
+        identity_version: int
+        purpose: str
+        placements: int
+        generator: NotRequired[object]
+        population_size: int
+        entries: list[_OpeningEntry]
+        population_hash: NotRequired[str]
+
+    class _SelectionManifest(TypedDict):
+        """既存の抽出条件・選択順・自己hashを記述する。正式資格の証明ではない。"""
+
+        format_version: int
+        population_hash: str
+        population_size: int
+        selection_algorithm: str
+        selection_seed: int
+        selected_case_ids: list[str]
+        sample_size: int
+        selection_hash: NotRequired[str]
 
 
 FORMAT_VERSION = 1
@@ -19,18 +67,18 @@ GENERATOR_VERSION = 1
 MAX_ATTEMPTS = 1_000_000
 
 
-def canonical_json(value):
+def canonical_json(value: object) -> str:
     """序盤/選択ID用のcanonical JSONを返す。NaN等は許可しない。"""
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False)
 
 
-def digest(value):
+def digest(value: object) -> str:
     """bytesはそのまま、それ以外はcanonical JSONのUTF-8をSHA-256化する。"""
     payload = value if isinstance(value, bytes) else canonical_json(value).encode('utf-8')
     return hashlib.sha256(payload).hexdigest()
 
 
-def _transforms(rows):
+def _transforms(rows: referee.Rows) -> Iterator[referee.BoardRows]:
     """8行の盤面を変更せず、反射と回転からD4の8変換を順に生成する。"""
     board = tuple(rows)
     for reflected in (False, True):
@@ -40,12 +88,12 @@ def _transforms(rows):
             current = tuple(''.join(current[7 - x][y] for x in range(8)) for y in range(8))
 
 
-def orbit_id(rows, to_move):
+def orbit_id(rows: referee.Rows, to_move: str) -> str:
     """D4変換の最小盤面表現と手番から対称重複排除用IDを返す。履歴は含めない。"""
     return digest(min(''.join(board) + to_move for board in _transforms(rows)))
 
 
-def case_id(moves, rows, to_move):
+def case_id(moves: list[_OpeningMove], rows: referee.Rows, to_move: str) -> str:
     """初期盤面・全履歴・到達盤面・手番を結ぶケースIDを返す。AI版や保存先は含めない。"""
     return digest({
         'identity_version': IDENTITY_VERSION,
@@ -57,7 +105,7 @@ def case_id(moves, rows, to_move):
     })
 
 
-def _entry(moves, rows, to_move):
+def _entry(moves: list[_OpeningMove], rows: referee.Rows, to_move: str) -> _OpeningEntry:
     """case ID・orbit ID・履歴・盤面・手番をまとめた序盤辞書を作る。
 
     盤面は行文字列のlistへ変換するが、movesは複製しない。
@@ -71,15 +119,15 @@ def _entry(moves, rows, to_move):
     }
 
 
-def _play_random_opening(generator, placements):
+def _play_random_opening(generator: random.Random, placements: int) -> _OpeningEntry | None:
     """渡された乱数生成器で合法手を選び、指定着手数の非終局序盤を作る。
 
     rows[y][x]はB/W/E、着手座標は(x, y)、passはNone。乱数生成器の状態を進め、
     途中または指定着手数で終局すればNoneを返す。全序盤の一様生成ではない。
     """
-    rows = referee.INITIAL_ROWS
+    rows: referee.BoardRows = referee.INITIAL_ROWS
     color = 'B'
-    moves = []
+    moves: list[_OpeningMove] = []
     placed = 0
     while placed < placements:
         legal = referee.legal_moves(rows, color)
@@ -100,17 +148,17 @@ def _play_random_opening(generator, placements):
     return _entry(moves, rows, color)
 
 
-def _population_content(population):
+def _population_content(population: _Population) -> dict[str, object]:
     """自己hashフィールドを除く母集合内容を新しい浅い辞書で返す。"""
     return {key: value for key, value in population.items() if key != 'population_hash'}
 
 
-def validate_entry(entry, placements):
+def validate_entry(entry: _OpeningEntry, placements: int) -> _OpeningEntry:
     """初期盤面から序盤履歴を再生し、着手数・盤面・手番・case/orbit IDを照合する。
 
     入力を変更せず期待entryを返し、不整合はValueError等で拒否する。
     """
-    rows = referee.INITIAL_ROWS
+    rows: referee.BoardRows = referee.INITIAL_ROWS
     color = 'B'
     moves = entry.get('moves')
     if not isinstance(moves, list):
@@ -148,7 +196,7 @@ def validate_entry(entry, placements):
     return expected
 
 
-def validate_population(population):
+def validate_population(population: _Population) -> _Population:
     """母集合の版・合法履歴・対称/ケース重複・正の整数N・内容hashを確認する。
 
     入力は変更せず同じ辞書を返す。報告側aliasや標本の資格はcontractsが検証する。
@@ -166,8 +214,8 @@ def validate_population(population):
     entries = population.get('entries')
     if type(placements) is not int or placements < 1 or not isinstance(entries, list):
         raise ValueError('invalid placements or entries')
-    seen_cases = set()
-    seen_orbits = set()
+    seen_cases: set[str] = set()
+    seen_orbits: set[str] = set()
     for entry in entries:
         checked = validate_entry(entry, placements)
         if checked['case_id'] in seen_cases or checked['orbit_id'] in seen_orbits:
@@ -183,13 +231,14 @@ def validate_population(population):
     return population
 
 
-def load_population(path):
+def load_population(path: str | PathLike[str]) -> _Population:
     """UTF-8 JSONを読み、内容を検証した母集合を返す。I/O・JSON・検証例外は伝播する。"""
     return validate_population(json.loads(Path(path).read_text(encoding='utf-8')))
 
 
-def generate_population(count, placements, seed, purpose='development', exclude_paths=(),
-                        max_attempts=MAX_ATTEMPTS):
+def generate_population(count: int, placements: int, seed: int, purpose: str = 'development',
+                        exclude_paths: Iterable[str | PathLike[str]] = (),
+                        max_attempts: int = MAX_ATTEMPTS) -> _Population:
     """seed付き合法手歩行から対称重複を除いた固定母集合を生成する。
 
     除外JSONを読み、生成器版/Python/ソースhashを記録するが、出力ファイルは書かない。
@@ -206,14 +255,14 @@ def generate_population(count, placements, seed, purpose='development', exclude_
         raise ValueError('purpose must be development or held_out')
     if type(max_attempts) is not int or count > max_attempts or max_attempts < 1:
         raise ValueError('requested count exceeds generation attempt limit')
-    excluded = set()
-    excluded_hashes = []
+    excluded: set[str] = set()
+    excluded_hashes: list[str] = []
     for path in exclude_paths:
         source = load_population(path)
         excluded.update(entry['orbit_id'] for entry in source['entries'])
         excluded_hashes.append(source['population_hash'])
     generator = random.Random(seed)
-    entries = []
+    entries: list[_OpeningEntry] = []
     # 対称排除は集合構成の規約で、全可能序盤への一様性を意味しない。
     seen_orbits = set(excluded)
     for _ in range(max_attempts):
@@ -226,7 +275,7 @@ def generate_population(count, placements, seed, purpose='development', exclude_
     if len(entries) != count:
         raise ValueError('could not generate {} unique openings within {} attempts'.format(count, max_attempts))
     module_path = Path(__file__).resolve()
-    population = {
+    population: _Population = {
         'format_version': FORMAT_VERSION,
         'rules_version': RULES_VERSION,
         'identity_version': IDENTITY_VERSION,
@@ -248,7 +297,9 @@ def generate_population(count, placements, seed, purpose='development', exclude_
     return validate_population(population)
 
 
-def select_entries(population, count, seed):
+def select_entries(
+    population: _Population, count: int, seed: int,
+) -> tuple[list[_OpeningEntry], _SelectionManifest]:
     """検証した固定母集合から独立seedで非復元抽出し、選択entryと全manifestを返す。
 
     元entryへの参照を返すため複製ではない。countは1..Nで、Python Random.sampleに
@@ -261,7 +312,7 @@ def select_entries(population, count, seed):
     if type(seed) is not int:
         raise ValueError('selection seed must be an integer')
     selected = random.Random(seed).sample(entries, count)
-    manifest = {
+    manifest: _SelectionManifest = {
         'format_version': 1,
         'population_hash': population['population_hash'],
         'population_size': len(entries),
@@ -274,7 +325,7 @@ def select_entries(population, count, seed):
     return selected, manifest
 
 
-def main():
+def main() -> int:
     """序盤生成/検証CLIを実行し、新規母集合JSONまたは検証概要を出力する。
 
     既存生成先は上書きせず、成功0、捕捉したI/O・値・JSON不正は終了2とする。

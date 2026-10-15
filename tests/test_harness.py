@@ -6,7 +6,7 @@ import json
 import subprocess
 import sys
 import time
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import pytest
 import harness.evaluate as evaluate_module
@@ -17,7 +17,7 @@ from harness.protocol import HarnessError, Player, validate_response
 from harness.search_budget import board_sha256, canonical_json, normalize_config, validate_trace
 from harness.referee import INITIAL_ROWS
 from harness.statistics import confidence_interval, estimate_pair_scores
-from harness import analysis, contracts
+from harness import analysis, contracts, openings
 from tools.evidence_plugin import record_expectation, record_observation, record_harness_artifacts
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1859,6 +1859,120 @@ def test_opening_population_is_reproducible_validated_and_sampled_without_replac
     corrupted['entries'][0]['moves'][0]['position'] = [0, 0]
     with pytest.raises(ValueError):
         validate_population(corrupted)
+
+
+def test_opening_typing_preserves_validation_aliases_and_extensions(tmp_path):
+    """型付けで検証対象を再構築せず、追加キー・履歴・選択entryの共有を維持する。"""
+    population = generate_population(3, 4, 417)
+    population['extension'] = {'note': ['preserve']}
+    payload = {key: value for key, value in population.items() if key != 'population_hash'}
+    population['population_hash'] = hashlib.sha256(json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False,
+    ).encode('utf-8')).hexdigest()
+    before = copy.deepcopy(population)
+    assert validate_population(population) is population
+    original = population['entries'][0]
+    checked = openings.validate_entry(original, 4)
+    assert checked == original and checked is not original
+    assert checked['moves'] is original['moves']
+    assert checked['board'] is not original['board']
+    selected, manifest = select_entries(population, 2, 2026)
+    assert all(any(entry is source for source in population['entries']) for entry in selected)
+    assert manifest['selected_case_ids'] == [entry['case_id'] for entry in selected]
+    assert population == before
+    path = tmp_path / 'extension-population.json'
+    path.write_text(json.dumps(population), encoding='utf-8')
+    assert load_population(path) == before
+    assert load_population(PurePath(path)) == before
+
+
+@pytest.mark.parametrize('kind,metadata', [
+    ('absent', None), ('null', None), ('array', ['opaque']),
+])
+def test_opening_typing_keeps_generator_metadata_unverified(kind, metadata):
+    """母集合検証は生成metadataを検査しないため、型付けで新しい拒否を追加しない。"""
+    population = generate_population(1, 4, 417)
+    if kind == 'absent':
+        population.pop('generator')
+    else:
+        population['generator'] = metadata
+    population['population_hash'] = openings.digest({
+        key: value for key, value in population.items() if key != 'population_hash'
+    })
+    before = copy.deepcopy(population)
+    assert validate_population(population) is population
+    assert population == before
+
+
+@pytest.mark.parametrize('position,message', [
+    (None, 'invalid pass in opening history'),
+    ((2, 3), 'opening position must contain two integers'),
+    ([True, 3], 'opening position must contain two integers'),
+    ([2], 'opening position must contain two integers'),
+    ('2 3', 'opening position must contain two integers'),
+    ([0, 0], 'illegal move in opening history'),
+])
+def test_opening_typing_preserves_untrusted_position_rejection(position, message):
+    """初手は合法手がある。tuple・bool・長さ違いを補正せず、既存の例外を返す。"""
+    entry = generate_population(1, 1, 417)['entries'][0]
+    entry['moves'][0]['position'] = position
+    before = copy.deepcopy(entry)
+    with pytest.raises(ValueError, match=message):
+        openings.validate_entry(entry, 1)
+    assert entry == before
+
+
+@pytest.mark.parametrize('changes,message', [
+    ({'count': True}, 'count must be a positive integer'),
+    ({'placements': True}, 'placements must be a positive integer'),
+    ({'seed': True}, 'seed must be an integer'),
+    ({'max_attempts': True}, 'requested count exceeds generation attempt limit'),
+])
+def test_opening_typing_preserves_strict_integer_generation_inputs(changes, message):
+    arguments = {'count': 1, 'placements': 4, 'seed': 417}
+    arguments.update(changes)
+    with pytest.raises(ValueError, match=message):
+        generate_population(**arguments)
+
+
+@pytest.mark.parametrize('count,seed,message', [
+    (True, 7, 'selection count must be between 1 and population size'),
+    (1, True, 'selection seed must be an integer'),
+    (0, 7, 'selection count must be between 1 and population size'),
+    (3, 7, 'selection count must be between 1 and population size'),
+])
+def test_opening_typing_preserves_selection_rejections(count, seed, message):
+    population = generate_population(2, 4, 417)
+    before = copy.deepcopy(population)
+    with pytest.raises(ValueError, match=message):
+        select_entries(population, count, seed)
+    assert population == before
+
+
+def test_opening_typing_preserves_canonical_json_and_raw_byte_digest():
+    assert openings.canonical_json({'z': '序盤', 'a': 1}) == '{"a":1,"z":"序盤"}'
+    assert openings.digest(b'abc') == 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
+    with pytest.raises(TypeError):
+        openings.canonical_json(object())
+
+
+@pytest.mark.parametrize('value', [float('nan'), float('inf')])
+def test_opening_typing_preserves_nonfinite_json_rejection(value):
+    with pytest.raises(ValueError):
+        openings.digest(value)
+
+
+def test_opening_typing_preserves_exclusion_and_symmetric_attempt_limit(tmp_path):
+    """初手4候補はD4で同一軌道なので、2件の対称重複排除生成は完了できない。"""
+    development = generate_population(2, 4, 417)
+    path = tmp_path / 'development.json'
+    path.write_text(json.dumps(development), encoding='utf-8')
+    held_out = generate_population(2, 4, 418, 'held_out', [PurePath(path)])
+    assert not ({entry['orbit_id'] for entry in development['entries']}
+                & {entry['orbit_id'] for entry in held_out['entries']})
+    assert held_out['generator']['excluded_population_hashes'] == [development['population_hash']]
+    with pytest.raises(ValueError, match='could not generate 2 unique openings within 2 attempts'):
+        generate_population(2, 1, 417, max_attempts=2)
 
 
 def test_opening_evaluation_replays_forced_moves_to_both_players(tmp_path):

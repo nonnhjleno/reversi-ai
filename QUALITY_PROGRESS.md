@@ -559,3 +559,102 @@ git diff --check
 残る制約：Pos.__eq__の引数/戻り値2注釈だけは既存の任意比較値を正確に表すAnyであり、完全な静的保証の外に残る。これをbool()/isinstance/NotImplementedで変更することは今回は禁止された実行時変更となるため行わない。単なる型検査の抑制や全関数のAny化ではなく、正常/異常/非bool/短絡を回帰で保護し、他位置へのAny/ignore/cast/no_type_check追加はguardで拒否する。ただしguardは任意の悪意ある隠蔽を証明する認証器ではない。既存statisticsの局所動的境界も今回変更していない。型introspection、ブラウザ実操作、CI実行、別OSや実行性能の比較は未確認で、ローカルgate成功から保証しない。実行速度の差を棋力/探索性能改善としない。
 
 未解決の作業blockerはなく、QUALITY_BLOCKERS.mdは新設していない。残りの本番型付け/全本番自動対象化は次の承認対象である。再開時は7対象の通常strictと対応済み証拠を再確認し、新しい対象を明示してから着手する。今回は**指定されたPhase 2のみPASSで終了**し、次のフェーズ・commit・pushには進まない。
+
+## mypy strict拡大 Phase 4（指定対象harness/openings.py）
+
+### 開始条件と型付け方針（実装前）
+
+2026-10-15、開始HEAD=96a04e4、mainはorigin/mainより2commit先、作業ツリーclean。今回の`\harness\openings.py`指定はリポジトリ相対のharness/openings.pyとして扱う。現在のAGENTS、進捗、pyproject.toml、architecture/contractsを確認した。QUALITY_BLOCKERS.mdは現ツリーに存在せず、進捗はPhase 2までの記録である。この不在をPhase 3の成功根拠にはしない。
+Phase 3は会話上の保留状態にあり、前段階PASSという条件との関係を確認した結果、ユーザーから「Phase 2のPASSを基準にPhase 4を先行する（Phase 3は保留のまま）」と明示承認された。web.pyは変更・対象追加しない。
+
+現在の通常strictは7source成功。Phase 2のquality-a3dea815f3c4439fb5464dcdd4992b1aと、保留時のquality-d8bbcd56335f4a8b935e7e7a060fb336は、いずれもpassed=true、31source開始/終了/現在hash一致、verify_publication=[]。validate_model=[]。過去のPASS文だけで開始を判断していない。
+新規一時領域reversi-strict-phase4-preflight-k3wot4rmへ全tracked開始hash、元openings.py、mypy診断、関連JUnitを保存した。変更前のGUI・本体等を上書きしない。
+
+対象単独のstrictは40診断。依存はstdlibと既にstrict対象のrefereeのみで、evaluate/contractsが序盤・抽出・IDを利用する。14関数の未注釈に加え、初期8要素tupleから可変長BoardRowsへの再代入、履歴辞書・set/listの型推論が主な原因。変更前の序盤/母集合/manifest/全数判定関連は24成功・321除外、24.04秒。
+
+方針: canonical JSON/digestの入力はobject、盤面はreferee.Rows/BoardRows、変換はIterator、生成器はRandom、IDはstrとして注釈する。履歴・序盤・生成情報・母集合・抽出manifestはTYPE_CHECKING内のTypedDictで既存辞書を記述し、必要なローカルset/list/盤面へ注釈を加える。自己hashは既存の構築後追記を表すNotRequiredとし、実行時のキー存在/内容検査を代替しない。要求・返却値の型は通常の辞書利用形状を表し、不正なJSONが静的検査済みになったという意味ではない。
+
+履歴のpositionは検証前のobjectとして記述する。既存isinstance/list長/整数要素/合法手検査をそのまま維持し、入力リストや辞書のaliasを変えない。list[int]の長さ検査後もtuple(position)を固定2要素Positionへ絞れないことを独立プローブで確認したため、検証前から正しい座標型だと断定しない。objectからの既存list検査では要素型/長さの静的保証が完全には得られず、ここは実行時検証と回帰で保証する。Any/cast/ignoreの追加や検証用分岐の追加は行わない。
+
+設計判断: 型注釈と静的な辞書記述のみで、母集合/抽出v1、case/orbit ID payload、D4代表、非復元抽出、検証例外、alias、CLI、取得fingerprint/schema5/trace4/validation3の意味は変更しない。現在のモデル図・契約表の責務/依存/データフローに変更はないため、図の更新は不要と実装前に記録する。型記述そのものを正式な検証済み状態や資格としない。注釈でも実source hashは変わるため、生成物のcode_sha256とそれに由来するpopulation/selection hashが変わることは通常の版識別として扱い、元hashや保存資産を書き換えない。
+
+先に既存対象漏れ回帰へopeningsを追加し、同じgate argvが未注釈shadow関数を見逃すことを確認する。既存テストへID/alias/不正入力/抽出条件の回帰を補い、変更前に成功を確認する。その後注釈を実装し、単独strict成功後にのみ既存7対象を維持して8件目に追加する。関連lint/回帰、関数の実行AST/bytecode、固定seed生成・CLIの変更前後照合、統合品質ゲート、source/publication/model照合を経てPASSを判断する。Phase 4以外とコミット・pushは実施しない。
+
+### 型付け・関連回帰・互換性照合（全体ゲート前）
+
+型付け前の追加19回帰は19成功・343除外、0.93秒。内容は追加metadataの保全、母集合/履歴/抽出entryのalias、未検証座標6種、厳密整数の生成4種・抽出4種、canonical JSON/既知のbytes SHA-256、NaN/Inf拒否、除外母集合と初手D4重複の試行上限。ルールの期待値を対象の出力から作るのではなく、初手の合法手・型/長さ・既知hash・共有規約等を根拠とした。
+対象漏れ回帰は旧2対象が成功する一方、openingsだけ「7source成功」で失敗し、1失敗・2成功・104除外、9.57秒。未注釈shadowを本番argvが検査しないことを確認した。
+
+14関数と必要なローカルへ注釈、TYPE_CHECKING内に5つの辞書形状を追加した。Any/cast/ignore/新しい実行時検証・正規化・例外処理は追加していない。positionはobjectから既存の検証で絞る方針を維持。単独strictは40→0となり、関連lint・限定formatも成功したため、openingsを8件目に常設追加した。既存7対象・strict設定・explicit_package_bases・format除外は維持した。
+通常strictも8source成功。対象漏れ回帰3成功・104除外9.40秒、序盤/母集合/manifest/全数関連は43成功・321除外36.51秒。追加19件以外の既存関連24件も維持できた。
+
+元ソースと現在の14関数すべてで、注釈を除いた実行ASTとbytecode/定数/参照名/ローカル名/例外表が一致した（future annotationsのflag、ファイル/行番号は比較対象外）。seed=0/1/417、placements=1/4/8の9条件で、ランダム歩行結果・最終Random状態・生成entries・case/orbit ID・抽出順序が一致。生成code_sha256とその自己hashへの伝播だけは実sourceの変更に対応して変わることを、独立したJSON/hash計算で照合した。元母集合のvalidate_populationは元オブジェクトをそのまま返し、新版でも読み替えず利用できた。
+別プロセスCLIでは旧/新それぞれのgenerate成功2本と、同じ旧母集合のvalidate成功、不正JSON、欠損ファイル、不正count、既存出力の排他書込拒否の5比較を実行した。後者5比較はstdout/stderr/exitが一致し、正常は0・異常は2。旧/新生成は選んだ保存先と実source由来hashの違いだけを確認した。入力root不正4種の例外種・メッセージも一致した。
+一時証拠のcompatibility.json、関連JUnit、scope-before/after.txt等へ記録。ここまでの成功は全体品質ゲートの成功や正式資格・棋力改善を意味しない。
+
+#### 最終監査による型記述の補正方針（補正前）
+
+型の保証範囲を監査したところ、validate_populationはgenerator metadataの存在・形状を検証しておらず、generator欠損/null/配列でも自己hash等が正しければ元辞書を返すことを確認した。したがって先の_GeneratorInfoを常に存在する型として返す記述は、生成直後の通常形状には合うが、保存済みデータのload/validate結果に対して強すぎる。
+この点は実行時検証を追加せず、generatorをNotRequired[object]へ補正し、未使用となる_GeneratorInfoを削除する。静的な辞書記述は4種とする。生成処理の辞書literal・値・hash payloadは変えず、欠損/null/配列の互換回帰を追加する。path引数はPathが受け付けるstr|PathLike[str]を記述し、独自PathLikeの受入れも回帰で保護する。未検証metadataを検証済みと見せないための型記述上の補正であり、既存モデル・契約・処理の変更は不要である。
+実行中の品質ゲートの対象sourceは変更せず、その終了を確認してから補正し、補正後の全ゲートを別UUIDで再実行する。先のゲート結果を最終ソースの成功として流用しない。
+
+先のquality-c917c3244d5e48269284b2ea5d11a394は終了0・545成功336.50秒で完了した。ただし以下の型記述補正前の中間証拠であり、最終版PASSの証拠にはしない。
+metadataが欠損/null/配列でも既存検証が受理する3回帰と、PurePathの読込/除外受入れを既存回帰へ追加した。補正前も実行時5回帰は成功した一方、未検証generatorからseedをintとして返すshadow関数を型検査が許してしまう回帰は、1失敗・107除外4.01秒で再現できた。
+generatorをNotRequired[object]へ補正し、型専用クラスを4種とした。PathLike注釈はTYPE_CHECKING内で読み、実行時importや処理は増やしていない。補正後の単独strictは1source成功、通常strictは8source成功、対象漏れ3件と過剰保証防止1件は4成功・104除外12.73秒。全lintと既存format9filesも成功した。
+実mypy graphでも8moduleの名前は一意で、全件disallow_untyped_defs/check_untyped_defs/disallow_any_generics有効、ignore_errors=Falseを確認した。これは標準ライブラリ等の全依存が新たにstrict化されたという意味ではない。
+最終版でも14関数の実行AST/bytecode一致、9条件の生成/抽出/乱数状態、metadata3形状の受入れ、CLI生成2本と正常/異常5比較、明示Any/cast/ignore/no_type_checkなし、validate_model=[]を再確認し、compatibility-final.jsonへ保存した。未検証metadataを正規化・検証済みへ昇格していない。
+
+### Phase 4：PASS / 最終証拠と完了監査
+
+最終版で `python -B tools/quality.py` を再実行し、終了0 / QUALITY PASS。
+保存先は `evaluation_results/quality-a0408e7ff61d4136a53bd24b747d4624/`。
+全pytest **549成功・0失敗、357.37秒**、独立smoke **1成功・0失敗・548除外、2.50秒**。
+525既存ケース＋互換19＋対象漏れ1＋未検証metadata3＋型の過剰保証防止1＝549。
+typing.txtは8source成功。必須10検査すべて終了0で、既存の検査を省略・除外していない。
+
+| 完了条件 | 最終ソースに対する根拠 |
+|---|---|
+| 開始条件 | Phase 2の保存済みPASS・7対象strict成功・Gitを再確認。Phase 3保留での先行は明示承認 |
+| 診断・依存・方針 | 単独40診断、referee依存、14関数・履歴/ID/生成/抽出/CLIを調査し、実装前に型/モデル方針を記録 |
+| 最小の型付け | 14関数・必要なローカル・型専用4辞書のみ。positionと未検証metadataはobject。明示Any/cast/ignoreなし |
+| 単独・常設strict | 単独40→0後に常設追加。既存7を保持して8対象成功、8moduleは一意、厳格設定とignore_errors=Falseを実graphで確認 |
+| 回帰の有効性 | 追加前にopeningsの対象漏れ1失敗、過剰なmetadata保証1失敗を別々に再現。最終版では両方を含む全549成功 |
+| 実行時互換性 | 14関数の実行AST/bytecode一致、9条件の生成/抽出/乱数状態、同一旧データのCLI正常/異常応答、alias維持 |
+| 全品質・証拠 | 必須10成功、full/smokeともcomplete・errors=[]、証拠全体complete・errors=[]、publication=[]、Markdown再生成一致、pendingなし |
+| モデル/契約 | validate_model=[]。責務/依存/データフロー/ID規則/抽出/例外/正式資格に意味変更なし。図・契約更新不要の理由を先行記録 |
+| 現在のsource対応 | 31sourceの開始/終了/現在hash一致。code_sha256・取得fingerprintの通常の版変化を偽装せず、元資産も書き換えない |
+| 範囲・Git保全 | 変更6ファイル、その他62trackedの開始hash一致。HEAD=96a04e4、未追跡なし、ステージ/commit/push/branch操作なし |
+
+変更ファイル:
+
+- `harness/openings.py`: 関数・ローカルの注釈、TYPE_CHECKING内の_OpeningMove/_OpeningEntry/_Population/_SelectionManifest。
+- `pyproject.toml`: filesへopeningsを追加。旧7対象・strict・名前解決・format scopeを維持。
+- `tests/test_harness.py`: 互換・alias・不正入力・metadata・PathLike・除外と試行上限の回帰22ケース。
+- `tests/test_quality.py`: 対象漏れパラメータ1ケースと、metadata過剰保証を検出するshadow回帰1ケース。
+- `ハーネス.md`: 現行8対象、未型付け範囲、型の保証限界、Phase 3保留での先行を明記。
+- `QUALITY_PROGRESS.md`: 開始承認・調査・先行方針・修正過程・実コマンド・最終監査の本記録。
+
+実行した主要コマンド:
+
+```powershell
+python -B -m mypy --no-incremental --config-file pyproject.toml
+python -B -m mypy --no-incremental --config-file pyproject.toml harness/openings.py
+python -B -m ruff check harness/openings.py tests/test_harness.py tests/test_quality.py --no-cache --config pyproject.toml
+python -B -m ruff check . --no-cache --config pyproject.toml
+python -B -m ruff format --check . --no-cache --config pyproject.toml
+python -B -m pytest -q tests/test_harness.py tests/test_invariants.py -k 'opening or population or manifest or census' -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_harness.py -k opening_typing -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_quality.py -k promoted_modules -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_quality.py -k 'promoted_modules or unchecked_generator_metadata' -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_harness.py -k 'generator_metadata_unverified or validation_aliases or symmetric_attempt_limit' -p no:cacheprovider --tb=short
+python -B tools/quality.py
+git diff --check
+```
+
+個別mypyには一時領域のcache-dirを、個別pytestには新規JUnit/log保存先を追加した。独立型プローブは--strict/--config-file=で実施し、常設設定を変更していない。
+互換性は旧ソースを独立namespaceへ読み、現行moduleと照合。CLIは直接CPythonの旧script実行と`-m harness.openings`を同じPYTHONPATH/入力で比較した。
+最終のmypy-graph-final.jsonではgeneratorとpositionの型識別子がbuiltins.object、generatorがrequiredでないことを直接照合した。補助プローブの最初の実行は、型の表示文字列をbuiltins.objectと仮定して失敗した（実表示はobject）。TypeInfo.fullnameで確認し直して成功したもので、本番コード/検査設定を緩和したものではない。
+
+Phase 4に未解決の実装blockerはないためQUALITY_BLOCKERS.mdを新設していない。Phase 3のGUIは依然保留であり、今回のPASSへ含めない。通信/report等の残り本番コード・全テストのstrict化、型introspection、ブラウザ実操作、remote CI、別OS、実行性能比較は未実施。
+履歴positionの要素型/長さ、入力JSONの完全な静的検証、生成metadataの真正性までは型だけで保証しない。既存の実行時検証と正式入口の検証は引き続き必要である。生成source hashが変わるため、過去の評価条件と同一コードであるとは主張しない。棋力や探索性能の改善も主張しない。
+再開時はこの8対象のstrictと対応する最新証拠を再確認し、次の指定moduleを明示してから調査する。**今回承認されたPhase 4のみPASSとして終了し、次フェーズ・commit・pushには進まない。**

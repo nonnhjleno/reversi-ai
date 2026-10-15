@@ -1020,7 +1020,10 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
     assert not json.loads((output / 'quality.json').read_text(encoding='utf-8'))['passed']
 
 
-@pytest.mark.parametrize('relative_path', ['harness/statistics.py', 'reversi_player/reversi.py'])
+@pytest.mark.parametrize(
+    'relative_path',
+    ['harness/statistics.py', 'reversi_player/reversi.py', 'harness/openings.py'],
+)
 def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
     """通常のgate argvで昇格済moduleの未注釈関数を拒否し、対象漏れを検出する。"""
     source = ROOT / relative_path
@@ -1051,6 +1054,37 @@ def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relati
     assert result.returncode == 1, result.stdout + result.stderr
     assert source.name + ':' in result.stdout
     assert '[no-untyped-def]' in result.stdout
+
+
+def test_openings_typing_keeps_unchecked_generator_metadata_opaque(tmp_path):
+    """未検証metadataからseedを安全に取得できると型検査が誤認する変更を検出する。"""
+    source = ROOT / 'harness/openings.py'
+    shadow = tmp_path / 'openings.py'
+    shadow.write_text(
+        source.read_text(encoding='utf-8')
+        + '\n\ndef _unchecked_generator_probe(population: _Population) -> int:\n'
+        + '    return population["generator"]["seed"]\n',
+        encoding='utf-8',
+    )
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [
+            *step.command,
+            '--cache-dir',
+            str(tmp_path / 'mypy-cache'),
+            '--shadow-file',
+            str(source),
+            str(shadow),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert 'openings.py:' in result.stdout
+    assert '[index]' in result.stdout
 
 
 def _check_reversi_dynamic_boundary(source):
