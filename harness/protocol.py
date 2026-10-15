@@ -65,7 +65,7 @@ if TYPE_CHECKING:
         measurement_thread_id: int
 
     class _CommandRecord(_Identity, total=False):
-        """生成中・失敗時も含む通常のhost要求形状。形式/意味の検証は別途必要。"""
+        """生成中・失敗時のhost要求形状。取得側phaseの追記も形式/意味の検証済み証明ではない。"""
 
         command: str
         startup_probe: bool
@@ -86,9 +86,10 @@ if TYPE_CHECKING:
         wire_envelope_ns: int
         seconds: float
         response: list[str]
+        phase: object
 
     class _HostEvidence(TypedDict, total=False):
-        """親証拠の通常形状。自由拡張lifecycleを検証済みの型へ置き換えない。"""
+        """正常/部分診断の親証拠形状。自由拡張lifecycleやstderrを検証済みの型へ置き換えない。"""
 
         commands: list[_CommandRecord]
         name: str | None
@@ -99,6 +100,7 @@ if TYPE_CHECKING:
         clock: _ClockDescriptor | None
         clock_domain_id: object
         lifecycle: dict[str, object] | None
+        stderr_tail: list[str]
 
     class _Conditions(TypedDict, total=False):
         """旧資料の欠損も含む期限形状。必要証拠・形式・正数条件は既存検査で確認する。"""
@@ -413,7 +415,7 @@ class HarnessError(RuntimeError):
         self.kind = kind
         self.command = command
         self.player: str | None = None
-        self.diagnostics: dict[str, object] | None = None
+        self.diagnostics: _HostEvidence | None = None
 
 
 def validate_response(command: str, lines: list[str]) -> None:

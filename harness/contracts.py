@@ -17,12 +17,12 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from os import PathLike
-    from typing import Literal, TypeGuard, TypedDict
-    from harness.openings import _OpeningEntry
+    from typing import Literal, ReadOnly, TypeGuard, TypedDict
+    from harness.openings import _OpeningEntry, _OpeningMove, _SelectionManifest
     from harness.protocol import _CommandRecord
     from harness.protocol import _HostEvidence, _Status, _TemporalReason, _TemporalResult
     from harness.referee import Position
-    from harness.search_budget import _BudgetCommand, _TraceValidation
+    from harness.search_budget import _BudgetCommand, _BudgetConfig, _TraceValidation
 
     _Role = Literal['A', 'B']
     _Record = dict[str, object]
@@ -38,21 +38,27 @@ if TYPE_CHECKING:
         budget: _Record
         search: _Record
 
+    class _FileInfo(TypedDict):
+        """取得側が実ファイルbytesから生成する参照。hash一致は意味検証ではない。"""
+        path: str
+        sha256: str
+
     class _Artifact(TypedDict, total=False):
         """保存参照の通常形状。hashや存在宣言は原bytesの検証に代わらない。"""
 
         path: str
-        sha256: str
+        sha256: str | None
+        error: str
         exists: bool
         format_version: int
 
     class _SavedTrace(TypedDict, total=False):
-        """保存cacheの通常形状。状態・測定値を認可せず毎回原traceと照合する。"""
-
-        status: str
-        reason: str | None
-        measurements: list[_Record]
-        artifact: _Artifact
+        """保存cacheの通常形状。必須の取得検査結果を受けても検証成功は再確認する。"""
+        status: ReadOnly[str]
+        reason: ReadOnly[str | None]
+        events: ReadOnly[int]
+        measurements: ReadOnly[list[_Record]]
+        artifact: object
 
     class _DiagnosticValidation(TypedDict, total=False):
         """取得保留/失敗や読込不能時の部分結果。欠損events/測定値を補造しない。"""
@@ -69,7 +75,6 @@ if TYPE_CHECKING:
         config: object
         budget_trace: _SavedTrace
         launch_status: str
-        stderr_tail: list[str]
 
     class _Move(TypedDict, total=False):
         """保存棋譜の通常形状。座標の長さ/値域・手番/合法性は再生時に検査する。"""
@@ -84,12 +89,12 @@ if TYPE_CHECKING:
         """通常の一局記録。異常入力の検査を省略するための型ではない。"""
 
         case_id: str
-        pair_id: str
+        pair_id: str | None
         leg: int
         seeds: dict[str, int]
         colors: dict[str, str]
         players: dict[str, _Player]
-        opening_moves: list[_Move]
+        opening_moves: list[_OpeningMove]
         opening_start_board: Sequence[str]
         opening_to_move: str
         moves: list[_Move]
@@ -100,8 +105,12 @@ if TYPE_CHECKING:
         budget: dict[str, _SavedTrace]
         winner: str | None
         result: str | None
-        score_a: float
+        score_a: float | None
         error: _Record | None
+        index: int
+        repeat_index: int
+        pair_status: str
+        pair_reason: str | None
 
     class _Conditions(TypedDict, total=False):
         """通常の取得条件。未知fieldの値域や旧形式の不足を型だけで認定しない。"""
@@ -112,15 +121,17 @@ if TYPE_CHECKING:
         planned_games: int
         seed: object
         determinism_verified: bool
-        budget_configs: dict[str, _RawBudgetConfig]
+        budget_configs: Mapping[str, _RawBudgetConfig | _BudgetConfig]
         budget_config_hashes: dict[str, object]
-        selection_manifest: _Manifest | None
+        selection_manifest: _Manifest | _SelectionManifest | None
         opening_population_hash: str | None
         opening_population_size: object
         startup_timeout: float
         command_timeout: float
         genmove_timeout: float
         measurement_contract: object
+        seed_scope: str
+        timeout_policy: str
         candidate_search_contract: _Record
 
     class _Manifest(TypedDict, total=False):
@@ -137,9 +148,11 @@ if TYPE_CHECKING:
 
         status: str
         repetitions: int
+        reason: str | None
+        trace_sha256: list[str]
         outputs: list[str]
         trace_artifacts: list[_Artifact]
-        attempts: list[_Player]
+        attempts: list[_HostEvidence]
         target_sha256: str
         config_sha256: str
         case_id: str
@@ -149,18 +162,28 @@ if TYPE_CHECKING:
         """通常の実行環境。時計/環境の対応可能性を宣言だけで保証しない。"""
 
         python: str
+        executable: str
+        platform: str
+        implementation: str
+        machine: str
+        processor: str
+        cpu_count: int | None
+        evaluation_concurrency: int
+        thread_environment: dict[str, str | None]
         clock: object
 
     class _Target(TypedDict, total=False):
         """対象本体/資産の通常参照。固定Bやassetの同一性は別条件で検査する。"""
 
         sha256: str
-        assets: list[_Artifact]
+        assets: list[_FileInfo]
+        path: str
 
     class _Evidence(TypedDict, total=False):
         """原証跡の通常保存先。移動先指定でも元資料の内容hashは変えない。"""
 
         root: str
+        format_version: int
         population: _Artifact
 
     class _RoleMetrics(TypedDict, total=False):
@@ -214,11 +237,16 @@ if TYPE_CHECKING:
         determinism: dict[str, _Probe]
         evidence: _Evidence
         population: _Record
-        harness: list[_Artifact]
+        harness: list[_FileInfo]
         experiment_id: str
         evaluation_fingerprint: object
         verification_requirements: _Record
         analysis_spec: _Record
+        analysis_fingerprint: str
+        analysis_id: str
+        created_at_utc: str
+        request: _Resolution
+        statistics: Mapping[str, object]
 
     class _Decoded(TypedDict):
         """入力検査の状態と原出典hash。conditionsの未知値を有効な数値に絞らない。"""
@@ -363,7 +391,7 @@ def _get_container[Value](value: dict[str, Value] | None) -> dict[str, Value]:
 
 class ArtifactWriteError(RuntimeError):
     """開始後の証跡/結果保存失敗。入力不正と区別し、phase・path・原原因を保持する。"""
-    def __init__(self, phase: str, path: str | PathLike[str], operation_id: str | None,
+    def __init__(self, phase: str, path: object, operation_id: str | None,
                  cause: BaseException) -> None:
         """診断情報を保持する。既存ファイルを削除したり再試行で上書きしたりしない。"""
         self.phase = phase
@@ -411,16 +439,16 @@ def _replay_game(game: _Game, opening: _OpeningEntry | None) -> bool:
 
     rows = tuple(referee.INITIAL_ROWS)
     color = 'B'
-    for move in game.get('opening_moves', []):
-        if not isinstance(move, dict) or move.get('color') != color:
+    for opening_move in game.get('opening_moves', []):
+        if not isinstance(opening_move, dict) or opening_move.get('color') != color:
             return False
-        position = move.get('position')
+        position = opening_move.get('position')
         legal = referee.legal_moves(rows, color)
         if position is None:
             if legal or not referee.legal_moves(rows, 'W' if color == 'B' else 'B'):
                 return False
         else:
-            position = tuple(position)
+            position = tuple(cast('Iterable[int]', position))
             if position not in legal:
                 return False
             rows = referee.apply_move(rows, color, position)
@@ -661,12 +689,12 @@ def resolve_game_count(requested: int | None, profile: str, population_size: int
     }
 
 
-def _artifact_bytes(report: _SourceReport, artifact: _Artifact, cache: _Cache) -> bytes:
+def _artifact_bytes(report: _SourceReport, artifact: Mapping[str, object], cache: _Cache) -> bytes:
     """証跡を読み、解析一呼出内のcacheへbytesまたはOSErrorを保存する。
 
     同じ実パスを再読込せず、hash照合とparseに同じbytesを使う。元reportは変更しない。
     """
-    path = (Path(report.get('evidence', {}).get('root', '')) / artifact['path']).resolve()
+    path = (Path(report.get('evidence', {}).get('root', '')) / cast(str, artifact['path'])).resolve()
     if path not in cache:
         try:
             cache[path] = path.read_bytes()
@@ -881,17 +909,17 @@ def _validate_report(report: _SourceReport, evidence_bytes: _Cache | None = None
                 errors.append('score_mismatch')
         for label, player in (game.get('players') or {}).items():
             trace = player.get('budget_trace', {}) if isinstance(player, dict) else {}
-            artifact = trace.get('artifact') if isinstance(trace, dict) else None
+            trace_artifact = trace.get('artifact') if isinstance(trace, dict) else None
             if trace.get('status') in ('verified', 'failed'):
-                if not isinstance(artifact, dict) or not artifact.get('exists'):
+                if not isinstance(trace_artifact, dict) or not trace_artifact.get('exists'):
                     errors.append('trace_artifact_missing')
                 else:
                     try:
-                        actual = hashlib.sha256(_artifact_bytes(report, artifact, evidence_bytes)).hexdigest()
+                        actual = hashlib.sha256(_artifact_bytes(report, trace_artifact, evidence_bytes)).hexdigest()
                     except (OSError, KeyError, TypeError, ValueError):
                         errors.append('trace_artifact_missing')
                     else:
-                        if actual != artifact.get('sha256'):
+                        if actual != trace_artifact.get('sha256'):
                             errors.append('trace_artifact_hash_mismatch')
     if len(games) != planned:
         errors.append('planned_game_coverage_mismatch')
@@ -984,7 +1012,7 @@ class _TranscriptEvidenceMissing(ValueError):
     """schema5の通信対応証拠が不足し、保存された要求との対応を確認できない状態。"""
 
 
-def _schema5_identity(player: _Player, context: Mapping[str, object], case_id: object,
+def _schema5_identity(player: _HostEvidence, context: Mapping[str, object], case_id: object,
                         role_seed: object, clock_domain_id: object, purpose: str) -> _Record:
     """原報告から期待slotを定め、取得済みsessionとの対応を照合する。時計順序は扱わない。"""
     lifecycle = player.get('lifecycle')
@@ -1008,7 +1036,7 @@ def _schema5_identity(player: _Player, context: Mapping[str, object], case_id: o
     return expected
 
 
-def _validate_player_transcript(player: _Player, expected: Sequence[_Requirement], conditions: _Conditions,
+def _validate_player_transcript(player: _HostEvidence, expected: Sequence[_Requirement], conditions: _Conditions,
                                   context: Mapping[str, object], strengthened: bool) -> list[_BudgetCommand]:
     """目的別に構成した期待通信列と実ログを照合する。game終局をprobeへ要求しない。"""
     from harness.protocol import command_id, validate_command_record, validate_response
@@ -1074,7 +1102,7 @@ def _validate_player_transcript(player: _Player, expected: Sequence[_Requirement
     return contexts
 
 
-def _observe_probe(player: _Player, case: _OpeningEntry, response: str, label: str, attempt: int,
+def _observe_probe(player: _HostEvidence, case: _OpeningEntry, response: str, label: str, attempt: int,
                     conditions: _Conditions, run_id: str, strengthened: bool,
                     schema5: bool = False, clock_domain_id: object = None) -> list[_BudgetCommand]:
     """保存probeを独立盤面で再生し、単発genmove・更新盤面・quitの通信を検証する。"""
@@ -1138,12 +1166,12 @@ def _command_contexts(game: _Game, conditions: _Conditions, run_id: str | None =
             append_command(label, ('result', [referee.result(rows)], None, None))
 
     check_state()
-    for move in game['opening_moves']:
-        position = move['position']
+    for opening_move in game['opening_moves']:
+        position = opening_move['position']
         if position is not None:
-            rows = referee.apply_move(rows, move['color'], cast('Position', tuple(position)))
+            rows = referee.apply_move(rows, opening_move['color'], cast('Position', tuple(cast('Iterable[int]', position))))
             for label in ('A', 'B'):
-                append_command(label, ('play {} {} {}'.format(move['color'], *position), ['OK'], None, None))
+                append_command(label, ('play {} {} {}'.format(opening_move['color'], *cast('Iterable[object]', position)), ['OK'], None, None))
         check_state()
     for move in game['moves']:
         color, label, position = move['color'], move['player'], move['position']
@@ -1242,7 +1270,7 @@ def _inspect_timelines(snapshot: _SourceReport, cache: _Cache, command_states: S
                     item['command_id'] = commands[int(index)].get('command_id')
             axes[axis].append(item)
 
-    def inspect_player(player: _Player, artifact: _Artifact | None, context: Mapping[str, object],
+    def inspect_player(player: _HostEvidence, artifact: object, context: Mapping[str, object],
                         normal_expected: bool) -> None:
         """1sessionのhost/rawを検査する。子証拠欠損はhostの既知矛盾を打ち消さない。"""
         if not isinstance(player, dict):
@@ -1303,18 +1331,18 @@ def _inspect_timelines(snapshot: _SourceReport, cache: _Cache, command_states: S
             check = snapshot.get('determinism', {}).get(label, {})
             for attempt in range(2):
                 attempts, artifacts = check.get('attempts', []), check.get('trace_artifacts', [])
-                player = attempts[attempt] if attempt < len(attempts) else {}
+                probe_player = attempts[attempt] if attempt < len(attempts) else {}
                 artifact = artifacts[attempt] if attempt < len(artifacts) else None
                 seed = seed_for(conditions['seed'], case, label) if case is not None else None
-                inspect_player(player, artifact, context_for('determinism-' + label, attempt, label, 'probe', case, seed),
+                inspect_player(probe_player, artifact, context_for('determinism-' + label, attempt, label, 'probe', case, seed),
                                check.get('status') == 'verified')
 
     for game in snapshot['games']:
         players = game.get('players', {})
         for label in ('A', 'B'):
             player = players.get(label, {}) if isinstance(players, dict) else {}
-            artifact = player.get('budget_trace', {}).get('artifact') if isinstance(player, dict) else None
-            inspect_player(player, artifact, context_for(game.get('pair_id'), game.get('leg'), label,
+            player_artifact = player.get('budget_trace', {}).get('artifact') if isinstance(player, dict) else None
+            inspect_player(player, player_artifact, context_for(game.get('pair_id'), game.get('leg'), label,
                                                         'game', game.get('case_id'), game.get('seeds', {}).get(label)),
                            game.get('game_status') == 'complete' and game.get('protocol_status') == 'verified')
         identity = {'run_id': snapshot.get('run_id'), 'pair_id': game.get('pair_id'), 'leg': game.get('leg')}
@@ -1665,17 +1693,17 @@ def _inspect_evaluation(report: _SourceReport, evidence_root: str | PathLike[str
                             or search_budget.normalize_config(player.get('config')) != config):
                         raise ValueError('budget_config_alias_mismatch')
                     trace = player.get('budget_trace', {})
-                    artifact = trace.get('artifact')
+                    game_artifact = trace.get('artifact')
                     allowed = label == 'B' and conditions.get('budget_policy') == 'baseline-asymmetric'
                     exempt, _ = search_budget.exemption_status(config, target_hash)
                     # Bの対局予算除外はAtrace・両通信・決定性証拠の免除ではない。
                     if exempt == 'exempt' and allowed and snapshot['schema_version'] < 5:
                         events = None
-                    elif not isinstance(artifact, dict) or not artifact.get('exists'):
+                    elif not isinstance(game_artifact, dict) or not game_artifact.get('exists'):
                         events = None
                     else:
-                        payload = _artifact_bytes(snapshot, artifact, cache)
-                        if hashlib.sha256(payload).hexdigest() != artifact.get('sha256'):
+                        payload = _artifact_bytes(snapshot, game_artifact, cache)
+                        if hashlib.sha256(payload).hexdigest() != game_artifact.get('sha256'):
                             raise ValueError('trace_artifact_hash_mismatch')
                         events = [json.loads(line) for line in payload.decode('utf-8').splitlines() if line.strip()]
                     validation = search_budget.validate_trace_events(

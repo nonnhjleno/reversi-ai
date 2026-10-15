@@ -62,6 +62,10 @@ evaluateのstatistics呼出は取得記録の予備ペア分類であり、正�
 
 ## 3. 取得・保存・再解析・統計のデータフロー
 
+Phase 9の型境界（個別承認・先行設計を実装反映済み）: evaluateの取得途中辞書・正常な親証拠・失敗診断・保存用報告を区別し、既存のACQ→fresh Inspection→Assessmentの向きを維持する。通常形状を検証済み証明とせず、序盤positionと統計fieldの未知値は局所の反復/添字/既存比較演算だけへ接続する。部分gameのscore/pairのNone、trace不在artifact、probe失敗時の部分親証拠を型でも保持する。直接依存の共有型はこの実際の生成形状と読取専用境界だけ精緻化し、正常値へ補修しない。
+
+_callは位置引数列と返却型を保つ汎用ラッパーとし、起動closureは必要なら同じ既定値捕捉を持つ注釈可能な局所関数へ表現する。_evaluateのoperation=Noneは元のupdate属性例外を維持する局所境界で扱う。Pathの局所束縛・親commandへの既存phase追記を静的に表し、採時・通信・回収・checkpointの順序を変えない。新しいimport辺・取得経路・資格入口・状態遷移は不要なので既存Mermaidの辺/状態を追加しない。型成功、API return、complete checkpoint、final保存、正式資格を混同しない。実装・検証の到達状態はQUALITY_PROGRESS.mdのPhase 9を参照する。
+
 評価APIが返す辞書、run checkpoint、CLIが保存する最終JSONは別物である。新規評価は**最終JSONを保存する前**にsummary生成と正式判定を行う。保存済み評価の再解析だけが最終source JSONを入口にする。
 
 ```mermaid

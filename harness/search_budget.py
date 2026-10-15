@@ -14,7 +14,7 @@ from harness.protocol import (clock_status, validate_command_record, temporal_or
 if TYPE_CHECKING:
     from collections.abc import Buffer, Iterable, Mapping, Sequence
     from os import PathLike
-    from typing import Literal, Required, TypeGuard, TypedDict
+    from typing import Literal, NotRequired, Required, TypeGuard, TypedDict
     from harness.protocol import _CommandRecord, _Status, _TemporalReason, _TemporalResult
 
     _WorkLimitKey = Literal['limit_nodes', 'limit_depth']
@@ -42,9 +42,8 @@ if TYPE_CHECKING:
         search: dict[str, object]
 
     class _BudgetCommand(_CommandRecord, total=False):
-        """親の通常要求に取得側phaseを加えた形状。保存内容の検証済み証明ではない。"""
+        """親要求の取得側phaseも継承する予算検査用形状。保存内容の検証済み証明ではない。"""
 
-        phase: object
 
     class _IntervalResult(TypedDict):
         """元の時間検査の状態と理由。rawへの値補充や検証証明書を含まない。"""
@@ -59,6 +58,7 @@ if TYPE_CHECKING:
         reason: str | None
         events: int
         measurements: list[dict[str, object]]
+        artifact: NotRequired[object]
 
 KINDS = {'time', 'nodes', 'depth', 'none', 'unknown'}
 TRACE_VERSION = 4

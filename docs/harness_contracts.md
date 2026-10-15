@@ -187,6 +187,16 @@ derived.gamesは初期値[]か、schema3以後のdecodeでlist内の辞書と文
 
 ## 8. 正式資格と統計の推定対象
 
+### Phase 9の型境界（先行設計を実装反映済み）
+
+先行設計に基づく共有型: 取得validationの必須fieldは弱めない。保存cacheの状態/理由/測定値は読取専用の通常形状とし、artifactだけは原値objectを保持する。生の親診断と正常evidenceが共通に持つhost fieldを共有し、stderr_tailも部分証拠として含む。生成中の辞書updateには元methodだけの境界を使い、原診断や算術結果を正常型へ全体castしない。先頭probeの不可能なNoneは元の添字TypeErrorと同じ失敗にし、空の正常caseを補わない。
+
+取得中gameはscore_a=Noneやpair_id=Noneを持ち得る。序盤の原positionはobjectのまま、使う場所の反復/tuple操作だけを局所ビューで記述する。欠損traceのartifact.sha256=None、events/追加診断、probeの失敗で保存する部分host evidenceを正常完走へ昇格しない。HarnessError.diagnosticsとprobe attemptsの共有型を調整する場合は、親が実際に作る通常の部分証拠の形状として表し、lifecycle/拡張metadataの未知値や既存例外を維持する。新しいdecode条件や検証省略を追加しない。保存cacheのstatus/reason/events/measurementsはReadOnlyの通常形状とし、必須fieldを持つ取得_TraceValidationを緩めず受け渡す。artifactは両側ともobject、親host証拠のstderr_tail/phaseを基礎型で共有する。_FileInfoは実bytesから作る通常のpath/hash参照で、欠損traceの_Artifactとは区別する。
+
+analysis.estimateが返すMappingのfieldは未知値であり、intervalが存在するだけで原report全体を有効とcastしない。evaluateの既存performance_criterionに必要な既存添字・scalar比較だけを限定境界とし、fresh検証→統計→数値基準→decision undeterminedの順序を維持する。原算術辞書・診断・取得報告をコピー/全体castして型差を隠さない。evaluateの8局所ビューはupdate method1、序盤の反復3と既存tuple座標1、既存数値基準のscalar2、CLIの生成済みID1だけ。直接依存contractsの4追加ビューは序盤反復/tupleと保存pathの既存操作に限り、既存33を維持して37とする。_callは同じ位置引数と元の返却値/例外を保ち、checkpointのJSON複製・flush/fsync/replaceと中断時の原例外/secondary noteも維持する。
+
+実装前に元コードで互換回帰を実行し、設定省略/パス/不正値、局数/期限/信頼度、ラッパーの例外同一性、部分game/probeと原証拠、進捗と中断/保存障害を固定する。対象登録漏れ・型逃げ/未知値の過剰保証も検査する。型introspection、traceback追加フレーム、実行コスト完全一致は保証しない。schema5/trace4/validation3、正式AND、既存fingerprintの通常のソースhash更新と旧資料の非補修を維持する。
+
 正式単独評価はconfirmatory/source schema5、母集合・抽出・全予定coverage・棋譜/通信・予算・時間・測定・source整合の全必須verified、固定nodes/depthと決定性条件等をANDで要求する。必要集合はprofile/policyから導出し、rawの自己申告除外を読んで緩和しない。
 
 推定対象は保存された固定有限序盤母集合でのA先後平均得点、対応比較は同caseのafter−before平均差。先後2局で1ペア、単独range[0,1]・差range[-1,1]。実装はHoeffding–Serfling有限母集合bound、資格を満たす全数ではcensus。母集合生成分布を未知の全局面分布と同一視しない。

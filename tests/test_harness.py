@@ -3244,3 +3244,154 @@ def test_statistics_typing_preserves_difference_direction_and_coverage():
     assert statistics.paired_difference(before, after, 1, expected_case_ids=['other'])['reason'] == 'expected_cases_mismatch'
     assert estimate_pair_scores(after, 1, eligible=False)['reason'] == 'evaluation_not_eligible'
     assert estimate_pair_scores(after, 1, expected_pair_count=2)['reason'] == 'incomplete_pairs'
+
+
+@pytest.mark.parametrize('failure', [None, 'harness', 'ordinary'])
+def test_evaluate_typing_call_preserves_values_and_exception_identity(failure):
+    marker = object()
+    received = []
+    error = HarnessError('protocol_error', 'original', 'name') if failure == 'harness' else ValueError('original')
+
+    def called(value):
+        """元の引数参照を記録し、指定した同一例外か同一結果を返す。"""
+        received.append(value)
+        if failure is not None:
+            raise error
+        return marker
+
+    if failure is None:
+        assert evaluate_module._call('A', called, marker) is marker
+    else:
+        with pytest.raises(type(error)) as caught:
+            evaluate_module._call('A', called, marker)
+        assert caught.value is error
+        if failure == 'harness':
+            assert error.player == 'A'
+            assert error.command == 'name'
+    assert received == [marker]
+
+
+@pytest.mark.parametrize('label', ['A', None])
+def test_evaluate_typing_failure_keeps_role_and_command(label):
+    with pytest.raises(HarnessError) as caught:
+        evaluate_module._failure(label, 'illegal_move', 'original', 'genmove B')
+    assert (caught.value.player, caught.value.kind, caught.value.command, str(caught.value)) == (
+        label, 'illegal_move', 'genmove B', 'original',
+    )
+
+
+@pytest.mark.parametrize('source', ['missing', 'mapping', 'path'])
+def test_evaluate_typing_config_keeps_unknown_and_source_metadata(tmp_path, source):
+    search = {'deterministic': True, 'extension': {'opaque': [1]}}
+    raw = {'format_version': 1, 'budget': {'kind': 'depth', 'limit_depth': 2}, 'search': search}
+    before = copy.deepcopy(raw)
+    path = tmp_path / 'config.json'
+    path.write_text(json.dumps(raw), encoding='utf-8')
+    argument = None if source == 'missing' else raw if source == 'mapping' else path
+    result = evaluate_module._config_info(argument)
+    assert result['config']['format_version'] == 2
+    assert result['config']['budget']['kind'] == ('unknown' if source == 'missing' else 'depth')
+    assert result['path'] == (str(path.resolve()) if source == 'path' else None)
+    assert result['sha256'] == hashlib.sha256(canonical_json(result['config']).encode('utf-8')).hexdigest()
+    if source == 'mapping':
+        assert result['config']['search'] is search
+    assert raw == before
+
+
+@pytest.mark.parametrize('value', [[], False, {'format_version': 2, 'budget': {'kind': 'depth', 'limit_depth': 0}}])
+def test_evaluate_typing_config_does_not_repair_invalid_input(value):
+    before = copy.deepcopy(value)
+    with pytest.raises(ValueError):
+        evaluate_module._config_info(value)
+    assert value == before
+
+
+@pytest.mark.parametrize('bad_command', [None, 'showboard', 'result'])
+def test_evaluate_typing_state_check_keeps_command_order_and_diagnostics(bad_command):
+    calls = []
+
+    def command(value):
+        """期待する盤面応答か指定した誤応答を返し、呼出順を記録する。"""
+        calls.append(value)
+        if value == 'showboard':
+            return ['EEEEEEEE'] * 8 if bad_command == value else list(INITIAL_ROWS)
+        return ['D'] if bad_command == value else ['NG']
+
+    players = {'A': SimpleNamespace(command=command)}
+    if bad_command is None:
+        evaluate_module._check_state(players, INITIAL_ROWS)
+    else:
+        with pytest.raises(HarnessError) as caught:
+            evaluate_module._check_state(players, INITIAL_ROWS)
+        assert caught.value.player == 'A'
+        assert caught.value.command == bad_command
+        assert caught.value.kind == ('board_mismatch' if bad_command == 'showboard' else 'protocol_error')
+    assert calls == (['showboard'] if bad_command == 'showboard' else ['showboard', 'result'])
+
+
+def test_evaluate_typing_checkpoint_preserves_source_and_leg_accounting(tmp_path):
+    report = {'run_id': 'original', 'metadata': {'opaque': [1]}}
+    before = copy.deepcopy(report)
+    active = {'index': 1, 'pair_id': 'pair', 'leg': 1}
+    interruptions = [{'index': 0, 'error': 'KeyboardInterrupt'}]
+    evaluate_module._write_progress(tmp_path, report, [], 4, 'running', active, interruptions)
+    saved = json.loads((tmp_path / 'run-state.json').read_text(encoding='utf-8'))
+    assert report == before
+    assert saved['report_state'] == 'running'
+    assert saved['progress'] == {
+        'planned_games': 4, 'started_legs': 2, 'completed_games': 0,
+        'not_started_legs': 2, 'in_progress': active, 'interrupted_legs': interruptions,
+    }
+    assert saved['summary']['attempted'] == 0
+    assert not (tmp_path / 'run-state.json.tmp').exists()
+
+
+@pytest.mark.parametrize('bad_value', [float('nan'), {1}, object()])
+def test_evaluate_typing_checkpoint_serialization_failure_stays_operational(tmp_path, bad_value):
+    with pytest.raises(contracts.ArtifactWriteError) as caught:
+        evaluate_module._write_progress(tmp_path, {'run_id': 'original', 'bad': bad_value}, [], 2, 'running')
+    assert caught.value.phase == 'checkpoint_serialize'
+    assert caught.value.operation_id == 'original'
+    assert not (tmp_path / 'run-state.json').exists()
+
+
+def test_evaluate_typing_private_missing_operation_keeps_attribute_error(tmp_path):
+    destination = tmp_path / 'not-created'
+    with pytest.raises(AttributeError) as caught:
+        evaluate_module._evaluate(SCRIPT, SCRIPT, games=2, evidence_dir=destination)
+    assert caught.value.name == 'update'
+    assert caught.value.obj is None
+    assert str(caught.value) == "'NoneType' object has no attribute 'update'"
+    assert not destination.exists()
+
+
+def test_evaluate_typing_default_game_is_partial_not_a_fabricated_loss():
+    game = evaluate_module.play_game(SCRIPT, SCRIPT, 0, 7)
+    assert game['score_a'] is None and game['winner'] is None and game['result'] is None
+    assert game['pair_id'] is None and game['moves'] == []
+    assert game['game_status'] == 'incomplete' and game['protocol_status'] == 'failed'
+    assert game['budget_status'] == 'unknown'
+    assert game['error']['kind'] == 'infrastructure_error'
+    assert game['error']['message'] == "'A'"
+    assert all(player['launch_status'] == 'not_started' for player in game['players'].values())
+
+
+def test_evaluate_typing_probe_keeps_partial_diagnostic_reference(tmp_path, monkeypatch):
+    diagnostic = {'lifecycle': {'unverified': object()}, 'extension': [1]}
+    error = HarnessError('abnormal_exit', 'original')
+    error.diagnostics = diagnostic
+
+    def unavailable(*arguments, **keywords):
+        """起動失敗の原例外と部分診断をそのまま送出する。"""
+        raise error
+
+    monkeypatch.setattr(evaluate_module, 'Player', unavailable)
+    case = {'case_id': 'case', 'moves': [], 'board': list(INITIAL_ROWS), 'to_move': 'B'}
+    result = evaluate_module._verify_determinism(
+        SCRIPT, 'A', case, 7, tmp_path / 'config', 'config-hash', 'target-hash',
+        'run', tmp_path, 5.0, 1.0, 10.0,
+    )
+    assert result['status'] == 'failed' and result['reason'] == 'original'
+    assert result['attempts'][0] is diagnostic
+    assert result['repetitions'] == 1 and result['outputs'] == []
+    assert result['trace_sha256'] == [] and result['trace_artifacts'] == []

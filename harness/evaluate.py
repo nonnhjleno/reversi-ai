@@ -1,5 +1,7 @@
 """独立AIの先後対戦取得・局単位checkpoint・比較CLI。勝敗と品質・統計資格を分離する。"""
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import json
@@ -11,18 +13,70 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 from harness import analysis, contracts, openings, referee, search_budget, statistics
 from harness.protocol import HarnessError, Player, MEASUREMENT_CONTRACT, clock_descriptor
 
 
-def _file_info(path):
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Mapping, Sequence
+    from os import PathLike
+    from typing import Never, TypedDict
+    from harness.contracts import (_Artifact, _Conditions, _FileInfo, _Game, _Probe,
+                                   _Runtime, _SourceReport, _Summary, _Target)
+    from harness.openings import _OpeningMove
+    from harness.protocol import _HostEvidence
+    from harness.referee import Position
+    from harness.search_budget import _BudgetConfig
+
+    _Path = str | PathLike[str]
+
+    class _Case(TypedDict):
+        """取得が必要とする序盤形状。原positionの合法性を型だけで認定しない。"""
+        case_id: str
+        moves: list[_OpeningMove]
+        board: list[str]
+        to_move: str
+
+    class _ConfigInfo(TypedDict):
+        """正規化設定と実読込元。省略設定のunknownは予算検証済みではない。"""
+        config: _BudgetConfig
+        sha256: str
+        path: str | None
+
+    class _Operation(TypedDict):
+        """取得前後の運用段階。プロセス起動数や正式資格とは別の状態である。"""
+        started: bool
+        phase: str
+        operation_id: str | None
+        path: _Path | None
+
+
+def _update_record(target: Mapping[str, object], fields: Mapping[str, object]) -> None:
+    """元辞書のupdateだけを呼び、原診断・生成結果の参照と拡張fieldを保持する。"""
+    cast('Callable[[Mapping[str, object]], object]', getattr(target, 'update'))(fields)
+
+
+def _unstarted_trace() -> contracts._SavedTrace:
+    """既存の未起動fallbackを毎回新規生成し、失敗やunknownを成功へ補完しない。"""
+    return {'status': 'unknown', 'reason': 'player_not_started', 'events': 0, 'measurements': []}
+
+
+def _operation_state(value: _Operation | None) -> _Operation:
+    """private APIの省略値は元のupdate属性例外で拒否し、正常状態を補造しない。"""
+    if value is None:
+        raise AttributeError("'NoneType' object has no attribute 'update'", name='update', obj=value)
+    return value
+
+
+def _file_info(path: _Path) -> _FileInfo:
     """ファイルを読み、絶対パスとbytesのSHA-256を返す。読込失敗は呼出側へ伝える。"""
     resolved = Path(path).resolve()
     return {'path': str(resolved), 'sha256': hashlib.sha256(resolved.read_bytes()).hexdigest()}
 
 
-def _call(label, function, *arguments):
+def _call[Result, *Arguments](label: str, function: Callable[[*Arguments], Result], *arguments: *Arguments) -> Result:
     """player呼出を実行し、HarnessErrorに候補役割を付けて再送出する。"""
     try:
         return function(*arguments)
@@ -31,14 +85,14 @@ def _call(label, function, *arguments):
         raise
 
 
-def _failure(label, kind, message, command=None):
+def _failure(label: str | None, kind: str, message: str, command: str | None = None) -> Never:
     """候補役割・失敗種別・要求を持つHarnessErrorを発生させる。"""
     error = HarnessError(kind, message, command)
     error.player = label
     raise error
 
 
-def _check_state(players, rows):
+def _check_state(players: Mapping[str, Player], rows: referee.Rows) -> None:
     """双方へshowboard/resultを送り、独立referee盤面と照合する。
 
     AIの盤面は更新しないが通信とcommands記録が増える。不一致はHarnessErrorとする。
@@ -53,12 +107,12 @@ def _check_state(players, rows):
             _failure(label, 'protocol_error', 'Wrong result: {}'.format(actual_result), 'result')
 
 
-def _seed_for(seed, case_id, role, repeat_index=0):
+def _seed_for(seed: object, case_id: object, role: str, repeat_index: int = 0) -> int:
     """共通契約のcase・役割・反復別seed導出へ委譲する。"""
     return contracts.seed_for(seed, case_id, role, repeat_index)
 
 
-def _config_info(config, source_path=None):
+def _config_info(config: object, source_path: Path | None = None) -> _ConfigInfo:
     """設定辞書またはJSONをv2へ正規化し、設定・hash・読込元パスを返す。
 
     省略設定はunknown予算とし、ファイル指定時のみ原設定を読む。
@@ -77,7 +131,7 @@ def _config_info(config, source_path=None):
     }
 
 
-def _runtime_info():
+def _runtime_info() -> _Runtime:
     """比較用にPython・OS・CPUと関連環境変数を記録する。実行環境自体は変更しない。"""
     thread_variables = (
         'OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS',
@@ -97,7 +151,7 @@ def _runtime_info():
     }
 
 
-def _harness_info():
+def _harness_info() -> list[_FileInfo]:
     """取得fingerprintに含める固定モジュール群のパスとソースhashを収集する。
 
     seed adapterを含めるが、対象AIの全importを網羅するhashではない。
@@ -109,7 +163,7 @@ def _harness_info():
     )]
 
 
-def _hash_payload(value):
+def _hash_payload(value: object) -> str:
     """共通canonical化規約で評価条件等のJSON hashを返す。"""
     return hashlib.sha256(openings.canonical_json(value).encode('utf-8')).hexdigest()
 
@@ -117,8 +171,9 @@ def _hash_payload(value):
 EvidenceWriteError = contracts.ArtifactWriteError
 
 
-def _write_progress(evidence_run, report, games, planned_games, state,
-                    in_progress=None, interruptions=()):
+def _write_progress(evidence_run: Path, report: _SourceReport, games: Sequence[_Game],
+                    planned_games: int, state: str, in_progress: Mapping[str, object] | None = None,
+                    interruptions: Sequence[Mapping[str, object]] = ()) -> None:
     """取得中の報告snapshotと局単位progressをrun-state.jsonへ保存する。
 
     一時ファイルをflush/fsyncして置換し、I/O失敗はEvidenceWriteErrorとする。
@@ -127,7 +182,7 @@ def _write_progress(evidence_run, report, games, planned_games, state,
     progress_path = evidence_run / 'run-state.json'
     temporary_path = evidence_run / 'run-state.json.tmp'
     try:
-        snapshot = json.loads(json.dumps(report, ensure_ascii=False, allow_nan=False))
+        snapshot: dict[str, object] = json.loads(json.dumps(report, ensure_ascii=False, allow_nan=False))
     except (ValueError, TypeError, OverflowError) as error:
         raise EvidenceWriteError('checkpoint_serialize', progress_path, report.get('run_id'), error) from error
     snapshot.update({
@@ -158,7 +213,8 @@ def _write_progress(evidence_run, report, games, planned_games, state,
         raise EvidenceWriteError('checkpoint', progress_path, report.get('run_id'), error) from error
 
 
-def _experiment_id(conditions, runtime, target_infos, evaluation_fingerprint):
+def _experiment_id(conditions: _Conditions, runtime: _Runtime,
+                   target_infos: Mapping[str, _Target], evaluation_fingerprint: str) -> str:
     """取得条件・runtime・本体/明示資産hash・取得版から実験IDを返す。
 
     解析confidenceや保存先とは分離するが、条件内の観測済み決定性flagも含む。
@@ -174,18 +230,19 @@ def _experiment_id(conditions, runtime, target_infos, evaluation_fingerprint):
     })
 
 
-def _verify_determinism(script, label, case, seed, config_path, config_hash,
-                        target_hash, run_id, evidence_dir, startup_timeout,
-                        command_timeout, genmove_timeout, clock_domain_id=None):
+def _verify_determinism(script: _Path, label: str, case: _Case, seed: int, config_path: _Path,
+                        config_hash: str, target_hash: str, run_id: str, evidence_dir: Path,
+                        startup_timeout: float, command_timeout: float, genmove_timeout: float,
+                        clock_domain_id: object = None) -> _Probe:
     """同一case・seed・設定の単発genmoveを別プロセスで2回試し、出力とtraceを保存する。
 
     先頭ケースだけの確認で全ケースの決定性証明ではない。trace保存が必要で、
     起動/通信/読込の失敗はfailedの証拠辞書として返す。
     """
-    outputs = []
-    trace_hashes = []
-    trace_artifacts = []
-    attempts = []
+    outputs: list[str] = []
+    trace_hashes: list[str] = []
+    trace_artifacts: list[_Artifact] = []
+    attempts: list[_HostEvidence] = []
     for attempt in range(2):
         trace_dir = evidence_dir / 'determinism' / label
         trace_dir.mkdir(parents=True, exist_ok=True)
@@ -209,7 +266,7 @@ def _verify_determinism(script, label, case, seed, config_path, config_hash,
                 for move in case['moves']:
                     if move['position'] is not None:
                         response = player.command('play {} {} {}'.format(
-                            move['color'], *move['position'],
+                            move['color'], *cast('Iterable[object]', move['position']),
                         ))
                         if response != ['OK']:
                             raise ValueError('replay opening move rejected')
@@ -247,10 +304,13 @@ def _verify_determinism(script, label, case, seed, config_path, config_hash,
     }
 
 
-def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
-              command_timeout=1.0, genmove_timeout=10.0, case=None, pair_id=None,
-              leg=0, seeds=None, repeat_index=0, config_paths=None, trace_paths=None, configs=None,
-              target_hashes=None, run_id=None, budget_policy='descriptive', clock_domain_id=None):
+def play_game(script_a: _Path, script_b: _Path, index: int, seed: int, startup_timeout: float = 5.0,
+              command_timeout: float = 1.0, genmove_timeout: float = 10.0, case: _Case | None = None,
+              pair_id: str | None = None, leg: int = 0, seeds: dict[str, int] | None = None,
+              repeat_index: int = 0, config_paths: Mapping[str, _Path] | None = None,
+              trace_paths: Mapping[str, _Path] | None = None, configs: Mapping[str, _BudgetConfig] | None = None,
+              target_hashes: Mapping[str, str] | None = None, run_id: str | None = None,
+              budget_policy: str = 'descriptive', clock_domain_id: object = None) -> _Game:
     """A/Bを独立プロセスで起動し、序盤再生から終局確認までの1legを取得する。
 
     genmoveは担当AI自身を更新するため、相手だけへplayを送り双方盤面を毎手照合する。
@@ -268,9 +328,9 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
     trace_paths = trace_paths or {}
     configs = configs or {}
     target_hashes = target_hashes or {}
-    players = {}
-    rows = referee.INITIAL_ROWS
-    game = {
+    players: dict[str, Player] = {}
+    rows: tuple[str, ...] = referee.INITIAL_ROWS
+    game: _Game = {
         'index': index, 'pair_id': pair_id, 'case_id': case['case_id'], 'leg': leg,
         'repeat_index': repeat_index,
         'colors': colors, 'seeds': seeds, 'opening_moves': case['moves'],
@@ -286,8 +346,9 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
     }
     try:
         for label, script in [('A', script_a), ('B', script_b)]:
-            players[label] = _call(
-                label, lambda script=script, label=label: Player(
+            def launch(script: _Path = script, label: str = label) -> Player:
+                """同じ既定値捕捉で起動し、_callへ元の起動例外を渡す。"""
+                return Player(
                     script, seed=seeds[label], startup_timeout=startup_timeout,
                     command_timeout=command_timeout, genmove_timeout=genmove_timeout,
                     evaluation_config=config_paths.get(label),
@@ -301,8 +362,8 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
                         ).hexdigest(),
                         'target_sha256': target_hashes[label],
                     },
-                ),
-            )
+                )
+            players[label] = _call(label, launch)
         _check_state(players, rows)
         for opening_move in case['moves']:
             color = opening_move['color']
@@ -314,9 +375,9 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
                 if not referee.legal_moves(rows, other):
                     _failure(None, 'protocol_error', 'Opening ends in a terminal position')
             else:
-                rows = referee.apply_move(rows, color, tuple(position))
+                rows = referee.apply_move(rows, color, cast('Position', tuple(cast('Iterable[int]', position))))
                 for label, player in players.items():
-                    response = _call(label, player.command, 'play {} {} {}'.format(color, *position))[0]
+                    response = _call(label, player.command, 'play {} {} {}'.format(color, *cast('Iterable[object]', position)))[0]
                     if response != 'OK':
                         _failure(label, 'protocol_error', 'Rejected a forced opening move', 'play')
             _check_state(players, rows)
@@ -375,7 +436,7 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
         if error.player in game['players'] and error.player not in players:
             game['players'][error.player]['launch_status'] = 'failed'
             if error.diagnostics:
-                game['players'][error.player].update(error.diagnostics)
+                _update_record(game['players'][error.player], error.diagnostics)
         game['protocol_status'] = 'failed'
         if error.kind in ('illegal_move', 'board_mismatch'):
             game['game_status'] = 'invalid'
@@ -394,7 +455,7 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
         for player in players.values():
             player.abort()
     game['final_board'] = rows
-    game['players'].update({
+    _update_record(game['players'], {
         label: {
             **player.evidence(),
             'stderr_tail': list(player.stderr_tail),
@@ -403,9 +464,7 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
         }
         for label, player in players.items()
     })
-    budget_results = {label: item.get('budget_trace', {
-        'status': 'unknown', 'reason': 'player_not_started', 'events': 0, 'measurements': [],
-    }) for label, item in game['players'].items()}
+    budget_results: dict[str, contracts._SavedTrace] = {label: item.get('budget_trace', _unstarted_trace()) for label, item in game['players'].items()}
     for label, player in players.items():
         try:
             budget_results[label] = search_budget.validate_trace(
@@ -428,16 +487,19 @@ def play_game(script_a, script_b, index, seed, startup_timeout=5.0,
     return game
 
 
-def summarize(games):
+def summarize(games: Sequence[_Game]) -> _Summary:
     """共通reducerで取得中の参考集計を返す。正式集計はfresh原証跡から別途生成する。"""
     return contracts.reduce_observations(games)
 
 
-def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0,
-             command_timeout=1.0, genmove_timeout=10.0, assets_a=(), assets_b=(),
-             openings_file=None, selection_seed=None, config_a=None, config_b=None,
-             budget_policy='descriptive', evaluation_profile='descriptive',
-             require_budget_verification=False, confidence=0.95, evidence_dir=None, operation=None):
+def _evaluate(script_a: _Path, script_b: _Path, games: int | None = None, seed: int = 20261009,
+              startup_timeout: float = 5.0, command_timeout: float = 1.0, genmove_timeout: float = 10.0,
+              assets_a: Iterable[_Path] = (), assets_b: Iterable[_Path] = (),
+              openings_file: _Path | None = None, selection_seed: int | None = None,
+              config_a: object = None, config_b: object = None, budget_policy: str = 'descriptive',
+              evaluation_profile: str = 'descriptive', require_budget_verification: bool = False,
+              confidence: float = 0.95, evidence_dir: _Path | None = None,
+              operation: _Operation | None = None) -> _SourceReport:
     """先後ペアの対戦を取得・保存・再検証し、評価JSON用の辞書を返す。
 
     母集合JSON、設定、本体/明示資産を読み、run専用領域へ原母集合・trace・checkpointを保存。
@@ -509,7 +571,7 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
     if evaluation_profile == 'deployment' and any(
             config['budget']['kind'] != 'time' for config in configs.values()):
         raise ValueError('deployment profile requires time budgets for both players')
-    target_infos = {
+    target_infos: dict[str, _Target] = {
         'A': {**_file_info(script_a), 'assets': [_file_info(path) for path in assets_a]},
         'B': {**_file_info(script_b), 'assets': [_file_info(path) for path in assets_b]},
     }
@@ -521,7 +583,7 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
             raise ValueError('baseline-asymmetric node budget requires counting_definition_id')
     harness_info = _harness_info()
     runtime = _runtime_info()
-    conditions = {
+    conditions: _Conditions = {
         'games': games,
         'planned_games': games,
         'seed': seed,
@@ -549,7 +611,7 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
         'analysis_spec': {'method': 'hoeffding_serfling_finite_population', 'confidence': confidence},
     })
     experiment_id = _experiment_id(conditions, runtime, target_infos, evaluation_fingerprint)
-    report = {
+    report: _SourceReport = {
         'schema_version': 5,
         'report_kind': 'evaluation',
         'run_id': uuid.uuid4().hex,
@@ -580,7 +642,8 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
     }
     evidence_root = (Path(evidence_dir) if evidence_dir else Path('evaluation_results') / 'runs').resolve()
     run_id = report['run_id']
-    operation.update(started=True, phase='prepare', operation_id=run_id, path=str(evidence_root))
+    operation = _operation_state(operation)
+    _update_record(operation, {'started': True, 'phase': 'prepare', 'operation_id': run_id, 'path': str(evidence_root)})
     evidence_run = evidence_root / run_id
     evidence_run.mkdir(parents=True, exist_ok=False)
     report['evidence'] = {'root': str(evidence_run), 'format_version': 1}
@@ -593,21 +656,23 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
             'path': population_path.name,
             'sha256': hashlib.sha256(population_path.read_bytes()).hexdigest(),
         }
-    entries = selected_entries if selected_entries is not None else [None] * (games // 2)
-    all_games = []
-    interruptions = []
+    entries: Sequence[_Case | None] = selected_entries if selected_entries is not None else [None] * (games // 2)
+    all_games: list[_Game] = []
+    interruptions: list[Mapping[str, object]] = []
     _write_progress(evidence_run, report, all_games, games, 'not_started', interruptions=interruptions)
-    with tempfile.TemporaryDirectory(prefix='reversi-evaluation-config-') as temporary_directory:
-        temporary_directory = Path(temporary_directory)
+    with tempfile.TemporaryDirectory(prefix='reversi-evaluation-config-') as temporary_name:
+        temporary_directory = Path(temporary_name)
         config_paths = {}
         for label in ('A', 'B'):
             config_paths[label] = temporary_directory / '{}-config.json'.format(label.lower())
             operation['path'] = str(config_paths[label])
             search_budget.write_config(configs[label], config_paths[label])
-        operation.update(phase='collection', path=str(evidence_run))
-        determinism_results = {}
+        _update_record(operation, {'phase': 'collection', 'path': str(evidence_run)})
+        determinism_results: dict[str, _Probe] = {}
         if evaluation_profile == 'confirmatory':
             probe_case = entries[0]
+            if probe_case is None:
+                raise TypeError("'NoneType' object is not subscriptable")
             for label, script in (('A', script_a), ('B', script_b)):
                 probe_seed = _seed_for(seed, probe_case['case_id'], label)
                 determinism_results[label] = _verify_determinism(
@@ -625,7 +690,7 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
             report['conditions'] = conditions
         report['determinism'] = determinism_results
         for pair_index, entry in enumerate(entries):
-            case = entry or {
+            case: _Case = entry or {
                 'case_id': openings.case_id([], referee.INITIAL_ROWS, 'B'),
                 'moves': [], 'board': list(referee.INITIAL_ROWS), 'to_move': 'B',
             }
@@ -724,7 +789,8 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
         report['status']['performance_criterion'] = 'undetermined'
     else:
         report['status']['performance_criterion'] = (
-            'met' if report['statistics']['point_rate'] >= 0.55 and interval['lower'] > 0.5
+            'met' if cast(float, report['statistics']['point_rate']) >= 0.55
+            and cast(float, contracts._item_field(interval, 'lower')) > 0.5
             else 'not_met'
         )
     # CIや数値基準が得られても、運用証拠を含む最終採用を自動決定しない。
@@ -735,13 +801,15 @@ def _evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0
     return report
 
 
-def evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0,
-             command_timeout=1.0, genmove_timeout=10.0, assets_a=(), assets_b=(),
-             openings_file=None, selection_seed=None, config_a=None, config_b=None,
-             budget_policy='descriptive', evaluation_profile='descriptive',
-             require_budget_verification=False, confidence=0.95, evidence_dir=None):
+def evaluate(script_a: _Path, script_b: _Path, games: int | None = None, seed: int = 20261009,
+              startup_timeout: float = 5.0, command_timeout: float = 1.0, genmove_timeout: float = 10.0,
+              assets_a: Iterable[_Path] = (), assets_b: Iterable[_Path] = (),
+              openings_file: _Path | None = None, selection_seed: int | None = None,
+              config_a: object = None, config_b: object = None, budget_policy: str = 'descriptive',
+              evaluation_profile: str = 'descriptive', require_budget_verification: bool = False,
+              confidence: float = 0.95, evidence_dir: _Path | None = None) -> _SourceReport:
     """取得API。preflight不正は元例外、開始後のI/O/保存障害は運用例外で区別する。"""
-    operation = {'started': False, 'phase': 'preflight', 'operation_id': None, 'path': evidence_dir}
+    operation: _Operation = {'started': False, 'phase': 'preflight', 'operation_id': None, 'path': evidence_dir}
     try:
         return _evaluate(
             script_a, script_b, games, seed, startup_timeout, command_timeout, genmove_timeout,
@@ -759,17 +827,19 @@ def evaluate(script_a, script_b, games=None, seed=20261009, startup_timeout=5.0,
 
 
 
-def _comparison_conditions(report):
+def _comparison_conditions(report: Mapping[str, object]) -> object:
     """共通契約へ委譲し、候補実装差を除いた取得比較条件を返す。"""
     return contracts.comparison_conditions(report)
 
 
-def compare_reports(before, after, confidence=0.95, require_budget_verification=False, evidence_roots=None):
+def compare_reports(before: _SourceReport, after: _SourceReport, confidence: object = 0.95,
+                    require_budget_verification: bool = False,
+                    evidence_roots: analysis._Roots = None) -> dict[str, object]:
     """共通解析入口へ委譲する比較facade。保存flagによる独自の資格判定をしない。"""
     return analysis.compare(before, after, confidence, require_budget_verification, evidence_roots)
 
 
-def main():
+def main() -> int:
     """対戦取得または保存報告比較を実行し、新規JSONと標準出力へ結果を出すCLI。
 
     成功条件を満たせば0、要求不成立や開始後の保存失敗なら1、入力不正なら2。
@@ -801,6 +871,7 @@ def main():
     try:
         if arguments.output and arguments.output.exists():
             parser.error('output already exists: {}'.format(arguments.output))
+        report: _SourceReport | dict[str, object]
         if arguments.compare:
             before, after = [json.loads(path.read_text(encoding='utf-8')) for path in arguments.compare]
             for source in (before, after):
@@ -839,7 +910,7 @@ def main():
             )['request_success']
         if arguments.output:
             contracts.write_report_exclusive(arguments.output, report, phase='final',
-                                             operation_id=report.get('run_id', report.get('analysis_id')))
+                                             operation_id=cast('str | None', report.get('run_id', report.get('analysis_id'))))
         print(json.dumps(report if arguments.compare else report['summary'], indent=2, ensure_ascii=False))
         return 0 if success else 1
     except EvidenceWriteError as error:

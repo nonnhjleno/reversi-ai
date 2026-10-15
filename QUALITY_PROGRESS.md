@@ -659,6 +659,87 @@ Phase 4に未解決の実装blockerはないためQUALITY_BLOCKERS.mdを新設�
 履歴positionの要素型/長さ、入力JSONの完全な静的検証、生成metadataの真正性までは型だけで保証しない。既存の実行時検証と正式入口の検証は引き続き必要である。生成source hashが変わるため、過去の評価条件と同一コードであるとは主張しない。棋力や探索性能の改善も主張しない。
 再開時はこの8対象のstrictと対応する最新証拠を再確認し、次の指定moduleを明示してから調査する。**今回承認されたPhase 4のみPASSとして終了し、次フェーズ・commit・pushには進まない。**
 
+
+
+## mypy strict拡大 Phase 9（指定対象harness/evaluate.py）
+
+### 開始条件・診断・先行設計
+
+2026-10-15、開始HEAD=27d1b36、Git clean。AGENTS/進捗/停止記録/現在設定とarchitecture第2〜7節・contracts第7〜9/12節を照合した。Phase 8のquality-05c58c782b164273bae80aea60071e0dを実読し、10必須成功・現在31sourceの開始/終了hash一致・verify_publication=[]・validate_model=[]・保存Markdown再生成一致を確認。現在の既存12source strictも再実行して成功した。Phase 3 GUIは引き続き保留する。
+
+新規一時領域 `C:/Users/taaai/AppData/Local/Temp/reversi-strict-phase9-jwn5hllx/` に69trackedの開始hash・元evaluate・診断/JUnitを保存した。evaluate単独strictは81診断（未注釈19・未注釈呼出51・TypedDict未知キー1・引数3・代入3・local容器2・演算1・添字1）。19関数とstdlib/analysis/contracts/openings/referee/search_budget/statistics/protocolの依存を確認した。開始時の取得/checkpoint/中断/起動前条件/CLI/smokeの関連既存pytestは30成功・0失敗・460除外、10.91秒。
+
+注釈済み独立プローブは7診断で、未知の序盤position展開、confirmatory分岐とnullable entry、Mappingの統計field比較/添字、command.phase追記、str→Path再束縛を確認した。最初のapply_patchで作成した一時probeファイルは読み取りACLエラーになり、診断として数えていない。同じ式をmypy -cで再実行して7件を得た。共有型の通常形状追加や局所変数注釈で解けるものと、未知値の限定操作境界が必要なものを区別する。すべての静的手法の不可能性を証明したとは扱わない。
+
+実行時ロジック変更禁止を無断で緩めず一度実装を停止し、ユーザーがPhase 9へ「限定変更を許可し、設計と互換回帰を先行する」と個別回答したため再開した。過去承認は流用していない。architecture第3節とcontracts第8節に先行型設計を記載した。DAG/データフロー/sequence/状態/正式ANDに新しい経路はないためMermaidの辺/状態追加は不要。取得途中のNone・原診断/原trace・未知metadataを保ち、共有型は実際の生成形状だけを記述する。これから元実装で互換回帰を固定し、限定注釈・単独strict・既存12を保持した13対象化・全品質ゲートと保存証拠照合の順で進める。PASSではなく、次フェーズ/commit/pushへ進まない。
+
+### Phase 9 実装・個別検証（全体ゲート前）
+
+元evaluateで追加21互換回帰が21成功・0失敗（1.19秒）、初回注釈後も21成功（1.16秒）。19既存関数を注釈し、3局所helperと同じ既定値捕捉のlaunch関数を追加した。単独診断は81→28→6→1→0。局所容器/別用途ループの束縛、未知position/添字/既存比較、既存updateのmethodビューだけで接続した。途中2回のパッチ生成失敗（署名検索、apply_patch用hunk形式）と後の局所名パッチ境界検索失敗はいずれも適用前であり、本番の修正失敗/テスト失敗とは分ける。
+
+共有型は実際の生成形状だけを調整した。protocolのphase/stderr_tail・正常/部分host診断、contractsの未終局score/pairのNone、元序盤position、ファイル参照/運用段階/報告構築fieldを記述。保存cacheのstatus等をReadOnlyにして、必須fieldの_TraceValidationを弱めず受け渡す。artifactはobjectのまま、元のdict検査/bytes/hash/意味再検証を維持する。source/report/trace全体のcast、Any/ignore/除外や新しい正式入口は追加していない。evaluateの局所ビューは8、contractsは既存33＋反復/座標/pathの4=37。protocol/search_budgetの既存ビュー数は変えない。
+
+単独strict成功後に既存12を保持してevaluateを13件目へ登録。追加した対象漏れ回帰は登録前に1失敗（4.87秒）となり、旧12対象の通常argvが意図した未注釈evaluateを見逃すことを純粋に再現した。登録後の常設13strictは成功。関連取得回帰51成功・0失敗（13.59秒）。型境界は最初に期待ASTの入れ子1式の更新漏れで1失敗・28成功（71.17秒）だったため、判定を緩めず正確な37ビューへ修正。新規テストの限定format差分もapply_patchで整形し、最終29品質回帰は29成功・0失敗（67.78秒）。
+
+元/現行evaluateの設定/seed/preflight/部分game/進捗保存117比較が一致し、checkpoint bytes/原入力も不変。元namespaceの__file__は現行へ固定して予期したfingerprint差だけを制御したため、実際の旧プロセスprovenance比較とは扱わない。実本体の同一role seedのplay_gameも両方完走、60手・白勝ち・両role各187commandの意味的な着手/応答/盤面/結果が一致した。実測nsとsession UUIDは比較から明示的に除外し、速度不変の証拠とはしない。
+
+注釈/docstring/castを除く実行ASTでevaluate既存17/19、protocol28/28、search_budget21/21が一致。evaluateの残りはplay_gameの同じclosure捕捉/update/fallbackと_evaluateの局所Path/operation/不可能なnull case境界。contractsは39/44がそのまま一致し、記録した局所ループ名/一時名のalpha正規化だけで44/44が一致した。追加分岐はNoneを正常化せず、元のAttributeError/TypeErrorを保持する。AST一致だけを全契約の証明にせず、回帰/差分/実入口と照合する。
+
+新規一時領域formal-cliで模擬producerによる正式2局を実evaluate CLI取得（終了0、完了2）。正常報告を全単独/比較公開APIでeligible/available/comparableと確認。同じ報告の初回親4端点を順序/区間長を保ってspawn前へ移すとtiming failed・ineligible/unavailable/comparable=false。実analysis CLIは正常0/不正1、evaluate比較CLIも正常0/不正1、不正root[]は2/出力なしだった。原正常JSONとinvalid入力bytesは保全した。検証スクリプト初回はstatistical_eligibilityのtupleを辞書と取り違えて停止し、スクリプトだけを訂正して既に取得済みの報告を変更せず再確認した。旧Phase 5ソースで保存されたschema5も正常受理され、原hash=33d4d4f93bb6f58a77e2594eb1408e03dfb49b82fbad491509047450a3c0e836を保持した。
+
+一時証拠はdifferential.json / real-game-comparison.json / runtime-ast.json / contract-alpha-ast.json / formal-cli/verification.jsonと各診断・JUnit・CLIログ。validate_model=[]。設計図の依存・取得/再解析経路・sequence/状態・schema5/trace4/validation3・正式ANDは不変で、先行設計を実装反映済みと明記した。ここからsource/config/modelを固定して全品質ゲートを新規UUIDで実行する。全必須成功と保存証拠/現在hash照合が揃うまでPhase 9はPASSにしない。
+
+### Phase 9 最終監査・PASS
+
+2026-10-15、指定されたevaluateのみの移行を完了した。単独81診断を0へ解消し、従来12対象を保持した常設13source strictを確認した。共有contracts/protocol/search_budgetは相互運用に必要な通常型・部分形状・局所束縛だけの変更で、別フェーズの実装ではない。Phase 3 GUIの保留は維持し、次フェーズへ進まない。
+
+最終固定ソースで `python -B tools/quality.py` は終了0 / **QUALITY PASS**。新規証拠は `evaluation_results/quality-f55f69dd9b6e436bb943b2cd66594f4e/`。既存評価資産を上書きしていない。
+
+| 必須検査 | 最終結果 |
+|---|---|
+| environment / model / dependencies | 全終了0、model_errors=[] |
+| lint / 限定format | 終了0 / 終了0、既存scope維持 |
+| 常設strict | 終了0、13source成功（ゲート3.153秒） |
+| 全pytest | **745成功・0失敗・0skip、416.09秒**（JUnit415.996秒、ゲート417.240秒） |
+| 独立smoke | **1成功・0失敗・744除外、10.58秒**（JUnit10.577秒、ゲート13.792秒） |
+| snapshot / evidence | 終了0 / 終了0 |
+
+開始時715ケースを保全し、互換21＋品質9（対象漏れ1・局所ビュー1・禁止改変6・複合opaque/汎用呼出probe1）の30ケースを追加した。全体内のsmokeと独立smokeを固有件数で二重計上しない。通常の対局/勝敗/予算/統計、起動/回収異常、原trace/保存階層の改変、公開入口/CLI、GUI接続、不変条件と既存の全回帰を含む現行745ケースが成功した。ブラウザ実操作や未試験OSまで保証する意味ではない。
+
+保存quality/evidence/JUnitを実読し、必須10すべてpassed=true・exit_code=0・error=None、full/smoke/全証拠の収集complete・errors=[]・validation_passed=trueを確認。31sourceの開始/終了/現在hash、117差分比較時の4本番source hashが一致。verify_publication=[]・validate_model=[]・Markdown再生成一致・pendingなし。初回の監査スクリプトはJUnitをrun直下と誤認してFileNotFoundErrorになったが、実際のpytest/pytest.xml・smoke/smoke.xmlへスクリプトだけを直し、同じ保存証拠で再照合を完了した。ゲート/テストの失敗や原証拠修正ではない。
+
+| 完了条件 | 根拠 |
+|---|---|
+| 開始条件 | clean HEAD=27d1b36、前段階の実証拠/現在31hash・旧12strictを確認して開始 |
+| 診断・依存 | 81診断・19関数・独立7診断・取得/保存/解析/CLIと共有型の利用を確認 |
+| 先行設計・承認 | Phase 9個別承認、architecture第3節/契約第8節を実装前に更新。図のDAG/経路/状態不変を照合 |
+| 互換性・限定実装 | 元実装で21互換成功。117差分/同一seedの実対局60手・各187応答一致、contracts44関数alpha正規化一致、protocol28/budget21関数の実行AST不変 |
+| strict常設 | 単独成功後だけ13へ追加。対象登録前のscope回帰1失敗→最終成功、旧12を維持 |
+| 型逃げ/未知境界 | evaluate8・contracts37の局所ビューを固定し、禁止6改変/opaque4fieldと_call引数型を検査。原report/trace/算術辞書全体のcastなし |
+| 実入口・保存互換 | 新規正式2局正常、全公開入口で正常受理/起動前拒否。実CLI0/1/2・新規出力・旧schema5と原hash保全 |
+| 全体・証拠 | 全745/独立smoke1/10必須/現在hash/publication/model/Markdown一致 |
+| 保護・記録 | 開始69trackedのうち対象12変更以外の57は開始hash一致。HEAD不変・index空、commit/push/branch操作なし |
+
+変更12ファイル: harness/evaluate.py・contracts.py・protocol.py・search_budget.py、pyproject.toml、tests/test_harness.py・test_quality.py、docs/harness_architecture.md・harness_contracts.md、ハーネス.md、QUALITY_PROGRESS.md・QUALITY_BLOCKERS.md。AI本体/GUI/学習資産/既存評価JSONは変更していない。
+
+実行した主要コマンド（個別の一時cache/JUnit/log保存先は上記一時領域、全ゲートの正確なargvはquality.json/evidence.json）:
+
+```powershell
+python -B -m mypy --no-incremental --config-file pyproject.toml
+python -B -m mypy --no-incremental --config-file pyproject.toml harness/evaluate.py
+python -B -m pytest -q tests/test_harness.py -k evaluate_typing -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_harness.py -k 'evaluate_typing or smoke or acquisition or checkpoint or interruption or preflight or resolve_game or determinism or operational or schema5_cli' -p no:cacheprovider --tb=short
+python -B -m pytest -q tests/test_quality.py -k 'evaluate_typing or contract_typing or promoted_modules' -p no:cacheprovider --tb=short
+python -B -m ruff check . --no-cache --config pyproject.toml
+python -B -m ruff format --check . --no-cache --config pyproject.toml
+python -B tools/quality.py
+git diff --check
+```
+
+上記に加え、独立mypy -c、実evaluate取得/比較・analysis CLI、保存原証拠の全公開API再検証・新旧差分スクリプトを実行した。最後のformatは全ゲートで成功した。途中のscope赤/AST期待式とformatの修正/検証スクリプトの誤りは本節の履歴どおりで、未実行を成功へ変えていない。
+
+ReadOnlyはfield再代入/削除の静的制約であり、原dictの実行時凍結や測定listの深い不変性を意味しない。unknown値・部分診断は成功証拠にしない。型introspection、tracebackフレーム、不正dict subclass/proxyの副作用、完全な性能一致、POSIX実機/remote CI/GUIブラウザ実操作は未保証である。棋力改善や実AItrace対応も今回の結果に含めない。探索・通信・時間/予算・正式AND・schema5/trace4/validation3は維持し、source hash由来fingerprintだけが通常どおり変わる。未解決のPhase 9 blockerはない。**Phase 9のみPASSとして停止し、次フェーズ・commit・pushへ進まない。**
+
 ## mypy strict拡大 Phase 8（指定対象harness/analysis.py）
 
 現在の状態は**PASS**（本節末尾の最終監査）。以下の開始・停止・再開・ゲート前の状態は時系列の記録であり、現在の停止指示ではない。

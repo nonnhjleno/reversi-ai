@@ -1030,6 +1030,7 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
         'harness/search_budget.py',
         'harness/contracts.py',
         'harness/analysis.py',
+        'harness/evaluate.py',
     ],
 )
 def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
@@ -1096,7 +1097,7 @@ def test_openings_typing_keeps_unchecked_generator_metadata_opaque(tmp_path):
 
 
 def _check_contract_type_boundaries(source):
-    """原構造のcastを許さず、旧26＋Phase 8の7局所操作ビューを固定する。"""
+    """原構造のcastを許さず、既存33＋Phase 9の4局所操作ビューを固定する。"""
     tree = ast.parse(source, type_comments=True)
     assert not tree.type_ignores
     assert not any(
@@ -1127,7 +1128,7 @@ def _check_contract_type_boundaries(source):
         "cast('Position', tuple(cast('Iterable[int]', move['position'])))",
         "cast('Iterable[int]', move['position'])",
         "cast('Iterable[int]', move['position'])",
-        "cast('Position', tuple(position))",
+        "cast('Position', tuple(cast('Iterable[int]', position)))",
         "cast(str, conditions.get('budget_policy'))",
         "cast(str, item['code'])",
         "cast(str, item['code'])",
@@ -1149,6 +1150,10 @@ def _check_contract_type_boundaries(source):
         "cast('Callable[[str, object], object]', getattr(_get_field(conditions, 'budget_config_hashes', {}), 'pop'))",
         "cast(int, before.get('schema_version', 1))",
         "cast(int, after.get('schema_version', 1))",
+        "cast(str, artifact['path'])",
+        "cast('Iterable[int]', position)",
+        "cast('Iterable[int]', position)",
+        "cast('Iterable[object]', position)",
     ]
     assert actual == sorted(expected)
 
@@ -1596,3 +1601,97 @@ def test_reversi_dynamic_boundary_guard_rejects_mutated_source(mutation):
     assert modified != source
     with pytest.raises(AssertionError):
         _check_reversi_dynamic_boundary(modified)
+
+
+def _check_evaluate_type_boundaries(source):
+    """取得の8局所ビュー以外の型逃げを拒否し、原証拠の全体castを許さない。"""
+    tree = ast.parse(source, type_comments=True)
+    assert not tree.type_ignores
+    assert not any(
+        isinstance(node, ast.Name)
+        and node.id in ('Any', 'no_type_check')
+        or isinstance(node, ast.Attribute)
+        and node.attr in ('Any', 'cast', 'no_type_check')
+        or isinstance(node, ast.alias)
+        and (
+            node.name in ('Any', 'no_type_check') or node.name == 'cast' and node.asname is not None
+        )
+        for node in ast.walk(tree)
+    )
+    actual = sorted(
+        ast.unparse(node)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'cast'
+    )
+    assert actual == sorted(
+        [
+            "cast('Callable[[Mapping[str, object]], object]', getattr(target, 'update'))",
+            "cast('Position', tuple(cast('Iterable[int]', position)))",
+            "cast('Iterable[int]', position)",
+            "cast('Iterable[object]', move['position'])",
+            "cast('Iterable[object]', position)",
+            "cast(float, report['statistics']['point_rate'])",
+            "cast(float, contracts._item_field(interval, 'lower'))",
+            "cast('str | None', report.get('run_id', report.get('analysis_id')))",
+        ]
+    )
+
+
+def test_evaluate_typing_limits_operation_views():
+    _check_evaluate_type_boundaries((ROOT / 'harness/evaluate.py').read_text(encoding='utf-8'))
+
+
+@pytest.mark.parametrize('mutation', ['raw', 'result', 'any', 'ignore', 'alias', 'decorator'])
+def test_evaluate_typing_boundary_guard_rejects_mutations(mutation):
+    source = (ROOT / 'harness/evaluate.py').read_text(encoding='utf-8')
+    additions = {
+        'raw': "\n_bad = cast('_SourceReport', raw)\n",
+        'result': "\n_bad = cast('_Game', result)\n",
+        'any': '\nfrom typing import Any\n',
+        'ignore': '\n_bad = None  # type: ignore\n',
+        'alias': "\nfrom typing import cast as unchecked\n_bad = unchecked('_Game', raw)\n",
+        'decorator': '\nfrom typing import no_type_check as unchecked\n',
+    }
+    with pytest.raises(AssertionError):
+        _check_evaluate_type_boundaries(source + additions[mutation])
+
+
+def test_evaluate_typing_opaque_fields_and_call_arguments_are_not_certified(tmp_path):
+    """未知値/部分得点はint認定せず、汎用_callも位置引数の型を検査する。"""
+    probe = tmp_path / 'evaluation_opaque_probe.py'
+    program = [
+        'from harness.evaluate import _Case, _call',
+        'from harness.contracts import _Game, _SourceReport',
+        'from harness.search_budget import _TraceValidation',
+        'def raw_position(case: _Case) -> int:',
+        ' """未検証座標を整数と偽認定させない。"""',
+        ' return case["moves"][0]["position"]',
+        'def raw_statistic(report: _SourceReport) -> int:',
+        ' """解析結果の未知fieldを整数と偽認定させない。"""',
+        ' return report["statistics"]["point_rate"]',
+        'def raw_artifact(trace: _TraceValidation) -> int:',
+        ' """原artifactを型だけで検証済み値にしない。"""',
+        ' return trace["artifact"]',
+        'def unfinished_score(game: _Game) -> float:',
+        ' """未終局のNoneを得点と偽認定させない。"""',
+        ' return game["score_a"]',
+        'def requires_integer(value: int) -> int:',
+        ' """ラッパー越しでも引数制約を保つ。"""',
+        ' return value',
+        '_call("A", requires_integer, "invalid")',
+        '_call("A", requires_integer, 1)',
+    ]
+    probe.write_text('\n'.join(program) + '\n', encoding='utf-8')
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [*step.command, '--cache-dir', str(tmp_path / 'mypy-cache'), str(probe)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert result.stdout.count('[return-value]') == 4, result.stdout + result.stderr
+    assert result.stdout.count(': error:') == 5, result.stdout + result.stderr
+    assert '[arg-type]' in result.stdout, result.stdout + result.stderr
