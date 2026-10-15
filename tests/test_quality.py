@@ -1028,6 +1028,7 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
         'harness/openings.py',
         'harness/protocol.py',
         'harness/search_budget.py',
+        'harness/contracts.py',
     ],
 )
 def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
@@ -1091,6 +1092,156 @@ def test_openings_typing_keeps_unchecked_generator_metadata_opaque(tmp_path):
     assert result.returncode == 1, result.stdout + result.stderr
     assert 'openings.py:' in result.stdout
     assert '[index]' in result.stdout
+
+
+def _check_contract_type_boundaries(source):
+    """原report/raw/全生成構造のcastを許さず、26の局所演算ビューだけを固定する。"""
+    tree = ast.parse(source, type_comments=True)
+    assert not tree.type_ignores
+    assert not any(
+        isinstance(node, ast.Name)
+        and node.id in ('Any', 'no_type_check')
+        or isinstance(node, ast.Attribute)
+        and node.attr in ('Any', 'cast', 'no_type_check')
+        or isinstance(node, ast.alias)
+        and (
+            node.name in ('Any', 'no_type_check') or node.name == 'cast' and node.asname is not None
+        )
+        for node in ast.walk(tree)
+    )
+    actual = sorted(
+        ast.unparse(node)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'cast'
+    )
+    expected = [
+        'cast(str, case_id)',
+        "cast('list[str]', record.get('response'))",
+        "cast(str, game['error']['kind'])",
+        "cast('int | float', item['search_elapsed_ns'])",
+        "cast('int | float', item['search_elapsed_ns'])",
+        "cast('Iterable[object]', first)",
+        "cast('Iterable[object]', second)",
+        "cast(str, error['kind'])",
+        "cast('Position', tuple(cast('Iterable[int]', move['position'])))",
+        "cast('Iterable[int]', move['position'])",
+        "cast('Iterable[int]', move['position'])",
+        "cast('Position', tuple(position))",
+        "cast(str, conditions.get('budget_policy'))",
+        "cast(str, item['code'])",
+        "cast(str, item['code'])",
+        "cast(str, item['code'])",
+        "cast(str, item.get('path', 'timing'))",
+        "cast(str, item['status'])",
+        'cast(str, incompatibility)',
+        "cast(int, manifest.get('selection_seed'))",
+        "cast(int, manifest.get('selection_seed'))",
+        "cast(str, validation.get('reason', 'trace_not_verified'))",
+        "cast('_Role', label)",
+        "cast('_Role', label)",
+        "cast('_BudgetState', trace['status'])",
+        "cast(str, validation.get('reason', 'not_verified'))",
+    ]
+    assert actual == sorted(expected)
+
+
+def test_contract_typing_limits_views_and_preserves_raw_boundary():
+    _check_contract_type_boundaries((ROOT / 'harness/contracts.py').read_text(encoding='utf-8'))
+
+
+@pytest.mark.parametrize('mutation', ['any', 'whole_structure', 'alias', 'ignore'])
+def test_contract_typing_boundary_guard_rejects_mutations(mutation):
+    source = (ROOT / 'harness/contracts.py').read_text(encoding='utf-8')
+    additions = {
+        'any': '\nfrom typing import Any\n',
+        'whole_structure': "\n_extra = cast('_SourceReport', {})\n",
+        'alias': "\nfrom typing import cast as unchecked\n_extra = unchecked('_Timing', {})\n",
+        'ignore': '\n_extra = None  # type: ignore\n',
+    }
+    with pytest.raises(AssertionError):
+        _check_contract_type_boundaries(source + additions[mutation])
+
+
+@pytest.mark.parametrize('field', ['decoded', 'snapshot', 'reference_ns'])
+@pytest.mark.parametrize('result_type', ['object', 'int'])
+def test_contract_typing_does_not_certify_raw_metadata(tmp_path, field, result_type):
+    source = ROOT / 'harness/contracts.py'
+    argument, expression = {
+        'decoded': ('decoded: _Decoded', "decoded['conditions']['seed']"),
+        'snapshot': ('inspection: _Inspection', "inspection['snapshot']['seed']"),
+        'reference_ns': ('summary: _Summary', "summary['A']['search_sum_ns']"),
+    }[field]
+    shadow = tmp_path / source.name
+    shadow.write_text(
+        source.read_text(encoding='utf-8')
+        + f'\n\ndef _unchecked_contract_probe({argument}) -> {result_type}:\n'
+        + '    """未検証metadataの数値保証を拒否する。"""\n'
+        + f'    return {expression}\n',
+        encoding='utf-8',
+    )
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [
+            *step.command,
+            '--cache-dir',
+            str(tmp_path / 'mypy-cache'),
+            '--shadow-file',
+            str(source),
+            str(shadow),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    if result_type == 'int':
+        assert result.returncode == 1 and '[return-value]' in result.stdout, (
+            result.stdout + result.stderr
+        )
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize('mutation', [False, True])
+def test_contract_typing_dependency_accepts_readonly_command_sequence(tmp_path, mutation):
+    """commandsのlist castを不要にし、依存側が読み取り専用という前提を型で固定する。"""
+    source = ROOT / 'harness/search_budget.py'
+    body = (
+        '    commands.append({})\n'
+        if mutation
+        else '    validate_child_lifecycle(None, commands, None, {})\n'
+    )
+    shadow = tmp_path / source.name
+    shadow.write_text(
+        source.read_text(encoding='utf-8')
+        + '\n\ndef _readonly_commands_probe(commands: Sequence[_CommandRecord]) -> None:\n'
+        + '    """列の非変更契約を検査する。"""\n'
+        + body,
+        encoding='utf-8',
+    )
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [
+            *step.command,
+            '--cache-dir',
+            str(tmp_path / 'mypy-cache'),
+            '--shadow-file',
+            str(source),
+            str(shadow),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    if mutation:
+        assert result.returncode == 1 and '[attr-defined]' in result.stdout, (
+            result.stdout + result.stderr
+        )
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
 
 
 def _check_budget_type_boundaries(source):

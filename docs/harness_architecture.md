@@ -174,6 +174,10 @@ OS条件は実CPythonのWindowsをsys.platform=='win32'、その他を既存POSI
 
 ## 5. 正式公開入口と信頼境界
 
+Phase 7の型境界（先行設計後に実装）: contractsの入力形状・生成途中のInspection・通常の返却形状を静的に区別する。通常形状の注釈は入力の検証成功や正式資格を意味しない。原値は従来どおりdecodeからfresh検証へ渡し、欠損・不正な形状も既存の経路で拒否する。型ガード化/局所束縛は既存述語の意味・拒否順・例外・detailを維持し、raw全体を有効reportへcastしない。母集合N/coverage、保存traceとsummary、4時間軸、旧schema、取得前summaryのprivate経路と公開入口の差を変えない。依存・データフロー・sequence・状態図に新しい到達経路はなく、検証省略入口を追加しない。検証結果はQUALITY_PROGRESS.mdのPhase 7を参照する。
+
+既存のcontracts→search_budget→protocolの向きは維持する。command列は読み取り専用Sequenceとして型を受け渡し、生成reason列は基礎時間型のまま拡張metadataを保持する。構造全体のcastやデータの複製で型差を隠さず、時間結果の既知4軸を元の順で構築する。None get境界にも採時や正常値への修復を追加しない。
+
 次は正式資格を発行する経路の図で、すべての関数がCLIの保存まで行うという意味ではない。図のInspection/Assessmentは辞書の説明名であり、追加クラスではない。
 
 ```mermaid

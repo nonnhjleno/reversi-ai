@@ -659,6 +659,92 @@ Phase 4に未解決の実装blockerはないためQUALITY_BLOCKERS.mdを新設�
 履歴positionの要素型/長さ、入力JSONの完全な静的検証、生成metadataの真正性までは型だけで保証しない。既存の実行時検証と正式入口の検証は引き続き必要である。生成source hashが変わるため、過去の評価条件と同一コードであるとは主張しない。棋力や探索性能の改善も主張しない。
 再開時はこの8対象のstrictと対応する最新証拠を再確認し、次の指定moduleを明示してから調査する。**今回承認されたPhase 4のみPASSとして終了し、次フェーズ・commit・pushには進まない。**
 
+## mypy strict拡大 Phase 7（指定対象harness/contracts.py）
+
+### 開始条件・診断・先行設計
+
+2026-10-15、HEAD=b078d83、Git clean。AGENTS・現在設定・既存モデル/契約・Phase 6進捗/解消記録を確認した。前段階quality-867259de5da94e1087c5314a10cdb93bのpassed=true、31sourceの開始/終了/現在hash一致、verify_publication=[]、validate_model=[]を実際に照合。現在の常設10source strictも終了0で再確認した。69trackedの開始hashと元contractsを新規一時領域reversi-strict-phase7-pjhovnolへ保存し、他の未コミット変更は開始時になかった。
+
+対象単独は199診断。内訳は未注釈37、未注釈呼出119、assignment10、arg-type9、local容器7、TypedDict項目6/未知キー4、operator3、union-attr/type-var/list-item/call-overload各1。29トップレベル関数・1constructor・7内部関数を調査した。runtime依存はstdlibと関数内のreferee/openings/protocol/search_budgetで、analysis/evaluateへの逆importはない。利用側はanalysisの全単独/比較入口、evaluate取得/CLIと品質モデル検査であり、正式入口の型を成功flagの再利用機構にしない。
+
+数値のtype membershipを注釈しただけではmypyが型を絞り込めず、時間理由の実際のdetailもprotocolの基礎TypedDictに含まれない。独立プローブで3診断を再現した。最初の-c実行は既定filesとの競合で実行不能だったため、空設定＋explicit_package_basesのプローブで確認し直したもので、常設設定は変えていない。
+
+無断で実行時表現を変えず方針確認したところ、ユーザーが「限定変更を許可し、設計と互換回帰を先行する」と回答したため再開する。Phase 6の承認を自動適用したものではない。architecture第5節とcontracts第7節に先行型契約を記録した。通常形状の注釈を原入力の有効性や正式資格と混同せず、未検証metadata/snapshotはobjectを維持する。既存述語の型ガード化と局所束縛・根拠を限定したビューで表現し、raw全体のcast/Any/ignoreで隠さない。失敗の理由/detail、入力の原値、旧schema、参考/正式、母集合/trace/時間/集計、全公開入口のANDは不変。図の依存・経路・状態は変わらないため、新しいMermaid遷移は追加しない。
+
+開始時の既存関連回帰は `python -B -m pytest -q tests/test_harness.py -k 'inspection or saved_trace or census or legacy_optional or consistency or temporal' -p no:cacheprovider --tb=short` で217成功・0失敗・204除外（160.15秒）。これから互換回帰と対象漏れ回帰を先行し、単独strict成功後にのみ既存10対象へ追加する。全品質ゲートと保存証拠/source/model照合まで完了するまではPhase 7をPASSにせず、次フェーズ・commit・pushへ進まない。
+
+### Phase 7 型境界の追加照合（実装前に確定する修正）
+
+新規互換29ケースは元コードで29成功（0.94秒）。注釈・通常形状の導入で単独199→105診断となり、実際のdetail・部分結果・未知metadataを落とさず表す方針で進めている。全体castで生成済み時間結果を結ぶ案は安全審査で拒否されたため撤回する。代替は型付き辞書構築と基礎reason列、元と同じAttributeErrorのNone get境界である。全体castを別名の操作へ置き換えて迂回しない。keyword updateの同値な辞書引数化と、固定4軸の順序/参照を保つ構築をモデル/契約へ先に記録した。
+
+独立型プローブで、phaseをReadOnlyへ変更するだけではlist不変性を解消せず、TypedDictへのupdateも幅の違う状態型をそのまま受け取れないことを確認した。そこで直接依存search_budgetの4つのcommand引数だけをSequence[_CommandRecord]へ注釈精緻化する。既存実装はこれらの列を書き換えず、全実行関数のASTは保持する。Phase 6のアルゴリズム・検証規則の再改造や、新しいstrict対象への移行ではない。相互接続のためのこの型変更と原データ非変更も対応テストで確認する。
+
+全体castを撤回して型付き4軸構築/None境界/部分結果を表した版では105→18診断。残るlistの不変性は拡張metadataを基礎型へ強制castせず、protocol.temporal_resultの理由引数/返却列を実使用どおり読み取り専用Sequence[Mapping[str, object]]へ注釈だけ精緻化して接続する。statusの3状態と原列の同一性を維持し、metadataのcode/detailの型や正式資格を過剰保証しない。この追加の直接依存注釈変更は実装前に契約へ反映し、runtime本文/alias/全品質回帰で確認する。
+
+### Phase 7 実装・個別検証（全体ゲート前）
+
+先行設計後、既存37定義と追加4helperを注釈した。通常形状の型定義はTYPE_CHECKING内に置き、原metadata/snapshotはobject、途中validation/旧条件は部分型として表す。これは独立JSON Schemaや検証済み証明書ではない。単独strictは199→105→18→6→0診断と段階的に減少し、単独成功後だけ既存10対象を残してcontractsを11件目へ登録した。
+
+実行時の限定表現変更は、既存のbool除外/有限数/正数の型ガード化、検査後の局所束縛、同じキー順/値のupdate辞書引数化、既知4時間軸の同順構築、None getの同一AttributeError境界である。新しい採時・許容値・補充・skip・正式資格は追加しない。protocol/search_budgetは直接依存の読み取り専用interfaceと旧欠損形状の注釈だけを調整した。採時や検証のruntime本文は変えていない。
+
+局所castは26か所に限定し、AST whitelistと禁止改変で固定する。原report/raw/時間結果全体のcastはない。
+
+| 対象 | 件数・前提と限界 |
+|---|---|
+| 既存board反復と座標演算 | 6。Iterable/Positionの局所operand。原値の変換・不正値の認可ではなく、従来の反復/座標例外を残す |
+| case ID・selection seed | 3。既存照合/抽出に渡す局所キー/seed。母集合の証拠を代替しない |
+| 既存response検証呼出 | 1。原responseをvalidate_responseへ渡すビュー。形式検査を省略しない |
+| 理由code/path/status・policy・エラーkind | 11。既存生成値/演算要求。code/detailや例外を削除しない |
+| 既知roleキー | 2。A/B反復で得るキーだけ |
+| 取得状態 | 1。既存の分岐内の状態。原traceの再検証は別途必須 |
+| 参考探索nsのoperand | 2。int/floatの原演算を保ち、floatを整数へ丸めず、不正operandの例外も保持。正式rawの整数ns検査を代替しない |
+
+互換回帰は初期29ケースを旧コードで29成功してから実装し、追加したNone例外属性/同一参照/理由list・tuple/参考float nsを含む34ケースと、既存protocol27・budget29の計90成功・0失敗（最終JUnit 0.368秒）。常設対象漏れ回帰は修正前1失敗・5成功でcontracts未登録を検出し、修正後は局所cast制限・禁止改変・opaque/参考数値の過剰型保証・command列の非変更境界を合わせ19成功・0失敗（46.755秒）。新規テストは互換34と品質14である。
+
+単独型・Lint・限定formatの個別成功を確認した。format差分の適用途中にテストの閉じ括弧を欠いた構文エラーをlintが検出したため修正し、lint/formatを再実行した。構造全体castの拒否案を迂回せず撤回した経緯、診断の減少、作業途中の失敗と最終結果を区別する。次に最終版の旧実装比較・公開入口/保存CLI・全品質ゲートと証拠照合を行い、それまでPhase 7は未完了とする。次フェーズ・commit・pushには進まない。
+
+### Phase 7 最終版の差分比較・最初の全体ゲート
+
+元contractsを独立namespaceへ読み、最終表現版で1,517ケース（decode1067、role予算75、game予算88、局数66、保存報告100、参考reducer22、比較22、保存条件77）の戻り値・例外種/表示/属性を比較して一致した。evidence fingerprintの差だけを制御するため、両namespaceの__file__は現在contractsのパスに揃えている。旧版プロセスのprovenanceそのものを証明した比較ではない。直接依存の注釈/docstringを除いた全関数ASTはprotocol29・search_budget21定義で一致した。実行コスト・全未知入力・型introspection・不正dict subclassの副作用までの同一性は保証しない。
+
+旧保存schema5報告を全正式公開入口で確認し、assess/statistical_eligibility/estimate/reanalysis/pairedとanalysis.compare/comparison_report/evaluate.compare_reportsは正常資料を受理した。親の初回コマンド4端点だけを起動前へ移した資料は、内部端点の順/経過時間を保ってもtiming=failed・formal=ineligible・区間unavailableとなり、比較3入口も統計不可。実analysis CLIも正常終了0・不正終了1で新規UUID先へJSONを保存した。元報告bytes/hashは不変。差分と公開入口の証拠は一時領域のdifferential-final.json / formal-compatibility.jsonへ保存した。
+
+最初の全 `python -B tools/quality.py` は `evaluation_results/quality-6de7cc8afb0c4218a0ddfc169353fc68/` へ保存し、**QUALITY FAIL**。全pytest670成功・0失敗（430.32秒）、独立smoke1成功・0失敗（2.65秒）、常設11source strictは成功したが、最新の部分型調整後に残ったTYPE_CHECKINGの未使用Required importをLintが1件検出した。成功したテストを根拠にゲート成功へ読み替えていない。実行中はソースを固定し、開始/終了31source hash一致で完走後、未使用importだけを除去した。修正後のlintは全成功、限定formatは9ファイル成功。1,517比較の実行時表現から変えたのはこの型専用未使用importだけであり、比較の記録hashを事後に最終hashへ改ざんしない。これから改めて新規出力先で全品質ゲートを実行し、まだPhase 7をPASSとしない。
+
+### Phase 7 最終監査・PASS
+
+2026-10-15、指定されたPhase 7（contracts）だけを完了した。199診断を0へ解消し、従来10対象を保全した常設11source strictを確認した。Phase 3のGUI保留と、evaluate/analysis等の未型付け範囲は継続する。
+
+未使用型importの除去後、最終ソース固定の `python -B tools/quality.py` は終了0 / **QUALITY PASS**。新規証拠は `evaluation_results/quality-d3fea7fb669a4314bd854cca454c4e66/`。最初の失敗証拠や既存の評価資産を上書きしていない。
+
+| 必須検査 | 最終実結果 |
+|---|---|
+| environment / model / dependencies | すべて終了0、model_errors=[] |
+| lint / 限定format | 終了0 / 終了0、formatは従来9ファイルのscopeを維持 |
+| 常設strict | 終了0、11source成功（ゲート3.431秒） |
+| 全pytest | **670成功・0失敗・0skip、414.78秒**（JUnit414.745秒、ゲート415.404秒） |
+| 独立smoke | **1成功・0失敗・669除外、2.65秒**（ゲート3.226秒） |
+| snapshot / evidence | 終了0 / 終了0 |
+
+既存622ケースを保全し、互換34・品質14の48ケースを追加した。全670ケースには従来の起動/終了・trace改変・保存報告再解析・正式公開入口同値性・対局/勝敗/予算/統計の回帰を含む。全体テスト内のsmokeと独立smokeは別実行であり、1ケースを追加の固有テストとして二重計上しない。実AIの強さや予算trace対応を検証した結果ではない。
+
+必須10検査すべてpassed=true・exit_code=0・error=None、全pytest/smoke/全証拠の収集complete・errors=[]を実ファイルから確認した。31sourceの開始/終了/現在hash一致、verify_publication=[]、validate_model=[]、保存Markdown再生成一致、pendingなし。証拠のcompleteは全内部assert/局所値の登録済みを意味せず、未収集詳細は従来どおりmissing_informationへ残る。監査プローブでtest_stepsを辞書と仮定して一度停止したため、実契約のlistに沿って読み直して確認した。プローブの誤りを本番の失敗として報告していない。
+
+| 完了条件 | 根拠 |
+|---|---|
+| 開始条件 | clean HEAD=b078d83、Phase 6の実証拠と現在10source strictを確認 |
+| 診断・影響 | 199診断、既存37定義、利用側/依存方向と未検証境界を調査 |
+| 先行設計 | 個別承認後、architecture第5節とcontracts第7節を各関連変更前に更新。依存/データフロー/sequence/状態の経路不変によりMermaid更新不要の理由を記録 |
+| 限定型付け | 既存37＋helper4の全41定義を注釈。未検証値はobject、26局所ビュー以外のcast/Any/ignoreや全体castを追加していない |
+| 単独・常設strict | 単独0診断後に11件目へ登録し、既存10対象も維持 |
+| 互換性 | 元コードで新規29成功、最終互換34と既存56の計90成功、型境界等19成功。元実装との1,517比較、公開API/CLI正常受理・起動前拒否、依存2moduleの全関数AST一致 |
+| 統合ゲート・証拠 | 最終10必須成功、670＋独立smoke1、source/publication/model/Markdown一致 |
+| 資料・保護 | 本節・BLOCKERS・操作・型境界の説明を更新。69tracked中58は開始bytes/hash不変、index空、HEAD不変、commit/push/branch操作なし |
+
+実行した主要コマンドは `python -B tools/quality.py`（全体を2回）、`python -B -m mypy --no-incremental --config-file pyproject.toml --cache-dir C:/Users/taaai/AppData/Local/Temp/reversi-strict-phase7-pjhovnol/mypy-cache`、`python -B -m ruff check . --no-cache --config pyproject.toml`、`python -B -m ruff format --check . --no-cache --config pyproject.toml`、既述の関連pytest/互換/型境界の実行である。最終ゲートの各正確なargv・実行環境・終了値はquality.json / evidence.json / 各stepログに保存した。追加の旧実装差分・原報告/不正報告を使う `python -B -m harness.analysis --report <入力> --output <新規UUID先>` の実argv/出力先と結果は一時領域のformal-compatibility.jsonと本節に対応する。
+
+変更ファイルはcontracts、直接依存のprotocol/search_budget、pyproject.toml、tests/test_harness.py・test_quality.py、architecture/contractsの2資料、ハーネス.md、QUALITY_PROGRESS.md・QUALITY_BLOCKERS.mdの計11。AI本体・GUI・学習資産・既存評価データは変更していない。型の成功は原証拠の意味検証や正式資格を代替しない。未知入力全域・性能同一性・型introspection・辞書subclass副作用・別OS実機・GUI実操作・棋力改善は未保証のまま。次は別途指定されたフェーズの開始条件を再確認するが、**今回はPhase 7 PASSで停止し、次フェーズ・commit・pushへ進まない。**
+
 ## mypy strict拡大 Phase 6（指定対象harness/search_budget.py）
 
 ### 開始確認・診断・承認後の先行方針

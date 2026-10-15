@@ -12,7 +12,7 @@ from harness.protocol import (clock_status, validate_command_record, temporal_or
                               temporal_match, temporal_result)
 
 if TYPE_CHECKING:
-    from collections.abc import Buffer, Iterable, Mapping
+    from collections.abc import Buffer, Iterable, Mapping, Sequence
     from os import PathLike
     from typing import Literal, Required, TypeGuard, TypedDict
     from harness.protocol import _CommandRecord, _Status, _TemporalReason, _TemporalResult
@@ -94,7 +94,7 @@ def _object_events(events: list[object]) -> TypeGuard[list[dict[str, object]]]:
     return not any(not isinstance(event, dict) for event in events)
 
 
-def validate_child_lifecycle(events: list[object] | None, commands: list[_BudgetCommand],
+def validate_child_lifecycle(events: list[object] | None, commands: Sequence[_CommandRecord],
                              lifecycle: object, expected_identity: Mapping[str, object]) -> _TemporalResult:
     """原rawと親の生存区間・全要求を照合する。予算除外でも子の通信証拠は免除しない。"""
     reasons: list[_TemporalReason] = []
@@ -422,7 +422,7 @@ def write_config(config: object, path: str | PathLike[str]) -> _BudgetConfig:
     return normalized
 
 
-def _validate_trace_events(events: list[object] | None, config: object, player_commands: list[_BudgetCommand],
+def _validate_trace_events(events: list[object] | None, config: object, player_commands: Sequence[_CommandRecord],
                            target_sha256: str, expected_identity: Mapping[str, object] | None = None,
                            allow_exemption: bool = False, purpose: str = 'game') -> _TraceValidation:
     """parse済みtraceと要求/commandsを照合し、予算状態と観測測定値を返す内部実装。
@@ -652,7 +652,7 @@ def _validate_trace_events(events: list[object] | None, config: object, player_c
             'events': len(events), 'measurements': measurements}
 
 
-def validate_trace_events(events: list[object] | None, config: object, player_commands: list[_BudgetCommand],
+def validate_trace_events(events: list[object] | None, config: object, player_commands: Sequence[_CommandRecord],
                           target_sha256: str, expected_identity: Mapping[str, object] | None = None,
                           allow_exemption: bool = False, purpose: str = 'game') -> _TraceValidation:
     """live/reload共通のtrace意味検証を行い、例外もfailedの理由辞書へ変換する。
@@ -672,7 +672,7 @@ def validate_trace_events(events: list[object] | None, config: object, player_co
         }
 
 
-def validate_trace(path: str | PathLike[str], config: object, player_commands: list[_BudgetCommand],
+def validate_trace(path: str | PathLike[str], config: object, player_commands: Sequence[_CommandRecord],
                    target_sha256: str, expected_identity: Mapping[str, object] | None = None,
                    allow_exemption: bool = False) -> _TraceValidation:
     """設定とUTF-8 JSONLファイルを読み、共通event検証へ接続する取得時wrapper。

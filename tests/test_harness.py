@@ -1864,6 +1864,131 @@ def test_budget_typing_preserves_search_interval_and_inputs(field, value, expect
     assert (header, event, record) == before
 
 
+@pytest.mark.parametrize('source,issue', [
+    (None, 'report_not_json_object'),
+    ([], 'report_not_json_object'),
+    ({'extension': float('nan')}, 'report_not_json_object'),
+    ({'extension': object()}, 'report_not_json_object'),
+    ({1: 'non-string-key'}, 'report_not_json_object'),
+    ({'schema_version': True}, 'schema_type_invalid'),
+    ({'report_kind': 'analysis'}, 'report_kind_mismatch'),
+    ({'conditions': []}, 'conditions_not_object'),
+    ({'summary': []}, 'summary_not_object'),
+    ({'validation_contract_version': 3, 'decoded': {}}, 'inspection_is_not_source_report'),
+])
+def test_contract_typing_preserves_input_rejection(source, issue):
+    decoded = contracts.decode_input(source)
+    assert decoded['input_status'] == 'invalid' and decoded['issues'] == [issue]
+
+
+def test_contract_typing_keeps_legacy_metadata_and_fresh_snapshot():
+    """JSONとして正常な未知値を過剰型付けせず、返却側の変更を元資料へ戻さない。"""
+    source = {'schema_version': 2, 'conditions': {'extension': {'number': 'opaque', 'array': (1, None)}},
+              'summary': {}, 'games': []}
+    before = copy.deepcopy(source)
+    decoded = contracts.decode_input(source)
+    assert decoded['input_status'] == 'valid'
+    assert decoded['conditions'] == source['conditions']
+    decoded['conditions']['extension']['number'] = 42
+    assert source == before
+    inspected = contracts.inspect_evaluation(source)
+    assert inspected['status'] == 'unknown'
+    assert inspected['snapshot'] == source and inspected['snapshot'] is not source
+    inspected['snapshot']['conditions']['extension']['array'] = []
+    assert source == before
+
+
+@pytest.mark.parametrize('states,policy,expected', [
+    ({}, 'equal-work', 'unknown'),
+    ({'A': 'verified', 'B': 'verified'}, 'equal-work', 'verified'),
+    ({'A': 'verified', 'B': 'unknown'}, 'equal-work', 'unknown'),
+    ({'A': 'unknown', 'B': 'failed'}, 'equal-work', 'failed'),
+    ({'A': 'verified', 'B': 'exempt'}, 'baseline-asymmetric', 'verified'),
+    ({'A': 'verified', 'B': 'exempt'}, 'equal-work', 'failed'),
+    ({'A': 'exempt', 'B': 'verified'}, 'baseline-asymmetric', 'failed'),
+    ({'A': 'unregistered', 'B': 'verified'}, 'equal-work', 'unknown'),
+])
+def test_contract_typing_preserves_role_budget_precedence(states, policy, expected):
+    assert contracts.aggregate_role_budget(states, {'budget_policy': policy}) == expected
+
+
+@pytest.mark.parametrize('requested,profile,size,expected', [
+    (None, 'smoke', 0, (False, None, 2, 'default_initial_pair')),
+    (None, 'descriptive', 3, (False, None, 6, 'all_openings')),
+    (2, 'confirmatory', 3, (True, 2, 2, 'explicit')),
+    (6, 'deployment', 3, (True, 6, 6, 'explicit')),
+])
+def test_contract_typing_preserves_game_count_resolution(requested, profile, size, expected):
+    assert contracts.resolve_game_count(requested, profile, size) == dict(zip(
+        ('games_explicit', 'requested_games', 'resolved_games', 'resolution'), expected))
+
+
+@pytest.mark.parametrize('requested,profile,size,reason', [
+    (True, 'smoke', 0, 'positive even number'),
+    (2.0, 'smoke', 0, 'positive even number'),
+    (3, 'smoke', 0, 'positive even number'),
+    (None, 'confirmatory', 3, 'requires explicit games'),
+    (8, 'confirmatory', 3, 'exceed opening population'),
+])
+def test_contract_typing_preserves_game_count_rejection(requested, profile, size, reason):
+    with pytest.raises(ValueError, match=reason):
+        contracts.resolve_game_count(requested, profile, size)
+
+
+def test_contract_typing_preserves_writer_error_identity(tmp_path):
+    path = tmp_path / 'existing.json'
+    path.write_bytes(b'original')
+    with pytest.raises(contracts.ArtifactWriteError) as raised:
+        contracts.write_report_exclusive(path, {'value': 1}, phase='typed-final', operation_id='operation')
+    error = raised.value
+    assert error.phase == 'typed-final' and error.path == str(path) and error.operation_id == 'operation'
+    assert isinstance(error.cause, FileExistsError) and error.__cause__ is error.cause
+    assert path.read_bytes() == b'original'
+
+
+def test_contract_typing_preserves_none_get_failure():
+    from harness.contracts import _get_container
+
+    with pytest.raises(AttributeError) as native:
+        getattr(None, 'get')
+    with pytest.raises(AttributeError) as guarded:
+        _get_container(None)
+    assert str(guarded.value) == str(native.value)
+    assert guarded.value.name == native.value.name == 'get'
+    assert guarded.value.obj is native.value.obj is None
+
+
+def test_contract_typing_preserves_get_container_identity():
+    from harness.contracts import _get_container
+
+    marker = object()
+    source = {'unknown': marker}
+    assert _get_container(source) is source and source['unknown'] is marker
+
+
+@pytest.mark.parametrize('container', [list, tuple])
+def test_contract_typing_temporal_reason_metadata_keeps_original_alias(container):
+    marker = object()
+    detail = {'extension': marker}
+    reasons = container([{'status': 'unknown', 'code': 'unavailable', 'path': 'trace', 'detail': detail}])
+    observed = protocol.temporal_result(reasons)
+    assert observed['status'] == 'unknown' and observed['reasons'] is reasons
+    assert observed['reasons'][0]['detail'] is detail and detail['extension'] is marker
+
+
+def test_contract_typing_reference_metrics_do_not_convert_uncertified_ns():
+    """参考cacheのfloatをintへ丸めず、正式な整数nsの証拠とも扱わない。"""
+    game = {'game_status': 'complete', 'protocol_status': 'verified', 'error': None,
+            'winner': 'A', 'result': 'B', 'colors': {'B': 'A', 'W': 'B'},
+            'players': {'A': {'commands': []}, 'B': {'commands': []}},
+            'budget': {'A': {'status': 'verified', 'measurements': [
+                {'phase': 'normal_move', 'search_elapsed_ns': 1.5}]}}}
+    summary = contracts.reduce_observations([game])
+    assert type(summary['A']['search_sum_ns']) is float and summary['A']['search_sum_ns'] == 1.5
+    assert summary['A']['search_metric_status'] == 'reference_only'
+    assert summary['A']['mean_search_seconds'] == 1.5 / 1_000_000_000
+
+
 def _protocol_typing_player():
     """実プロセスなしの通信fixture。pipe/stateは元Playerと同じ公開属性で差し替える。"""
     player = object.__new__(Player)

@@ -1,6 +1,18 @@
 # 品質移行の停止事項
 
-現在のPhase 6は**解消済み・PASS**。限定変更の個別承認、設計/互換回帰先行、単独strict、常設10対象、全品質ゲートと保存証拠の照合を完了した。以下のPhase 5および停止経緯は履歴として維持する。Phase 3のGUIは保留のまま。次フェーズ・commit・pushへは進まない。
+現在のPhase 7（contracts.py）は**解消済み・PASS**。199診断と注釈のみの数値/時間detailプローブ3診断を確認後、設計・互換回帰先行の限定変更を個別承認されて実施した。Phase 6の承認を自動流用していない。常設11source strict、最終全品質ゲートと保存証拠の照合を完了した。下記Phase 6/5は過去の解消記録であり、Phase 3のGUI保留は継続する。次フェーズ・commit・pushには進まない。
+
+## Phase 7: contracts.pyの未検証値と部分結果の型境界（解消済み）
+
+第一推奨・採用案は、既存の値域/失敗順序を表す型ガード、検査後の局所束縛、通常形状と未知object/部分結果の区別である。母集合/trace/時間/集計と公開入口のANDを維持する。副作用はhelperの呼出コストとNone境界のtracebackフレームが増えることであり、性能同一性を主張しない。再開条件だった個別承認・先行契約・元コードでの互換回帰を満たして実装した。
+
+局所ビューだけで全不一致を結ぶ代案は、castが増えて検証済みとの混同を起こしやすく単独では不採用。生成時間結果の全体cast案は安全審査で拒否されたため撤回し、固定4軸の型付き構築と直接依存の読み取り専用Sequence interfaceに設計を先行更新した。別名の全体cast・Any・ignoreへ迂回していない。依存方向・通信・探索・正式資格・状態経路は不変で、新しいMermaid遷移を追加する必要はない。protocol/search_budgetの全関数は注釈/docstring除去後のASTが開始版と一致する。
+
+単独strictは199→105→18→6→0、新規互換は元実装で29成功、追加後は34と既存56の計90成功、型境界等19成功。旧実装との1,517差分比較、旧正常資料の公開API/CLI受理と起動前通信の拒否を確認した。最初の全ゲートはpytest670成功でも未使用型importのLint1件でFAILとなり、完走後にそのimportだけを除去した。
+
+最終 `python -B tools/quality.py` は終了0 / QUALITY PASS、常設11source strict、全pytest670成功・0失敗（414.78秒）、独立smoke1成功・0失敗（2.65秒）、必須10検査すべて成功。保存先は `evaluation_results/quality-d3fea7fb669a4314bd854cca454c4e66/`。31sourceの開始/終了/現在hash一致、収集complete・errors=[]、publication/model=[]、Markdown再生成一致、pendingなし。未解決のPhase 7 blockerはない。実際の変更・局所castの前提・コマンド・残る保証外はQUALITY_PROGRESS.mdのPhase 7を参照する。
+
+前段階のPhase 6は**解消済み・PASS**。限定変更の個別承認、設計/互換回帰先行、単独strict、常設10対象、全品質ゲートと保存証拠の照合を完了した。以下のPhase 5および停止経緯は履歴として維持する。Phase 3のGUIは保留のまま。次フェーズ・commit・pushへは進まない。
 
 ## Phase 6: search_budget.pyの未検証数値・端点境界（解消済み）
 

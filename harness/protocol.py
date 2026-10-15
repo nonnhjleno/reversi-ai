@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
     from os import PathLike
     from types import TracebackType
     from typing import IO, Literal, NotRequired, TypeGuard, TypedDict
@@ -52,10 +52,10 @@ if TYPE_CHECKING:
         after: NotRequired[object]
 
     class _TemporalResult(TypedDict):
-        """時間検査の状態と理由。同じ理由listを返し、正常値へ補修しない。"""
+        """時間検査の状態と理由。同じ理由列を返し、metadataを正常値へ補修しない。"""
 
         status: _Status
-        reasons: list[_TemporalReason]
+        reasons: Sequence[Mapping[str, object]]
 
     class _Identity(TypedDict, total=False):
         """現在のsession/generationと実測thread。原lifecycleの値は未検証である。"""
@@ -100,8 +100,8 @@ if TYPE_CHECKING:
         clock_domain_id: object
         lifecycle: dict[str, object] | None
 
-    class _Conditions(TypedDict):
-        """取得条件の通常期限。入力形式と正数条件は既存の入口/境界で確認する。"""
+    class _Conditions(TypedDict, total=False):
+        """旧資料の欠損も含む期限形状。必要証拠・形式・正数条件は既存検査で確認する。"""
 
         startup_timeout: float
         command_timeout: float
@@ -212,7 +212,7 @@ def _required_pipe(pipe: IO[str] | None, operation: _PipeOperation) -> IO[str]:
     return pipe
 
 
-def temporal_result(reasons: list[_TemporalReason]) -> _TemporalResult:
+def temporal_result(reasons: Sequence[Mapping[str, object]]) -> _TemporalResult:
     """既知矛盾を優先し、欠損・比較不能の理由を失わずに時間検査を集約する。"""
     return {'status': 'failed' if any(item['status'] == 'failed' for item in reasons)
             else 'unknown' if reasons else 'verified', 'reasons': reasons}
