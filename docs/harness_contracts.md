@@ -175,6 +175,16 @@ contracts.inspect_evaluationは原report snapshotと同一呼出内のartifact b
 
 RTTは成功したgenmove通信の平均・最大で、失敗局に含まれる成功問い合わせやpass/terminal probeも対象となる。内部全genmoveとnormal_moveは別に集計し、内部sum/max nsとsample数をrawから再計算する。勝敗率の正常完了分母とは別の標本である。実AItraceなしは内部平均null/unknown。予算・測定・時系列のrole→game→report階層の保存矛盾も拒否する。
 
+### 7.1 Phase 8の型境界（先行設計を実装反映済み）
+
+analysisは原入力の通常形状、fresh Inspection、Assessment、算術結果とserializerを区別する。snapshotやmetadataはobjectを維持し、原report/trace/生成結果全体のcastや型のためのデータ再構築を使わない。confidenceの厳密int/float判定と差分のall判定を同じ値域の型ガードへ接続し、bool除外・短絡順序・例外を保つ。未知のbudget要求の真偽評価も早期bool化せず、既存orの評価を維持する。
+
+共有contractsの比較関数はMapping[str, object]の未知fieldを読む型へ合わせる。属性get/添字/反復の小さな境界は元と同じ操作を行い、正常値への変換・欠損補充・追加の認可をしない。局所ビューは属性method/標準operator.getitem・setitemの呼出形や既存scalar演算に限定する。operatorの型定義が要求する正常operandを原値へ強制castせず、同じ標準操作へ未知値を渡して従来の例外も残す。comparisonsのdeepcopy、lookup/短絡順、候補設定の変更対象は維持する。検証済みNやplanned countのscalarビューも既存正式分岐の前提に限り、資格入力に使わない。
+
+derived.gamesは初期値[]か、schema3以後のdecodeでlist内の辞書と文字列keyを確認したgameのdeepcopyである。したがって共有型をSequence[Mapping[str, object]]へ精緻化できるが、各fieldはobjectのままとし、failed/unknownのgameを有効な得点/ID/予算へ昇格しない。旧schema1/2やdecode不正は初期値のままである。この生成根拠の回帰を用意する。statistics側の入力も同じ未検証Mappingへ接続し、case/ペアIDをstrへ変換しない。算術が返す理由/IDと既存の動的な得点演算境界は維持し、Anyを新しい入力全体へ拡大しない。
+
+算術辞書と解析用の可変field集合を無理に同じTypedDictへcastしない。解析側は読取Mappingとして保持し、methodだけの局所ビューで同じ元辞書へupdateする。キーの順番/参照、既存writerへの伝播も維持する。helper呼出コストとtracebackフレームの完全一致は保証しない。通常JSONの辞書/配列と既存例外を照合対象とし、不正dict subclass/proxyの属性lookupや反復の副作用まで新たに保証しない。原入力、getの例外属性、confidence/要求/参考/正式の区別、算術辞書の同一性、旧資料/API/CLIを互換回帰と元実装比較で照合する。コードhash由来の解析/検証fingerprintは通常どおり変わり、旧保存hashを書き換えない。
+
 ## 8. 正式資格と統計の推定対象
 
 正式単独評価はconfirmatory/source schema5、母集合・抽出・全予定coverage・棋譜/通信・予算・時間・測定・source整合の全必須verified、固定nodes/depthと決定性条件等をANDで要求する。必要集合はprofile/policyから導出し、rawの自己申告除外を読んで緩和しない。

@@ -3120,6 +3120,117 @@ def test_statistics_typing_does_not_repair_malformed_input(mutation, error):
         statistics.pair_scores(games)
 
 
+@pytest.mark.parametrize('value,expected', [(None, 0.8), (0.25, 0.25), (0.95, 0.95)])
+def test_analysis_typing_confidence_uses_original_value(value, expected):
+    """保存値の既定利用と明示指定の優先を保ち、入力を変更しない。"""
+    inspection = {'snapshot': {'analysis_spec': {'confidence': 0.8}}}
+    original = copy.deepcopy(inspection)
+    assert analysis._confidence(inspection, value) == expected
+    assert inspection == original
+
+
+@pytest.mark.parametrize('value', [True, False, 0, 1, -1, 2, float('nan'), float('inf'), -float('inf'), '0.9', [], {}])
+def test_analysis_typing_confidence_rejects_same_values(value):
+    with pytest.raises(ValueError, match='^confidence_invalid$'):
+        analysis._confidence({}, value)
+
+
+@pytest.mark.parametrize('value', [None, [], 0, 'bad'])
+def test_analysis_typing_metadata_get_preserves_native_exception(value):
+    """不正なprivate入力を補完せず、元のget属性例外のname/objも保つ。"""
+    with pytest.raises(AttributeError) as captured:
+        analysis._confidence({'snapshot': {'analysis_spec': value}}, None)
+    assert captured.value.name == 'get'
+    assert captured.value.obj is value
+
+
+@pytest.mark.parametrize('required', [False, True, [], ['requested']])
+def test_analysis_typing_budget_truthiness_is_not_early_normalized(required):
+    inspection = {
+        'decoded': {'conditions': {'evaluation_profile': 'smoke', 'require_budget_verification': required}},
+        'snapshot': {}, 'input_status': 'valid', 'status': 'unknown', 'integrity_errors': [],
+        'gameplay': {'status': 'verified'}, 'coverage': {'status': 'verified'}, 'reasons': [],
+    }
+    result = analysis._assess_inspection(inspection)
+    assert result['reference_available']
+    assert result['formal_eligibility'] == 'not_requested'
+    assert result['requirements']['budget_required'] is bool(required)
+    assert result['request_success'] is (not bool(required))
+
+
+@pytest.mark.parametrize('kind', ['single', 'paired'])
+def test_analysis_typing_updates_original_arithmetic_result(monkeypatch, kind):
+    """型付けのためのdict展開/copyが、算術辞書の同一性と未知metadataを壊さない。"""
+    marker = object()
+    games = [{'unverified': marker}]
+    inspection = {
+        'decoded': {'conditions': {'planned_games': 2}}, 'status': 'verified', 'reasons': [],
+        'derived': {'games': games, 'coverage_kind': 'census_verified'},
+        'population': {'verified_N': 1}, 'selection': {'planned_n': 1, 'selected_case_ids': ['c']},
+    }
+    supplied = {'status': 'computed', 'reason': None, 'interval': {'lower': 0.5}, 'opaque': marker}
+    def compute(*arguments, **keywords):
+        """算術への原game参照を観測し、同じ辞書を返す。"""
+        assert arguments[0] is games
+        return supplied
+    if kind == 'single':
+        monkeypatch.setattr(analysis, '_assess_inspection', lambda *arguments: {
+            'requirements': {'formal_requested': True}, 'formal_eligibility': 'eligible',
+            'formal_reason': None, 'input_status': 'valid', 'confidence': 0.9,
+        })
+        monkeypatch.setattr(analysis.statistics, 'estimate_pair_scores', compute)
+        result = analysis._estimate_inspection(inspection, 0.9)
+    else:
+        monkeypatch.setattr(analysis, '_assess_pair_inspections', lambda *arguments: {
+            'formal_pair_eligibility': 'eligible', 'formal_reason': None,
+        })
+        monkeypatch.setattr(analysis.statistics, 'paired_difference', compute)
+        result = analysis._paired_inspections([inspection, inspection], 0.9)
+    assert result is supplied and result['opaque'] is marker
+    assert result['status'] == 'available' and result['formal_eligibility'] == 'eligible'
+
+
+def test_analysis_typing_arithmetic_preserves_unvalidated_ids():
+    """低水準算術のIDをstrへ正規化せず、正式なID証明とは別に保持する。"""
+    games = _arithmetic_games()
+    for game in games:
+        game['pair_id'], game['case_id'] = 7, 9
+    result = estimate_pair_scores(games, 1)
+    assert result['pairs'][7]['case_id'] == 9
+    assert result['formal_eligibility'] == 'not_assessed'
+
+
+@pytest.mark.parametrize('field,operation', [('colors', 'get'), ('seeds', 'items')])
+def test_analysis_typing_arithmetic_preserves_attribute_errors(field, operation):
+    games = _arithmetic_games()
+    games[0][field] = None
+    with pytest.raises(AttributeError) as captured:
+        estimate_pair_scores(games, 1)
+    assert captured.value.name == operation and captured.value.obj is None
+
+
+@pytest.mark.parametrize('field,operation', [('conditions', 'get'), ('budget_configs', 'get'), ('budget_config_hashes', 'pop'), ('targets', 'get')])
+def test_analysis_typing_comparison_does_not_repair_null_metadata(field, operation):
+    report = {'conditions': {}}
+    if field.startswith('budget_'):
+        report['conditions'][field] = None
+    else:
+        report[field] = None
+    with pytest.raises(AttributeError) as captured:
+        contracts.comparison_mismatches(report, {})
+    assert captured.value.name == operation and captured.value.obj is None
+
+
+@pytest.mark.parametrize('score', [0.5, 'unchecked', None])
+def test_analysis_typing_derived_mapping_does_not_certify_fields(integrity_report, score):
+    report = copy.deepcopy(integrity_report)
+    report['games'][0]['score_a'] = score
+    result = contracts.inspect_evaluation(report)
+    assert all(isinstance(game, dict) for game in result['derived']['games'])
+    assert result['derived']['games'][0]['score_a'] == score
+    assert report['games'][0]['score_a'] == score
+
+
 def test_statistics_typing_preserves_difference_direction_and_coverage():
     """先後平均after=.5、before=0なので、全数1ペアの対応差は+.5となる。"""
     from harness import statistics

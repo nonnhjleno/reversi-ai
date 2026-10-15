@@ -1,6 +1,29 @@
 # 品質移行の停止事項
 
-現在のPhase 7（contracts.py）は**解消済み・PASS**。199診断と注釈のみの数値/時間detailプローブ3診断を確認後、設計・互換回帰先行の限定変更を個別承認されて実施した。Phase 6の承認を自動流用していない。常設11source strict、最終全品質ゲートと保存証拠の照合を完了した。下記Phase 6/5は過去の解消記録であり、Phase 3のGUI保留は継続する。次フェーズ・commit・pushには進まない。
+現在のPhase 8（analysis.py）は**解消済み・PASS**。個別承認・設計/互換回帰先行の限定変更、常設12source strict、全品質ゲートと保存証拠の照合を完了した。過去の承認を流用していない。以下の停止条件は承認前の履歴、Phase 7/6/5は解消済みの履歴である。Phase 3のGUI保留は継続し、次フェーズ・commit・pushには進まない。
+
+## Phase 8: analysis.pyの未知metadata・数値述語・正式分岐の型境界
+
+個別承認により第一案で再開した。architecture第5節・contracts第7.1節を実装前に更新し、原構造全体のcastなしで相互運用する設計に確定した。新規35互換回帰は元コードで全成功。analysisと直接依存contracts/statisticsを限定変更し、46→残診断5→0、既存11対象を保持した常設12対象のstrict成功、関連99互換回帰成功を確認した。共有の未検証field/IDはobject、派生gameの要素は未知Mappingのまま。713比較、全公開APIの正常受理/起動前拒否、実CLI0/1/2と原証拠保全を確認した。
+
+最終 `python -B tools/quality.py` は終了0 / QUALITY PASS。新規証拠は `evaluation_results/quality-05c58c782b164273bae80aea60071e0d/`、全pytest715成功・0失敗（1064.19秒）、独立smoke1成功・0失敗（2.59秒）、必須10検査全成功。31sourceの開始/終了/現在hash一致、収集complete・errors=[]、publication/model=[]、Markdown再生成一致、pendingなし。最初のゲートは検査用probeの命名/docstring修正のため中止し、その不完全証拠も保全した。未解決のPhase 8 blockerはない。長時間化の根本原因は未特定であり、少数の新旧profileから性能不変を断定しない。詳細・途中の検証上の誤り・局所ビューの範囲・保証外はQUALITY_PROGRESS.mdのPhase 8最終監査を参照する。以下は停止時の分析と選択肢の履歴である。
+
+2026-10-15、開始HEAD=a3c6bf2、Git clean。前段階の保存済みPASSと現在31source hash、publication/model、Markdownを再照合し、現在11source strictも成功した。analysis単独は46診断、開始時関連112テストは全成功。19関数とcontracts/statistics・evaluate/CLI/テストの利用関係を調査した。本番・テスト・設定・モデルは未変更であり、失敗している既存動作を発見したという報告ではない。
+
+注釈のみの独立プローブで7診断を再現した。analysis._confidenceのsnapshot.analysis_specへのget、type membership後の数値比較/返却、all後の差分演算、_estimate_inspectionのderived.gamesとverified_Nから統計への引渡しが対象である。共有contracts._Inspectionは意図的にsnapshotをMapping[str, object]、derived.gamesをobject、verified_Nをint | Noneとしている。正式資格のboolは数値/構造の静的な型絞込みを発行しない。これを理由に共有型を無条件で有効形状へ狭めたり、snapshot/report/原trace全体をcastしたりしてはならない。プローブは単純な注釈だけで解決しない根拠であり、他の安全な静的解決全般の不可能性を証明したものではない。
+
+### 解決案（最大2案）
+
+1. **境界の限定表現変更を個別承認し、設計・互換回帰を先行する（第一推奨）**。既存の数値述語を型ガード等へ接続し、局所束縛/既存演算の局所ビューと通常形状を使う。原metadataは未知のまま保持し、必要な型関係の根拠を正式分岐と既存検査へ対応付ける。型付けのための新しい値補充・許容条件・検証省略・例外握り潰し・原構造全体のcastは禁止する。局所ビューも個別の前提と限界を記録する。副作用としてhelper呼出コストやtracebackフレームが変わり得るため、性能完全一致は保証しない。共有型の調整が必要なら既存消費側の全影響を調査し、rawを有効と過剰保証しない。実装案の詳細は承認後の設計照合で確定し、安全な方針が得られなければ再停止する。
+2. **実行時ロジック変更禁止を維持し、Phase 8を保留する**。既存11対象の成功と正常評価経路を維持できる一方、analysisの常設strict追加は未完了のままになる。raw全体のcast/Any/ignoreで見かけだけ12対象へ増やす代替案は採用しない。
+
+### モデルとの照合・再開条件
+
+architectureの第2節DAG、第3節データフロー、第5節正式入口、第6節状態図、およびcontractsの第7/8/9/12節に照合した。analysis→contracts/statistics、fresh Inspection→Assessment→適格時のみ数式→結果組立/CLI保存の順を維持する。取得/再解析、unknown/failed、参考/正式、computed/available、要求成否/採用は分離し、原証拠を修復しない。第一案もこれらの経路を変える計画ではないが、共有型や内部表現の具体案が確定したら実装より先に正本の説明を更新・再照合する。今回は提案未承認・コード未着手なので、現在の図や契約を実装済みとして書き換えない。
+
+再開にはPhase 8への個別の限定変更承認が必要。承認後、confidenceのbool/非有限/欠損/不正metadata、差分の非数値/None、両側条件不一致、旧schema/別root、raw改変/不正summary/起動前通信、caller結果の上書き拒否、保存失敗とCLI0/1/2を含む互換回帰を先行する。元実装との戻り値/例外・原入力不変性、全公開入口の同値性を確認し、単独strict成功後だけ常設に追加する。既存11対象、全pytest/独立smoke、全品質ゲートと保存証拠/source/model一致まで確認するまではPASSにしない。診断・一時証拠・実コマンドと未実施範囲はQUALITY_PROGRESS.mdのPhase 8を参照する。commit/push/branch操作は行わない。
+
+前段階のPhase 7（contracts.py）は**解消済み・PASS**。199診断と注釈のみの数値/時間detailプローブ3診断を確認後、設計・互換回帰先行の限定変更を個別承認されて実施した。Phase 6の承認を自動流用していない。常設11source strict、最終全品質ゲートと保存証拠の照合を完了した。下記Phase 6/5は過去の解消記録であり、Phase 3のGUI保留は継続する。次フェーズ・commit・pushには進まない。
 
 ## Phase 7: contracts.pyの未検証値と部分結果の型境界（解消済み）
 

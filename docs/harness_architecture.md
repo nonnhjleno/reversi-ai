@@ -178,6 +178,8 @@ Phase 7の型境界（先行設計後に実装）: contractsの入力形状・�
 
 既存のcontracts→search_budget→protocolの向きは維持する。command列は読み取り専用Sequenceとして型を受け渡し、生成reason列は基礎時間型のまま拡張metadataを保持する。構造全体のcastやデータの複製で型差を隠さず、時間結果の既知4軸を元の順で構築する。None get境界にも採時や正常値への修復を追加しない。
 
+Phase 8の型境界（先行設計後に実装）: analysisの型付けは同じfresh Inspectionと正式ANDを使い、型ガード/局所束縛と既存属性・添字・update操作の限定境界で表現する。snapshotを有効reportへcastしない。contractsの比較関数は未知値を持つMappingを受け取り、decode済みgame配列という生成根拠だけをSequence[Mapping[str, object]]として共有する。statisticsはこの読取専用の未検証入力を受け、得点・case/ペアIDの原値を保持する。算術結果の辞書をコピー/全体castせず、同じ辞書への既存updateを行う。これらは相互運用に必要な直接依存の型境界で、探索・通信・資格条件の変更や次フェーズの実装ではない。依存DAG・データフロー・sequence・状態の経路は変わらないため、Mermaidへ新しい状態/辺を追加しない。検証状況はQUALITY_PROGRESS.mdのPhase 8を参照する。
+
 次は正式資格を発行する経路の図で、すべての関数がCLIの保存まで行うという意味ではない。図のInspection/Assessmentは辞書の説明名であり、追加クラスではない。
 
 ```mermaid

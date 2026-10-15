@@ -8,13 +8,14 @@ import hashlib
 import copy
 import json
 import math
+import operator
 import sys
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
     from os import PathLike
     from typing import Literal, TypeGuard, TypedDict
     from harness.openings import _OpeningEntry
@@ -282,7 +283,7 @@ if TYPE_CHECKING:
     class _Derived(TypedDict, total=False):
         """派生値。failed/unknown時のgame内容を有効な型へ過剰保証しない。"""
 
-        games: object
+        games: Sequence[Mapping[str, object]]
         qualified_pair_scores: dict[str, object]
         coverage_kind: str
         validated_pair_count: int
@@ -321,6 +322,21 @@ if TYPE_CHECKING:
         leg: int | None
 
     _MeasurementSeries = dict[tuple[str | None, int | None], dict[str, _Validation]]
+
+
+def _get_field(value: object, key: str, *default: object) -> object:
+    """原値のgetを同じ引数で呼ぶ。未検証値を辞書へ認定せず、属性/呼出例外も保つ。"""
+    return cast('Callable[..., object]', getattr(value, 'get'))(key, *default)
+
+
+def _item_field(value: object, key: str | int) -> object:
+    """元と同じ添字アクセスの原値を返す。型・欠損・値域を補正しない。"""
+    return cast('Callable[[object, str | int], object]', operator.getitem)(value, key)
+
+
+def _iter_field(value: object) -> Iterator[object]:
+    """元の反復可能性だけを要求する。要素の形状・正式資格は保証しない。"""
+    return iter(cast('Iterable[object]', value))
 
 
 def _number(value: object) -> TypeGuard[int | float]:
@@ -593,7 +609,7 @@ def decode_input(report: object) -> _Decoded:
     return result
 
 
-def verification_requirements(conditions: Mapping[str, object], require_budget: bool = False) -> _Requirements:
+def verification_requirements(conditions: Mapping[str, object], require_budget: object = False) -> _Requirements:
     """既知profile/policyから必要roleと検証軸を導く。rawの任意除外宣言は読まない。"""
     strict = conditions.get('evaluation_profile') in ('confirmatory', 'deployment')
     return {'roles': ('A', 'B'), 'budget_required': bool(strict or require_budget),
@@ -1864,25 +1880,25 @@ def validate_report(report: _SourceReport) -> list[str]:
     return _inspection_errors(inspect_evaluation(report))
 
 
-def comparison_conditions(report: _SourceReport) -> Mapping[str, object]:
+def comparison_conditions(report: Mapping[str, object]) -> object:
     """原報告を変更せず比較条件を作り、候補Aの探索実装差と必要な共通契約を分離する。
 
     A.searchは決定性/counting定義だけ保持し、A設定hashを除く。Bの条件は残す。
     """
     conditions = copy.deepcopy(report.get('conditions', {}))
-    candidate = conditions.get('budget_configs', {}).get('A')
+    candidate = _get_field(_get_field(conditions, 'budget_configs', {}), 'A')
     if isinstance(candidate, dict):
-        search = candidate.get('search', {})
-        conditions['candidate_search_contract'] = {
-            'deterministic': search.get('deterministic'),
-            'counting_definition_id': search.get('counting_definition_id'),
-        }
+        search: object = candidate.get('search', {})
+        cast('Callable[[object, str, object], None]', operator.setitem)(conditions, 'candidate_search_contract', {
+            'deterministic': _get_field(search, 'deterministic'),
+            'counting_definition_id': _get_field(search, 'counting_definition_id'),
+        })
         candidate['search'] = {}
-    conditions.get('budget_config_hashes', {}).pop('A', None)
+    cast('Callable[[str, object], object]', getattr(_get_field(conditions, 'budget_config_hashes', {}), 'pop'))('A', None)
     return conditions
 
 
-def comparison_mismatches(before: _SourceReport, after: _SourceReport) -> list[str]:
+def comparison_mismatches(before: Mapping[str, object], after: Mapping[str, object]) -> list[str]:
     """正規化比較条件・版・runtime・取得fingerprint・固定B本体/資産の不一致項目を返す。
 
     個々の報告や証跡の再検証は行わないため、共通inspectionと組み合わせて使う。
@@ -1893,17 +1909,17 @@ def comparison_mismatches(before: _SourceReport, after: _SourceReport) -> list[s
     for key in ('schema_version', 'runtime', 'evaluation_fingerprint'):
         if before.get(key) != after.get(key):
             mismatches.append(key)
-    if before.get('schema_version', 1) < 3 and after.get('schema_version', 1) < 3:
-        if [item.get('sha256') for item in before.get('harness', [])] != [
-                item.get('sha256') for item in after.get('harness', [])]:
+    if cast(int, before.get('schema_version', 1)) < 3 and cast(int, after.get('schema_version', 1)) < 3:
+        if [_get_field(item, 'sha256') for item in _iter_field(before.get('harness', []))] != [
+                _get_field(item, 'sha256') for item in _iter_field(after.get('harness', []))]:
             mismatches.append('harness')
-    values: list[str | None] | list[list[str | None]]
+    values: list[object]
     for key in ('sha256', 'assets'):
         if key == 'assets':
-            assets = [report.get('targets', {}).get('B', {}).get('assets') for report in (before, after)]
-            values = [[asset.get('sha256') for asset in value or []] for value in assets]
+            assets = [_get_field(_get_field(report.get('targets', {}), 'B', {}), 'assets') for report in (before, after)]
+            values = [[_get_field(asset, 'sha256') for asset in _iter_field(value or [])] for value in assets]
         else:
-            values = [report.get('targets', {}).get('B', {}).get('sha256') for report in (before, after)]
+            values = [_get_field(_get_field(report.get('targets', {}), 'B', {}), 'sha256') for report in (before, after)]
         if values[0] != values[1]:
             mismatches.append('opponent.' + key)
     return mismatches

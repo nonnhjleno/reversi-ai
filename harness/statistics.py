@@ -3,29 +3,19 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Callable, Iterable, Mapping, Sequence
     from typing import Any, NotRequired, TypedDict
 
-    class _GameRecord(TypedDict, total=False):
-        """算術が参照する入力形状。任意キーと未検証得点を許し、正式資格は表さない。"""
-
-        pair_id: str | None
-        case_id: str | None
-        leg: int | None
-        game_status: str | None
-        protocol_status: str | None
-        budget_status: str | None
-        colors: dict[str, str]
-        seeds: dict[str, int | None]
-        score_a: object
+    # 派生gameでもfieldは未検証。読取操作を共有し、IDや得点の型を認定しない。
+    _GameRecord = Mapping[str, object]
 
     class _PairScore(TypedDict):
         """既存の値域検査を通った先後平均と元の得点値。原trace検証とは別である。"""
 
-        case_id: str | None
+        case_id: object
         score: float
         game_scores: list[object]
 
@@ -52,10 +42,10 @@ if TYPE_CHECKING:
         formal_eligibility: str
         reason: str | None
         pair_count: int
-        invalid_pairs: dict[str, str]
+        invalid_pairs: dict[object, str]
         point_rate: float | None
         interval: _Interval | None
-        pairs: dict[str, _PairScore]
+        pairs: dict[object, _PairScore]
         mean_delta: float
 
 
@@ -101,20 +91,20 @@ def confidence_interval(values: Sequence[float], population_size: int, confidenc
     }
 
 
-def pair_scores(games: Iterable[_GameRecord]) -> tuple[dict[str, _PairScore], dict[str, str]]:
+def pair_scores(games: Iterable[_GameRecord]) -> tuple[dict[object, _PairScore], dict[object, str]]:
     """記録上の条件を満たす先後2legを得点化し、ペア別得点と不適格理由を返す。
 
     A勝1・引分0.5・負0の2局平均。保存statusを参照する低水準関数であり、
     raw意味や母集合を検証した正式資格とは別。入力を変更しない。
     """
-    grouped: dict[str, list[_GameRecord]] = {}
-    reasons: dict[str, str] = {}
+    grouped: dict[object, list[_GameRecord]] = {}
+    reasons: dict[object, str] = {}
     for game in games:
         pair_id = game.get('pair_id')
         if not pair_id:
             continue
         grouped.setdefault(pair_id, []).append(game)
-    scores: dict[str, _PairScore] = {}
+    scores: dict[object, _PairScore] = {}
     for pair_id, pair_games in grouped.items():
         if len(pair_games) != 2:
             reasons[pair_id] = 'incomplete_pair'
@@ -135,13 +125,13 @@ def pair_scores(games: Iterable[_GameRecord]) -> tuple[dict[str, _PairScore], di
         values: list[Any] = []
         for game in pair_games:
             values.append(game.get('score_a'))
-        if {game.get('colors', {}).get('B') for game in pair_games} != {'A', 'B'}:
+        if {cast('Callable[[str], object]', getattr(game.get('colors', {}), 'get'))('B') for game in pair_games} != {'A', 'B'}:
             reasons[pair_id] = 'roles_not_swapped'
             continue
         if len({game.get('case_id') for game in pair_games}) != 1:
             reasons[pair_id] = 'case_id_mismatch'
             continue
-        if len({tuple(sorted(game.get('seeds', {}).items())) for game in pair_games}) != 1:
+        if len({tuple(sorted(cast('Callable[[], Iterable[tuple[object, object]]]', getattr(game.get('seeds', {}), 'items'))())) for game in pair_games}) != 1:
             reasons[pair_id] = 'player_seed_mismatch'
             continue
         if any(value not in (0.0, 0.5, 1.0) for value in values):

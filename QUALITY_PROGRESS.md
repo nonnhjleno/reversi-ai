@@ -659,6 +659,101 @@ Phase 4に未解決の実装blockerはないためQUALITY_BLOCKERS.mdを新設�
 履歴positionの要素型/長さ、入力JSONの完全な静的検証、生成metadataの真正性までは型だけで保証しない。既存の実行時検証と正式入口の検証は引き続き必要である。生成source hashが変わるため、過去の評価条件と同一コードであるとは主張しない。棋力や探索性能の改善も主張しない。
 再開時はこの8対象のstrictと対応する最新証拠を再確認し、次の指定moduleを明示してから調査する。**今回承認されたPhase 4のみPASSとして終了し、次フェーズ・commit・pushには進まない。**
 
+## mypy strict拡大 Phase 8（指定対象harness/analysis.py）
+
+現在の状態は**PASS**（本節末尾の最終監査）。以下の開始・停止・再開・ゲート前の状態は時系列の記録であり、現在の停止指示ではない。
+
+### 開始条件・診断・実装前の停止
+
+2026-10-15、開始HEAD=a3c6bf2、Git clean。今回の明示指定はPhase 8 / analysisであり、中断された依頼のPhase 2や過去の次候補とは区別する。AGENTS・現在設定・Phase 7の進捗/解消記録・現行architecture/contractsを確認した。前段階quality-d3fea7fb669a4314bd854cca454c4e66を実際に読み、passed=true・必須全成功・31source開始/終了/現在hash一致・verify_publication=[]・validate_model=[]・Markdown再生成一致を確認。現在の常設11source strictも再実行して終了0だった。Phase 3のGUIは引き続き保留する。
+
+新規一時領域 `C:/Users/taaai/AppData/Local/Temp/reversi-strict-phase8-cas1v4ho/` に69trackedの開始hash、元analysis.py、既存strict結果、単独診断と注釈プローブ、開始時JUnitを保存した。原コード・既存評価データは変更していない。
+
+analysis単独strictは46診断（no-untyped-def19 / no-untyped-call25 / assignment2）。19トップレベル関数で内部関数やクラスはない。runtime依存はstdlibとcontracts/statistics。evaluateはestimate・assess_evaluation・compareへ委譲し、analysisのsource hashを解析fingerprintへ含める。CLIとテストも利用する。contractsへの逆import追加や算術側による資格発行は不要で、依存DAGの変更は計画しない。
+
+開始時の既存関連回帰は `python -B -m pytest -q tests/test_harness.py -k 'analysis or inspection or formal or comparison or estimate or paired or confidence or legacy or reanalysis' -p no:cacheprovider --tb=short --junitxml=C:/Users/taaai/AppData/Local/Temp/reversi-strict-phase8-cas1v4ho/baseline-related.xml` で**112成功・0失敗・343除外、71.67秒**。既存strictは `python -B -m mypy --no-incremental --config-file pyproject.toml --cache-dir C:/Users/taaai/AppData/Local/Temp/reversi-strict-phase8-cas1v4ho/mypy-cache` で11source成功。同じargvへharness/analysis.pyを明示した単独検査で46診断を得た。
+
+独立注釈プローブでは、元_confidence本体への引数/戻り値注釈、既存の数値述語と差分comprehension、Inspectionから統計への引渡しを用い、7診断を再現した。-cと常設filesの競合を避け、`--config-file nul --strict --explicit-package-bases --no-incremental --python-version 3.13` と専用cacheを指定した。nulにmypy節がない旨の警告とは別に、attr-defined1 / operator3 / return-value1 / arg-type2の実診断である。
+
+| 境界 | 根拠・維持条件 |
+|---|---|
+| snapshotのanalysis_spec/confidence | analysis._confidenceとcontracts._Inspection.snapshotは未検証objectを含む。原値を数値/辞書へ一括castしたり欠損を補ったりしない |
+| 既存数値述語・差分 | type membership / allの結果がmypyに伝播しない。bool除外・短絡順序・既存例外・非数値時Noneを維持する必要がある |
+| 正式分岐と算術入力 | derived.gamesはobject、verified_NはintまたはNone。_formal_eligibilityのboolと値の型関係を、未検証値まで有効とする注釈で代替しない |
+| 返却辞書の段階 | arithmetic_only/computedと正式available、参考可否/要求成否/decisionを分離した通常形状が必要。TypedDictを原資料の証明書にしない |
+
+現在の実行時ロジック変更禁止を維持したまま、これらを安全に接続する方針を確定できないため、**実装前で停止**する。7診断を「あらゆる静的解決が不可能」という証明にはせず、未検証境界を隠す解決を採用しない判断根拠とする。Phase 7の限定変更承認をPhase 8へ流用しない。3回無進展による停止ではない。最大2案・副作用・第一推奨・再開条件はQUALITY_BLOCKERS.mdのPhase 8へ記録した。
+
+現段階はPhase 8 **未完了・PASSではない**。本番/テスト/設定/モデル図/契約を変更せず、常設strictは11対象のままanalysisを追加していない。全品質ゲート・全pytest・独立smokeのPhase 8再実行、単独strict解消、回帰追加、実装後のAPI/CLI・保存証拠照合は未実施で、前段階のPASSを今回の完了へ読み替えない。次の手順は変更制約の確認後、型境界の設計/契約を先行確定し、元実装での互換回帰→限定実装→単独成功後の常設12対象→全ゲート/証拠/モデル照合である。変更条件の確認までコードへ進まず、次フェーズ・commit・push・branch操作も行わない。
+
+### Phase 8 再開承認と先行設計
+
+ユーザーがPhase 8へ個別に「限定変更を許可し、設計と互換回帰を先行する」と回答したため再開する。再開時HEAD=a3c6bf2で、未コミットは上の停止記録2ファイルだけ。過去の承認を流用せず、architecture第5節とcontracts第7.1節に境界を先行記録した。
+
+analysisだけで原snapshot/全派生gameをcastして隠す方法は採らない。相互運用に必要な直接依存として、contractsの比較入力を未知Mappingへ、derived.gamesをdecodeに根拠のあるSequence[Mapping[str, object]]へ接続し、statisticsの入力も未検証Mappingへ揃える。後者のfield/IDはobjectのまま、得点演算の既存動的境界は広げない。既存属性・添字・updateの局所ビューと同じ数値述語を使い、原値や算術辞書をコピー/修復しない。依存/時系列/状態/正式ANDの経路は不変で、図を架空の新経路に書き換える必要はない。これはPhase 8の依存境界調整であり、他フェーズを進める承認とは扱わない。次に本体変更前の互換回帰と対象漏れ回帰を固定し、単独strict成功後にのみ12対象へ追加する。
+
+### Phase 8 実装・個別検証（全体ゲート前）
+
+先行設計後、新規互換35ケースを元実装で実行し、35成功・0失敗（3.73秒）を確認した。confidenceの原値/既定値/bool/非有限/範囲外、private metadataの属性例外name/obj、要求の真偽、算術辞書とgame参照の同一性、未検証IDの非変換、comparisonのnull、派生fieldの原値を固定した。型のために算術結果をdict展開でコピーする案は使わない。
+
+最初のscope漏れテストは非同期で実行中の依存読込が実装編集と重なり、analysis未登録だけでなく依存の新規2診断が混入したため、純粋な修正前証拠としない。元contracts/statisticsと元analysis＋未注釈probeをshadowへ固定し直し、当時の常設11対象の同じ設定が終了0でanalysisを見逃すことを再現した。証拠はscope-before-isolated.txt。新規35互換は本体編集前に完走している。
+
+19関数を注釈し、2つの通常Assessment型と4helperを追加した。数値述語/列のall検査、len、同じ辞書へのupdateに限定し、snapshotの未知値はget/添字境界で原操作を行う。直接依存ではcontractsの比較/必要集合引数と派生配列、statisticsのMapping入力/原IDの型を調整した。新しいharness依存はなく、原report/trace/全生成結果のcast、検証省略入口、原値補充、資格条件の変更は追加していない。CLIのJSON入力注釈は通常形状であり、既存decodeとfresh検証を省略しない。
+
+対象＋直接依存の初回strictは5診断（標準operatorの正常operand制約2、TypedDictへのprovenance展開1、残る未知fieldアクセス2）。標準operatorの呼出形だけのビューと同順の既知3field構築/未知getを設計へ追記後に直し、3source成功。成功後にのみanalysisを12件目へ登録し、既存11対象を保全した常設12source strictも成功した。lintは全成功。限定formatの新規テスト差分をapply_patchで直し、9ファイル成功を再確認した。
+
+最終のanalysis_typing/statistics_typing/contract_typing選択は99成功・0失敗・391除外（17.66秒）。局所ビューはanalysis10、contractsは従来26＋操作7の計33、statisticsはmethod2に限定し、各前提を設計へ記録、AST制限を具体的な操作だけへ更新した。statisticsの既存values: list[Any]境界1件は維持するだけで増やしていない。今後は型境界/禁止改変/常設漏れ回帰、元実装差分、実API/CLIと全品質ゲート、source/model/publication照合を行う。現時点ではPhase 8をPASSにしない。
+
+### Phase 8 最終ソース固定前の照合
+
+常設scope・局所ビュー制限・禁止改変・未知fieldの過剰保証・既存contract境界は28成功・0失敗（351.37秒）。さらにno_type_checkの別名importも拒否する負例を補い、解析型境界の最終9ケースを再実行して9成功・0失敗（12.98秒）。lint全成功、限定format9ファイル成功も再確認した。新規テストは互換35＋scope1＋操作境界2＋禁止改変6＋opaque複合probe1の45ケースである。
+
+開始時の3元ソースを独立namespaceに読み、confidence24、private Assessment66、比較条件99、条件不一致99、算術pair77・単独122・対応122、単独/比較の8公開API各13の**計713ケース**で戻り値reprと例外種/表示/name/objが一致した。原source hashによる当然のmetadata差だけを制御するため、両namespaceの__file__は現在ファイルへ揃えた。これは旧版を物理的に別プロセスで稼働させたprovenance比較ではない。比較時の3source hashをdifferential.jsonに残し、現在との一致も確認する。
+
+原schema5報告を現行のassess/eligibility/estimate/reanalysis/paired、比較Assessment/compare/builder/evaluate facadeで確認し、正常資料はeligible/available、初回親通信の4端点を起動前へ移した資料はtiming failed・ineligible/unavailableとなった。実再解析CLIは正常0・不適格1で別の新規UUID JSONを保存、不正JSON rootは2で新出力なし。元報告bytes/hashと不正入力[]を保全した。実argvと結果はformal-compatibility.jsonに保存した。
+
+資料の先行設計を実装反映済みとし、操作のstrictを12対象へ更新した。依存方向と正式AND、取得/再解析・unknown/failed・参考/正式・computed/available・要求/採用は維持する。ここからsource/config/modelを固定し、`python -B tools/quality.py` を新規UUID領域へ実行する。全必須と現在hash・保存証拠・モデルを照合するまでPhase 8は未完了である。
+
+最初の全ゲート `evaluation_results/quality-9a5e43f69c4e4057b18a1aab2e46817e/` はdependencies/lint/format/typing成功後、pytest途中で意図的に中止した。最終レビューで新規型probe内の一文字引数名を見つけたためで、本番の不具合やテスト失敗を検出したという記録ではない。UUID付きpytestのPIDとその品質ゲート親PIDを照合し、自分のツリーの終了を確認してから、probeの引数名/docstringだけを修正した。実行中にソースを変更して成功扱いせず、中断runの不完全証拠も削除しない。型検査の期待3診断や本番3source/モデルの意味は不変なので、新たな図の変更は不要。修正後の全ゲートを別UUIDで再実行するまで未完了とする。
+
+### Phase 8 最終監査・PASS
+
+2026-10-15、Phase 8の指定対象analysisを完了した。46診断を0へ解消し、従来11対象を保全した常設12source strictを確認。今回の限定承認を超える次フェーズやPhase 3 GUIへは進まない。
+
+最終ソース固定後の `python -B tools/quality.py` は終了0 / **QUALITY PASS**。新規保存先は `evaluation_results/quality-05c58c782b164273bae80aea60071e0d/`。前の中断runや過去の評価結果は削除/上書きしていない。
+
+| 必須検査 | 最終実結果 |
+|---|---|
+| environment / model / dependencies | 全終了0、model_errors=[] |
+| lint / 限定format | 終了0 / 終了0、既存scopeを維持 |
+| 常設strict | 終了0、12source成功（ゲート18.912秒） |
+| 全pytest | **715成功・0失敗・0skip、1064.19秒**（JUnit1064.178秒、ゲート1066.033秒） |
+| 独立smoke | **1成功・0失敗・714除外、2.59秒**（ゲート3.006秒） |
+| snapshot / evidence | 終了0 / 終了0 |
+
+既存670ケースを保全し、互換35＋品質10の45ケースを追加した。全体内のsmokeと独立実行のsmokeを固有テスト数として二重計上しない。最終のprobe命名/docstring修正後も解析型境界9ケースが9成功・0失敗（12.39秒）だった。途中のscope1失敗・6成功（180.68秒）は前述の依存読込との競合を含み、元ソースshadow固定での見逃し再現と最終の対象漏れ拒否を別に確認した。
+
+共有検証核の実行時変更を抑えた根拠として、注釈/docstring/局所castを除いたASTを元ソースと比較した。contractsは既存41定義中39一致、既存の変更はcomparison_conditions/comparison_mismatchesの2つだけで、属性/添字/反復の3helperを追加。statisticsは4定義中3一致で数式3関数を維持し、pair_scoresの既存属性操作2つだけを表現変更。analysisは19定義中11一致で、残り8は先行契約に記載した境界変更、4helper追加である。AST一致だけを契約の正しさの証明とせず、713差分・互換回帰・実API/CLI・全体テストを合わせて照合した。証拠はruntime-ast.json。
+
+今回は全体テストが前段階より長くかかった。新旧の同一保存報告のfresh検証をcProfileで各1回だけ比較し、旧2.961秒・現行3.086秒でともにverified。プロファイル付きの少数観測であり、環境要因や性能不変を断定しない。長時間化の根本原因は未特定で、AIの強さ/思考時間の比較結果にも読み替えない。制限緩和やテスト省略はせず、既存のゲート上限内で完走した。profile-summary.jsonと各profileログへ残した。
+
+quality/evidenceを実際に再読込し、必須10検査すべてpassed=true・exit_code=0・error=None、pytest/smoke/全証拠の収集complete・errors=[]を確認。31sourceの開始/終了/現在hash、差分比較時の本番3source hashが一致し、verify_publication=[]・validate_model=[]・保存Markdown再生成一致・pendingなしだった。completeを全内部assert/局所値の収集済みとは解釈せず、既存のmissing_informationを維持する。
+
+| 完了条件 | 現在の根拠 |
+|---|---|
+| 現行状態・前段階 | clean HEAD=a3c6bf2、Phase 7の実証拠/現在31hashと通常11source strictを確認後に開始 |
+| 診断・依存分析 | 46診断、19関数、独立7診断、contracts/statisticsとevaluate/CLIの利用を確認 |
+| 先行設計 | Phase 8個別承認後、architecture第5節とcontracts第7.1節を実装前に更新。図の経路不変も明記 |
+| 限定実装 | analysisの23定義を注釈、通常Assessmentと未知Mappingを分離。直接依存の相互運用だけを調整し、全体cast/新しいAny/ignore/除外で隠していない |
+| 単独・常設strict | 単独成功後にanalysisを12件目へ追加、既存11対象も維持 |
+| 関連回帰・正式入口 | 旧実装で35成功、最終関連99成功、境界28成功と追加/命名修正後9成功、713比較一致。全公開APIの正常受理/起動前拒否、CLI0/1/2、原証拠と算術辞書の参照保持を確認 |
+| 統合・設計整合 | 全715＋独立smoke1、10必須成功、モデル/現在source/保存証拠一致。DAGと取得/再解析・状態・正式ANDの経路は不変 |
+| 保護・記録 | 本節/BLOCKERS/操作/設計契約を更新。69tracked中58は開始bytes/hash不変、index空、HEAD不変。AI/GUI/学習資産/既存評価データを変更せず、commit/push/branch操作なし |
+
+変更はharness/analysis.py・contracts.py・statistics.py、pyproject.toml、tests/test_harness.py・test_quality.py、docs/harness_architecture.md・harness_contracts.md、ハーネス.md、QUALITY_PROGRESS.md・QUALITY_BLOCKERS.mdの11ファイル。正確な最終argv・環境・終了値はquality.json/evidence.json/各stepログに保存し、追加の実CLI argvは一時領域のformal-compatibility.jsonへ記録した。実行した主要コマンドは既述のmypy（単独3source→常設12source）、関連pytest、ruff check/format --check、`python -B tools/quality.py`（1回中断・1回完走）である。
+
+Phase 8の未解決blockerはない。ただし全未知入力、型introspection、不正dict subclass/proxyの副作用、性能完全一致、別OS/remote CI/GUI実操作は未保証。評価schema5/trace4/validation3、原証拠と正式資格の契約は維持し、型成功だけで資格を発行しない。旧schemaの不足を補造/昇格せず、解析/検証コードhash由来の新fingerprintだけを通常どおり記録する。evaluate/GUI等の残る本番strict化、実AIのtrace対応と棋力改善は今回の完了に含めない。**Phase 8 PASSで停止し、次フェーズ・commit・pushへは進まない。**
+
 ## mypy strict拡大 Phase 7（指定対象harness/contracts.py）
 
 ### 開始条件・診断・先行設計

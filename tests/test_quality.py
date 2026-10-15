@@ -1029,6 +1029,7 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
         'harness/protocol.py',
         'harness/search_budget.py',
         'harness/contracts.py',
+        'harness/analysis.py',
     ],
 )
 def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
@@ -1095,7 +1096,7 @@ def test_openings_typing_keeps_unchecked_generator_metadata_opaque(tmp_path):
 
 
 def _check_contract_type_boundaries(source):
-    """原report/raw/全生成構造のcastを許さず、26の局所演算ビューだけを固定する。"""
+    """原構造のcastを許さず、旧26＋Phase 8の7局所操作ビューを固定する。"""
     tree = ast.parse(source, type_comments=True)
     assert not tree.type_ignores
     assert not any(
@@ -1141,6 +1142,13 @@ def _check_contract_type_boundaries(source):
         "cast('_Role', label)",
         "cast('_BudgetState', trace['status'])",
         "cast(str, validation.get('reason', 'not_verified'))",
+        "cast('Callable[..., object]', getattr(value, 'get'))",
+        "cast('Callable[[object, str | int], object]', operator.getitem)",
+        "cast('Iterable[object]', value)",
+        "cast('Callable[[object, str, object], None]', operator.setitem)",
+        "cast('Callable[[str, object], object]', getattr(_get_field(conditions, 'budget_config_hashes', {}), 'pop'))",
+        "cast(int, before.get('schema_version', 1))",
+        "cast(int, after.get('schema_version', 1))",
     ]
     assert actual == sorted(expected)
 
@@ -1446,6 +1454,122 @@ def _check_reversi_dynamic_boundary(source):
         and node.attr in ('cast', 'no_type_check')
         for node in ast.walk(tree)
     )
+
+
+def _check_analysis_type_boundaries(source, module):
+    """限定操作以外のcast/Any/ignoreを拒否し、原値を有効構造へ昇格させない。"""
+    tree = ast.parse(source, type_comments=True)
+    assert not tree.type_ignores
+    assert not any(
+        isinstance(node, ast.Attribute)
+        and node.attr in ('Any', 'cast', 'no_type_check')
+        or isinstance(node, ast.Name)
+        and node.id == 'no_type_check'
+        or isinstance(node, ast.alias)
+        and (node.name == 'no_type_check' or node.name == 'cast' and node.asname is not None)
+        for node in ast.walk(tree)
+    )
+    any_uses = [node for node in ast.walk(tree) if isinstance(node, ast.Name) and node.id == 'Any']
+    any_imports = [
+        node for node in ast.walk(tree) if isinstance(node, ast.alias) and node.name == 'Any'
+    ]
+    if module == 'statistics':
+        assert len(any_uses) == len(any_imports) == 1
+        assert any(
+            ast.unparse(node) == 'values: list[Any] = []'
+            for node in ast.walk(tree)
+            if isinstance(node, ast.AnnAssign)
+        )
+    else:
+        assert not any_uses and not any_imports
+    actual = sorted(
+        ast.unparse(node)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'cast'
+    )
+    expected = {
+        'analysis': [
+            "cast('Sized', value)",
+            "cast('Callable[[Mapping[str, object]], object]', getattr(result, 'update'))",
+            "cast('Callable[[], Iterable[object]]', getattr(configs, 'values'))",
+            "cast(int, inspection['population']['verified_N'])",
+            "cast(float, assessment['confidence'])",
+            "cast(int, conditions['planned_games'])",
+            "cast(int, inspections[0]['population']['verified_N'])",
+            'cast(float, confidence)',
+            "cast(float, _item_field(interval, 'lower'))",
+            "cast(str, result['analysis_id'])",
+        ],
+        'statistics': [
+            "cast('Callable[[str], object]', getattr(game.get('colors', {}), 'get'))",
+            "cast('Callable[[], Iterable[tuple[object, object]]]', getattr(game.get('seeds', {}), 'items'))",
+        ],
+    }
+    assert actual == sorted(expected[module])
+
+
+@pytest.mark.parametrize('module', ['analysis', 'statistics'])
+def test_analysis_typing_limits_operation_views(module):
+    _check_analysis_type_boundaries(
+        (ROOT / 'harness' / (module + '.py')).read_text(encoding='utf-8'), module
+    )
+
+
+@pytest.mark.parametrize('mutation', ['raw', 'result', 'any', 'ignore', 'alias', 'decorator'])
+def test_analysis_typing_boundary_guard_rejects_mutations(mutation):
+    source = (ROOT / 'harness/analysis.py').read_text(encoding='utf-8')
+    addition = {
+        'raw': "\n_bad = cast('_SourceReport', raw)\n",
+        'result': "\n_bad = cast('Mapping[str, object]', result)\n",
+        'any': '\nfrom typing import Any\n',
+        'ignore': '\n_bad = None  # type: ignore\n',
+        'alias': "\nfrom typing import cast as unchecked\n_bad = unchecked('_Inspection', raw)\n",
+        'decorator': '\nfrom typing import no_type_check as unchecked\n',
+    }[mutation]
+    with pytest.raises(AssertionError):
+        _check_analysis_type_boundaries(source + addition, 'analysis')
+
+
+def test_analysis_typing_opaque_values_are_not_numeric_certificates(tmp_path):
+    """派生game・未検証case ID・解析Mappingが、型だけでintへ昇格しない。"""
+    probe = tmp_path / 'opaque_probe.py'
+    probe.write_text(
+        'from harness.contracts import _Inspection, _SourceReport\n'
+        'from harness.statistics import _PairScore\n'
+        'from harness.analysis import estimate\n'
+        'def valid_game(inspection: _Inspection) -> object:\n'
+        ' """派生fieldを未知値のまま返す。"""\n'
+        ' return inspection["derived"]["games"][0]["score_a"]\n'
+        'def invalid_game(inspection: _Inspection) -> int:\n'
+        ' """型だけで未検証fieldを数値認定できないことを確認する。"""\n'
+        ' return inspection["derived"]["games"][0]["score_a"]\n'
+        'def valid_case(pair: _PairScore) -> object:\n'
+        ' """未検証の原case IDを返す。"""\n'
+        ' return pair["case_id"]\n'
+        'def invalid_case(pair: _PairScore) -> int:\n'
+        ' """算術のcase IDを整数へ過剰保証しない。"""\n'
+        ' return pair["case_id"]\n'
+        'def valid_result(report: _SourceReport) -> object:\n'
+        ' """解析結果を原field型のまま読む。"""\n'
+        ' return estimate(report)["point_rate"]\n'
+        'def invalid_result(report: _SourceReport) -> int:\n'
+        ' """解析の状態確認なしに整数認定できないことを確認する。"""\n'
+        ' return estimate(report)["point_rate"]\n',
+        encoding='utf-8',
+    )
+    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
+    result = subprocess.run(
+        [*step.command, '--cache-dir', str(tmp_path / 'mypy-cache'), str(probe)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=60,
+    )
+    assert result.returncode == 1 and result.stdout.count('[return-value]') == 3, (
+        result.stdout + result.stderr
+    )
+    assert result.stdout.count(': error:') == 3, result.stdout + result.stderr
 
 
 def test_reversi_dynamic_annotations_stay_at_legacy_comparison_boundary():
