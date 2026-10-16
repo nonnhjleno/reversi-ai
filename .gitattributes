@@ -1,0 +1,5 @@
+# manifestのSHA-256を保つため、Phase 0の固定資産は改行を変換しない。
+/baselines/random_v0/** -text
+/benchmark_sets/phase0/** -text
+# 複製元から保持したCRLFと末尾空行は、固定実体の一部として扱う。
+/baselines/random_v0/reversi.py whitespace=cr-at-eol,-blank-at-eof

@@ -1,0 +1,95 @@
+{
+  "manifest_version": 1,
+  "phase": 0,
+  "created_at": "2026-10-16",
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "platform": "Windows 11",
+    "architecture": "AMD64"
+  },
+  "baseline": {
+    "baseline_id": "random_v0",
+    "manifest_path": "baselines/random_v0/manifest.json",
+    "manifest_sha256": "b1b7b65d93dd5b4178477c88c6fce854bd9f9eeb28b9f7963e7ad4b4522c7220",
+    "script_path": "baselines/random_v0/reversi.py",
+    "script_sha256": "a485400c335a8731a0cafd1d77d98fbbcda1289194c4e13147cbaf3135b12b41"
+  },
+  "opening_populations": [
+    {
+      "path": "benchmark_sets/phase0/development.json",
+      "file_sha256": "59dcc82a4365dfbad5403a834558fe66d8522c3e9d8d3a4cfaee7f388db34c13",
+      "population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+      "purpose": "development",
+      "population_size": 1000,
+      "placements": 8,
+      "generation_seed": 20261016,
+      "generator_code_sha256": "11d14dc64f4ba2f66475d5f664770ef81ebe6501c339f9c6fafe469b5e88f26f",
+      "excluded_population_hashes": []
+    },
+    {
+      "path": "benchmark_sets/phase0/held_out.json",
+      "file_sha256": "79cdd51816643002b7e708d2714f1e987d4885b1d7fda2ff4c0da0c69163b0c4",
+      "population_hash": "bf3c00a7eb67babeb75fcd8cc8ab94f2119246010066c9891d017b42cc0500c6",
+      "purpose": "held_out",
+      "population_size": 1000,
+      "placements": 8,
+      "generation_seed": 20261017,
+      "generator_code_sha256": "11d14dc64f4ba2f66475d5f664770ef81ebe6501c339f9c6fafe469b5e88f26f",
+      "excluded_population_hashes": [
+        "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78"
+      ]
+    }
+  ],
+  "phase0_smokes": [
+    {
+      "report_path": "evaluation_results/phase0/random-v0-smoke-20261016.json",
+      "report_sha256": "9f2c785556aa3c5c5d55795d1cd1450229c085abc04392f04b94ef019fb7f13b",
+      "run_id": "1972df36b08148c5a91b62db5d3c37a9",
+      "repeat_report_path": "evaluation_results/phase0/random-v0-smoke-repeat-20261016.json",
+      "repeat_report_sha256": "d1bb1f74e5b9eedbfd72c190ab44c2181260be6ef41730ce10c135aea25e0516",
+      "arguments": {
+        "games": 2,
+        "master_seed": 20261016,
+        "evaluation_profile": "smoke",
+        "budget_policy": "descriptive",
+        "starting_position": "initial_position_only",
+        "startup_timeout_seconds": 5,
+        "command_timeout_seconds": 1,
+        "genmove_timeout_seconds": 10
+      },
+      "first_run": {
+        "attempted": 2,
+        "completed": 2,
+        "failed": 0,
+        "A_wins_losses_draws": [1, 1, 0],
+        "A_win_rate": 0.5,
+        "A_point_rate": 0.5,
+        "protocol_status": "verified",
+        "budget_status": "unknown",
+        "statistics_status": "descriptive_only",
+        "A_genmove_samples": 62,
+        "A_mean_genmove_seconds": 0.0001855032258064516,
+        "A_max_genmove_seconds": 0.0005604,
+        "B_genmove_samples": 62,
+        "B_mean_genmove_seconds": 0.00019200967741935483,
+        "B_max_genmove_seconds": 0.0008887
+      },
+      "repeatability_check": {
+        "case_ids_and_role_seeds_match": true,
+        "moves_boards_and_results_match_excluding_elapsed_seconds": true,
+        "timings_match": false
+      },
+      "held_out_population_used": false
+    }
+  ],
+  "quality_gate": {
+    "report_path": "evaluation_results/quality-f37b07584956422a9274ff9cc0056a29/quality.json",
+    "report_sha256": "35859e5431c9f9baabc587e3202cb2abf4287637cd615059dd95a7aa20e36754",
+    "passed": true,
+    "pytest_passed": 750,
+    "pytest_failed": 0,
+    "independent_smoke_passed": 1
+  },
+  "formal_strength_claim": false
+}

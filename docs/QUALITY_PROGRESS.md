@@ -1236,3 +1236,20 @@ git diff --check
 新たな依存・循環依存や責務の移動はない。pipe guardは時計を呼ばず、採時位置/回数と期限の意味を維持するが、実行コスト0や実測ns不変は保証しない。traceback位置/追加helperフレームは変わり得る。TYPE_CHECKINGと遅延注釈の導入後の型introspectionは互換保証の対象外である。Windowsの対応直接CPythonで検証し、Linux設定の静的検査と模擬POSIX分岐を実機成功と混同しない。GUIのブラウザ実操作・POSIX実回収・remote CI・性能比較・棋力向上は未検証であり、本PASSの主張に含めない。
 
 通常のコード変更に伴いsource hashは変わるため、過去と同一コード条件と偽装しない。保存済み評価資産・AI本体・GUI・他の本番モジュールは変更していない。未解決のPhase 5 blockerはない。次回は現在の9strictと最新証拠を再確認し、別途指定された対象だけを調査する。**今回のPhase 5のみPASSとして停止し、次フェーズ・commit・pushには進まない。**
+
+## AI段階開発 Phase 0（2026-10-16）
+
+追補: mainの`d257df5`の改訂計画へ再照合し、29項目成功・0失敗。Phase 0の再生成は不要と判断した。学習はPhase 6〜7の主要工程となったが未実装。固定資産・保存対局・品質証拠のhashと意味を再検証した。詳細は[Phase 0報告の追補](reports/20261016_phase0.md)に置く。`feat/ai-phase0`をmainまで早送りし、固定資産のGit改行変換だけを`.gitattributes`で抑止する。strict対象・AI本体・GUI・評価契約の判定は変更しない。以下は初回実施時点の記録であり、追補後の品質結果は別記する。
+
+追補後の最終品質結果: `evaluation_results/quality-52f6d0a89bfa41f0b1c7ed05e28703ba/`で必須品質ゲートPASS、pytest 750成功・0失敗（363.28秒）、独立smoke 1成功（2.90秒）。31 source hash一致、`verify_publication=[]`。固定資産5ファイルはインデックスおよび改行設定true／falseの復元フィルターで元hashを保持した。Phase 0はPASSを維持し、Phase 1へは進まない。品質証拠と評価結果は既存のGit管理外保存先にも保持する。
+
+詳細なPhase順序は[リバーシAI段階開発・評価設計書](リバーシAI段階開発・評価設計書.md)を開発計画へ取り込んだ。今回はPhase 0だけを実施し、Phase 1以降のAIコード/テスト実装は行っていない。現行`reversi.py`と`web.py`、標準入出力仕様、schema5/trace4/validation3、正式評価条件は変更していない。
+
+- `baselines/random_v0/reversi.py`は変更前`reversi_player/reversi.py`とSHA-256が一致（`a485400c335a8731a0cafd1d77d98fbbcda1289194c4e13147cbaf3135b12b41`）。Python標準ライブラリのみをruntime依存とし、CPython 3.13.5/Windows/AMD64を記録した。
+- 開発用・held-out序盤母集団はそれぞれ1000件・8手・seed 20261016/20261017で生成し、Population v1検証成功。held-outは開発用population hashを除外し、D4 orbit交差0件。具体的なmanifestは`benchmark_sets/phase0/manifest.json`。
+- baseline同士のsmokeを同じseed/条件で2回実行。各回2局完走・失敗0・A/B先後各1局。case/role seed/着手/盤面/結果は計測秒を除いて再現した。2回の計測時間一致や正式なdeterminism probe成功とは扱わない。
+- 最終統合品質ゲート`evaluation_results/quality-f37b07584956422a9274ff9cc0056a29/`は全10必須step成功、pytest 750成功/0失敗、独立smoke 1成功。31 sourceの開始/終了hash一致、evidence complete/errorsなし、`verify_publication=[]`。
+- 実行条件、各hash、評価結果、残る制約は[Phase 0報告](reports/20261016_phase0.md)。report・trace等の既存成果物は上書きしていない。`docs/先生からのメモ/20261016.md`は作業開始時に未追跡で存在を確認したが、終了時には存在しなかった。こちらから編集・移動・削除・stageはしておらず、quality runnerにもworkspace上の任意ファイル削除処理はないことを確認した。消失原因は特定できず、復元はしていない。
+- 最終確認時に`AGENTS.md`へGit/branch運用ルールの差分があることを検出した。今回の変更として編集せず、内容も上書きしていない。最終quality evidenceの`AGENTS.md` source hashはその時点の現在bytesと一致する。
+
+共通ゲートはG0 PASS、G1 PASS（自動仕様/GUI接続テスト。実ブラウザ操作は未確認）、G2 PASS、G3 PASS、G4 PASS（Phase 0の固定条件同一性のみ。候補変更前後の比較や内部予算のverifiedは未実施）、G5 PASS。評価profileはsmokeであり、AI内部budgetはunknown、statisticsはdescriptive_only。正式な強さ・優越性・内部探索量は主張しない。Phase 0固有条件と全品質ゲートが成立したためPhase 0はPASS。Phase 1へ研究・実装を進める条件は満たすが、この記録はPhase 1の開始承認や実装を意味しない。
