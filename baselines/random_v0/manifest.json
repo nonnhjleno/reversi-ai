@@ -1,0 +1,28 @@
+{
+  "manifest_version": 1,
+  "baseline_id": "random_v0",
+  "entrypoint": "reversi.py",
+  "source": {
+    "path": "reversi_player/reversi.py",
+    "git_commit": "d722f12",
+    "sha256": "a485400c335a8731a0cafd1d77d98fbbcda1289194c4e13147cbaf3135b12b41"
+  },
+  "frozen_copy": {
+    "path": "baselines/random_v0/reversi.py",
+    "sha256": "a485400c335a8731a0cafd1d77d98fbbcda1289194c4e13147cbaf3135b12b41",
+    "byte_identical_to_source": true
+  },
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "platform": "Windows",
+    "architecture": "64-bit"
+  },
+  "runtime_dependencies": ["Python standard library only"],
+  "selection": "random.shuffle over legal candidates; choose the first candidate",
+  "reproducibility_scope": "Harness-seeded Python random under the recorded Python/runtime and evaluation conditions; not a cross-version guarantee",
+  "limitations": [
+    "The AI does not consume or enforce internal search-budget configuration.",
+    "The AI does not emit the required trace4 evidence; Phase 0 results are smoke/reference results, not formal strength evidence."
+  ]
+}

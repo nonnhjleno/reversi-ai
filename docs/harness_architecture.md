@@ -420,3 +420,23 @@ JLは同じevidenceモジュール内のprivate関数_journal_errorsとして実
 session/selected/testの重複、実行区間の交差、終了後イベント、未知kind/format_versionはincompleteへ伝播し、gateを失敗にする。途中停止は不足を記録し、終了イベントを補造しない。元pytest結果、評価schema5/trace4/validation3、正式資格入口、公開hash確認の責務は変更しない。verify_publicationは保存bytes対応だけを確認し、この状態検査の代用にも記録真正性の証明にもしない。
 
 最終監査で、完成名へ直接書き込むとfsync失敗後にも全bytesが残り得ることを確認し、先に公開モデルを修正した。pendingからos.linkによる排他公開を使い、同名winnerを置換しない。hardlink未対応の保存先は失敗にし、危険なreplaceへfallbackしない。own pendingの回収失敗は警告で保持し、公開済みの保存成功を巻き戻さない。停電/OS障害・directoryの永続性まで保証するものではない。
+
+## 12. AI開発Phase 0の資産・評価フロー
+
+この図は現行ハーネスの新しい正式評価経路ではなく、Phase 0で固定するAI資産と既存CLIの接続を示す。`reversi.py`は変更せず、baselineの独立コピーをA/Bの実行対象にする。序盤母集団は既存`openings`で生成・検証する。Phase 0の2局smokeは初期盤面で行い、最終評価用母集団を対局や調整に使用しない。
+
+```mermaid
+flowchart LR
+    SRC["reversi_player/reversi.py<br/>変更前のランダム実装"] -->|byte一致・SHA-256照合| BASE["baselines/random_v0/<br/>固定実行資産 + manifest"]
+    GEN["harness.openings<br/>seed・Python・generator版"] --> DEV["開発用Population v1<br/>purpose=development"]
+    GEN --> HOLD["最終評価用Population v1<br/>purpose=held_out<br/>developmentを対称除外"]
+    DEV --> VAL["load_population / validate_population"]
+    HOLD --> VAL
+    BASE -->|同一固定対象をA/Bへ指定| EV["harness.evaluate<br/>2局・先後交換・smoke<br/>初期盤面"]
+    EV --> REP["評価JSON + runs/<br/>trace・checkpoint等"]
+    DEV -.->|Phase 0では未使用| EV
+    HOLD -.->|隔離して保存・未使用| EV
+    REP --> REPORT["docs/reports/Phase 0報告<br/>quality証拠とhash参照"]
+```
+
+baselineの複製・序盤母集団のhashは資産同一性を照合するための値であり、署名や秘密保持を意味しない。母集団の`purpose`と除外hashは用途の記録であり、最終評価用データが人から秘匿されている、または未閲覧であることの保証ではない。図は品質ゲート・対局の正式資格を変更せず、random AIのtrace4/探索予算対応を示さない。
