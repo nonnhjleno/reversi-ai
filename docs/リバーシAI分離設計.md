@@ -1,6 +1,6 @@
 # リバーシAI分離設計
 
-調査・設計日: 2026-10-10。整理・照合日: 2026-10-13。状態: **設計案。AI分離は未実装**。AI境界の設計正本として旧move_selection_designの必要条件を統合した。現行ハーネスの契約は[データ契約](docs/harness_contracts.md)、構造は[アーキテクチャ](docs/harness_architecture.md)、実行確認は[正常化報告](docs/reports/ハーネス正常化完了報告.md)。整理前の本文は[旧分離資料](docs/archive/move_selection_design.md#snapshot-ai-separation)に保管する。
+調査・設計日: 2026-10-10。整理・照合日: 2026-10-13。状態: **設計案。AI分離は未実装**。AI境界の設計正本として旧move_selection_designの必要条件を統合した。現行ハーネスの契約は[データ契約](harness_contracts.md)、構造は[アーキテクチャ](harness_architecture.md)、実行確認は[正常化報告](reports/ハーネス正常化完了報告.md)。整理前の本文は[旧分離資料](archive/move_selection_design.md#snapshot-ai-separation)に保管する。
 
 ## 1. 結論、調査範囲、判断の根拠
 
@@ -14,15 +14,15 @@
 
 | 対象 | 確認した内容 |
 | --- | --- |
-| [AGENTS.md](AGENTS.md) | 資料の役割、独立ハーネス、未コミット変更の保護、契約と図の整合 |
-| [reversi.py](reversi_player/reversi.py) / [web.py](reversi_player/web.py) | 全クラス・関数、盤面・乱数の副作用、起動とコマンド経路 |
+| [AGENTS.md](../AGENTS.md) | 資料の役割、独立ハーネス、未コミット変更の保護、契約と図の整合 |
+| [reversi.py](../reversi_player/reversi.py) / [web.py](../reversi_player/web.py) | 全クラス・関数、盤面・乱数の副作用、起動とコマンド経路 |
 | `harness/` の10モジュール | 通信、seed、独立判定、固定序盤、予算trace、報告検証、比較・統計の関連経路 |
 | `tests/` の3テストモジュールと2fixture | stdin、盤面・反転・終局、GUI接続、異常、再現性、予算・保存・比較の試験 |
 | [プログラム開発方法.md](プログラム開発方法.md) | コマンド、盤面更新、色・座標、処理期限、機能群の分割 |
 | [開発計画.md](開発計画.md) / [強化方針.md](強化方針.md) | ランダム→探索→自己対戦学習、黒視点価値、予算・固定相手 |
-| [ハーネス.md](ハーネス.md) / [ハーネス拡張計画.md](docs/archive/ハーネス拡張計画.md) | 現行CLIと契約、正式評価と時間評価の区別、未実装の修正計画 |
-| [現状アーキテクチャ](docs/harness_architecture.md) / [契約定義](docs/harness_contracts.md) | 現行図・監査A01〜A16とコードの照合 |
-| [前回の分離案](docs/archive/move_selection_design.md) | AIパッケージ・盤面切り出し案との差分 |
+| [ハーネス.md](ハーネス.md) / [ハーネス拡張計画.md](archive/ハーネス拡張計画.md) | 現行CLIと契約、正式評価と時間評価の区別、未実装の修正計画 |
+| [現状アーキテクチャ](harness_architecture.md) / [契約定義](harness_contracts.md) | 現行図・監査A01〜A16とコードの照合 |
+| [前回の分離案](archive/move_selection_design.md) | AIパッケージ・盤面切り出し案との差分 |
 
 対象HEADは `1b934293ec66f1174f7f6dfbc47de5bbf66f34d1`。未コミットのハーネス拡張があるため、HEADだけではなく実際の作業ツリーを調査した。「コード確認」「今回の実行確認」「将来の提案」を区別する。既存資料の診断結果は今回再実行した診断とは扱わない。
 
@@ -102,7 +102,7 @@ GUIはHTTP要求ごとに子プレイヤーを新規起動する。パスはGUI�
 
 ### 2.4 ハーネス・テストとの境界
 
-本体を変更せず独立refereeと両host通信で検証する方式を維持する。Playerはプロセスと通信、evaluateは対局・序盤同期、contractsは原証拠の共通再検証、analysisは公開原report入口とprivate資格判定、statisticsは算術を担当する。schema5 / trace4 / validation3の現在の関数・型・保証は[現行構造](docs/harness_architecture.md)と[現行契約](docs/harness_contracts.md)を参照し、本書で古いschema3関数表を複写しない。
+本体を変更せず独立refereeと両host通信で検証する方式を維持する。Playerはプロセスと通信、evaluateは対局・序盤同期、contractsは原証拠の共通再検証、analysisは公開原report入口とprivate資格判定、statisticsは算術を担当する。schema5 / trace4 / validation3の現在の関数・型・保証は[現行構造](harness_architecture.md)と[現行契約](harness_contracts.md)を参照し、本書で古いschema3関数表を複写しない。
 
 budget_playerはrefereeを使う模擬producer、fault_playerは故障注入用。実AIからharness/referee.pyをimportして検証器との独立性を失わせない。正式fixtureの成功は実AIの予算制御や強さの証明ではない。
 
@@ -464,7 +464,7 @@ ai_engine.py、必要ならrules.py、設定・モデル・import等の実行依
 
 旧ai/random_policy.py＋board.py案は将来候補として履歴へ移した。本書の案A（ai_engine.py一つ、ルールは本体）が第一推奨。案Bの共通ルール分離はコピー速度・複数利用者・接続重複等の必要性が出た時に選ぶ。将来のai/search.py等を初版で一括作成しない。
 
-旧A01〜A15の未修正一覧・schema3関数表・当時の86テスト/ソースhashは現在の故障一覧として使わない。母集合/原trace/公開資格/時系列の現在の検査は現行契約を優先する。旧監査F02の予算設定検査は[現行契約](docs/harness_contracts.md#legacy-optional-budget)で対応。実AItrace、全case決定性、全依存固定、GUI設定/通常応答timeout等は残件・再確認事項として保持する。
+旧A01〜A15の未修正一覧・schema3関数表・当時の86テスト/ソースhashは現在の故障一覧として使わない。母集合/原trace/公開資格/時系列の現在の検査は現行契約を優先する。旧監査F02の予算設定検査は[現行契約](harness_contracts.md#legacy-optional-budget)で対応。実AItrace、全case決定性、全依存固定、GUI設定/通常応答timeout等は残件・再確認事項として保持する。
 
 ### 8.5 受け入れ条件
 
@@ -545,6 +545,6 @@ ai_engine.py、必要ならrules.py、設定・モデル・import等の実行依
 
 ## 12. 設計資料の更新と実行証拠
 
-本体/GUI/AI分離はこの整理で実装・変更していない。現在の回帰・CLI確認と制約は[正常化完了報告](docs/reports/ハーネス正常化完了報告.md)、過去の調査・hashは[旧分離資料の整理前snapshot](docs/archive/move_selection_design.md)に保管する。
+本体/GUI/AI分離はこの整理で実装・変更していない。現在の回帰・CLI確認と制約は[正常化完了報告](reports/ハーネス正常化完了報告.md)、過去の調査・hashは[旧分離資料の整理前snapshot](archive/move_selection_design.md)に保管する。
 
 AIを実装した時点で責務一覧・依存/sequence・選択器/計測契約・テスト・資産登録を更新する。ブラウザ描画、全将来局面の速度、モデルの強さを既存pytestの成功から保証しない。

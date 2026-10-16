@@ -2,7 +2,7 @@
 
 更新日: 2026-10-14。評価契約の基準: 8712843＋品質導入の非意味的lint整理・型注釈。現行実装はevaluation/analysis/comparison schema5、trace4、validation3。第13節は実装に先行して確定した開発用品質契約。旧schemaや品質ゲートの成功を正式AI評価資格に読み替えない。
 
-外部コマンド・盤面・時間制限の正本は[課題仕様](../プログラム開発方法.md)、実行方法は[ハーネス.md](../ハーネス.md)、責務と図は[harness_architecture.md](harness_architecture.md)。実行確認と残件は[正常化完了報告](reports/ハーネス正常化完了報告.md)。旧定義・監査・整理前の本文は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管する。
+外部コマンド・盤面・時間制限の正本は[課題仕様](プログラム開発方法.md)、実行方法は[ハーネス.md](ハーネス.md)、責務と図は[harness_architecture.md](harness_architecture.md)。実行確認と残件は[正常化完了報告](reports/ハーネス正常化完了報告.md)。旧定義・監査・整理前の本文は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管する。
 
 ## 1. 形式・型と外部仕様
 
@@ -274,6 +274,8 @@ statistics単独APIはcomputed/arithmetic_only/not_assessedで、母集合やraw
 comparison_reportのcaller resultはfresh結果との一致確認だけで、予約fieldを上書きしない。unknown/failedを許可する互換モードはない。内部private関数の改造や全原証拠の整合した偽造を防ぐ認証機構ではない。
 
 ## 13. 開発用品質報告（実装前に確定した別契約）
+
+資料再配置の契約（2026-10-16、参照変更に先行して確定）: 課題仕様の正本はdocs/プログラム開発方法.mdへ移し、tools.quality._source_hashesはそのパスと実bytesを開始/終了ともに記録する。旧ルートパスをfallbackや別名キーとして残さず、新パスの編集・削除も既存snapshot照合で検出する。AGENTS.mdはルート、設計図・契約は既存のdocs/配下を維持する。manifest.model_contract_hashesは既存のdocs/接頭辞の抽出結果なので、仕様を含む3文書となる。QualityReport/Evidenceの形式、必須検査、snapshotの合否条件、AI正式資格は変更しない。過去のquality/evidence/trace内の記録パス/hashは当時の原証拠として保持し、今回の移動に合わせて修復しない。履歴Markdownのリンク先だけは新配置に追従させ、履歴本文や件数を現在の結果へ置き換えない。
 
 品質runnerの結果は`report_kind=quality_gate / format_version=1`であり、evaluation/analysis/comparison schema5ではない。品質passedを正式評価のInspection/Assessmentへ渡さない。
 

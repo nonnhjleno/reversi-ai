@@ -2,7 +2,7 @@
 
 更新日: 2026-10-14。schema5 / trace4 / validation3、評価経路のコード基準は8712843＋品質導入時の非意味的なlint整理・型注釈。第2〜6節は現行評価モデルで、状態はPython enumの追加を意味しない。第11節は品質ゲートの実装前に確定した設計で、実装状況はQUALITY_PROGRESS.mdで区別する。AI・GUI・評価契約は変更しない。
 
-[操作手順](../ハーネス.md)、[データ契約](harness_contracts.md)、[最新実行報告](reports/ハーネス正常化完了報告.md)を参照する。整理前の図・監査・旧版説明は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管し、現行の指示には使わない。AI分離は別の[未実装設計案](../リバーシAI分離設計.md)である。
+[操作手順](ハーネス.md)、[データ契約](harness_contracts.md)、[最新実行報告](reports/ハーネス正常化完了報告.md)を参照する。整理前の図・監査・旧版説明は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管し、現行の指示には使わない。AI分離は別の[未実装設計案](リバーシAI分離設計.md)である。
 
 ## 1. 責務と境界
 
@@ -318,6 +318,8 @@ stateDiagram-v2
 
 ## 11. 開発用品質ゲート（現行実装）
 
+資料配置の整理（2026-10-16、参照変更に先行して確定）: ルートのAGENTS.mdとREADME.mdを入口とし、現行資料・品質進捗・授業メモをdocs/へ集約する。課題仕様の実ファイルと品質snapshotのキーはdocs/プログラム開発方法.mdへ移す。下図のsnapshotとmanifestはその新パスを使い、検査の順序・必須10検査・正式評価の経路・schemaは変更しない。model_contract_hashesは既存のdocs/接頭辞による抽出を維持するため、移動後は課題仕様も含む。既存のimport図・状態遷移の変更は不要で、過去の証拠のパス/hashを書き換えない。Phase 10のscope検査はこの整理では実装しない。反映状況と新旧の実行結果は[品質進捗](QUALITY_PROGRESS.md)を参照する。
+
 本節の図と契約はGoal 5のコード追加に先行して確定・照合した。対応するtools.qualityと27ゲート回帰は実装済みで、統合ゲートもローカル成功を確認した。最新の実行結果・未確認範囲はQUALITY_PROGRESS.mdに記録する。品質runnerを評価器や正式資格発行元へ組み込まず、第2〜6節の経路・schema・fresh検証を変えない。stdlibだけの`tools/quality.py`を入口とし、harnessからtoolsへのimportは禁止。CIも同じrunnerを呼び、独自の成功基準を持たない。
 
 ```mermaid
@@ -325,7 +327,7 @@ flowchart TD
     DEV["開発者 / Windows CI"] --> Q["tools/quality.py<br/>直接CPython3.13.5・固定dev依存を確認"]
     CFG["pyproject.toml / requirements-dev.txt"] --> Q
     Q --> M["validate_model<br/>AST import辺・主要fresh呼出辺を照合"]
-    DOC["現行設計図 / 契約"] --> M
+    DOC["docs/harness_architecture.md / docs/harness_contracts.md"] --> M
     CODE["harness / fixture / 公開wrapperコード"] --> M
     Q --> L["Ruff lint / 限定format / strict mypy / pip check"]
     Q --> T["全pytest / tools.evidence_plugin<br/>既存回帰・明示観測・段階別journal"]
@@ -333,7 +335,7 @@ flowchart TD
     M --> OUT["必須結果の集約<br/>全成功のみpassed"]
     L --> OUT
     S --> OUT
-    Q --> SNAP["開始時の対象source hash"]
+    Q --> SNAP["開始時の対象source hash<br/>課題仕様: docs/プログラム開発方法.md"]
     S --> SAME["終了時hashと照合<br/>観測した変更はgate失敗"]
     SNAP --> SAME
     SAME --> OUT
@@ -380,7 +382,7 @@ stateDiagram-v2
     QualityFailure --> [*]
 ```
 
-`validate_model`は第2節の全harness importとfixture3辺の過不足・循環、新moduleの図漏れを検査する。第5節の単独wrapper→fresh inspection、比較wrapper→_inspect_pair→fresh inspection、facade委譲をASTで検査する。図のレンダリングや全関数の制御フロー/意味の証明ではない。T-ID〜T-GATEや品質/統計の状態は全pytestと[品質導入対応表](../QUALITY_PROGRESS.md)で照合する。
+`validate_model`は第2節の全harness importとfixture3辺の過不足・循環、新moduleの図漏れを検査する。第5節の単独wrapper→fresh inspection、比較wrapper→_inspect_pair→fresh inspection、facade委譲をASTで検査する。図のレンダリングや全関数の制御フロー/意味の証明ではない。T-ID〜T-GATEや品質/統計の状態は全pytestと[品質導入対応表](QUALITY_PROGRESS.md)で照合する。
 
 Windows venvのredirectorではPopen PIDとproducer PIDが異なる事象を確認した。正式identity照合を緩めず、このゲートはvenvランチャーではない直接CPythonを使う。別起動機構の正式対応は未実装であり、この制約を時刻の猶予やhash更新で回避しない。
 

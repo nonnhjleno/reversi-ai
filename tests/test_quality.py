@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -87,6 +88,74 @@ def _fake_result(step: quality.Step, log: Path, code: int) -> quality.StepResult
         'error': None,
         'passed': code == 0,
     }
+
+
+def test_documentation_file_links_resolve():
+    """現行資料と履歴のローカルリンク先を検査する。外部URLや見出しの存在は検査しない。"""
+    documents = [ROOT / 'README.md', ROOT / 'AGENTS.md', *sorted((ROOT / 'docs').rglob('*.md'))]
+    missing = []
+    for document in documents:
+        links = re.findall(r'!?\[[^\]\n]*\]\(([^)\n]+)\)', document.read_text(encoding='utf-8'))
+        for target in links:
+            if target.startswith('#') or re.match(r'[a-zA-Z][a-zA-Z0-9+.-]*:', target):
+                continue
+            path = target.split('#', 1)[0]
+            if path and not (document.parent / path).exists():
+                missing.append(f'{document.relative_to(ROOT).as_posix()}: {target}')
+    assert missing == []
+
+
+def test_source_hashes_use_relocated_specification(tmp_path):
+    """旧パスの同名ファイルではなく、移動した仕様のbytesと新パスを記録する。"""
+    (tmp_path / 'docs').mkdir()
+    specification = tmp_path / 'docs/プログラム開発方法.md'
+    specification.write_text('仕様の正本。\n', encoding='utf-8')
+    (tmp_path / 'プログラム開発方法.md').write_text('旧配置の別内容。\n', encoding='utf-8')
+    hashes = quality._source_hashes(tmp_path)
+    assert hashes == {
+        'docs/プログラム開発方法.md': hashlib.sha256(specification.read_bytes()).hexdigest()
+    }
+
+
+@pytest.mark.parametrize('mutation', ['unchanged', 'changed', 'deleted'])
+def test_gate_tracks_relocated_specification_in_snapshots_and_manifest(tmp_path, mutation):
+    """新配置の仕様変更・欠損を旧パスの囮で隠せず、正常系は保存まで成功する。"""
+    root = tmp_path / 'source'
+    _model_copy(root)
+    shutil.copy2(ROOT / 'requirements-dev.txt', root / 'requirements-dev.txt')
+    specification = root / 'docs/プログラム開発方法.md'
+    specification.write_text('仕様の正本。\n', encoding='utf-8')
+    initial_hash = hashlib.sha256(specification.read_bytes()).hexdigest()
+    (root / 'プログラム開発方法.md').write_text('旧配置の別内容。\n', encoding='utf-8')
+
+    def runner(step, source, log):
+        """検査途中の仕様だけを一時領域で変更し、各コマンド自体は成功させる。"""
+        if step.name == 'lint':
+            if mutation == 'changed':
+                specification.write_text('検査中に変更された仕様。\n', encoding='utf-8')
+            elif mutation == 'deleted':
+                specification.unlink()
+        return _fake_result(step, log, 0)
+
+    output = tmp_path / 'run'
+    report = quality.run_gate(root, output, runner)
+    key = 'docs/プログラム開発方法.md'
+    assert report['source_hashes'][key] == initial_hash
+    assert 'プログラム開発方法.md' not in report['source_hashes']
+    assert report['passed'] is (mutation == 'unchanged')
+    snapshot = next(item for item in report['steps'] if item['name'] == 'snapshot')
+    assert snapshot['passed'] is (mutation == 'unchanged')
+    if mutation == 'deleted':
+        assert key not in report['source_hashes_end']
+    else:
+        assert (
+            report['source_hashes_end'][key]
+            == hashlib.sha256(specification.read_bytes()).hexdigest()
+        )
+    saved = json.loads((output / 'evidence.json').read_text(encoding='utf-8'))
+    assert saved['manifest']['source_hashes'][key] == initial_hash
+    assert saved['manifest']['model_contract_hashes'][key] == initial_hash
+    assert evidence.verify_publication(output) == []
 
 
 def test_model_matches_current_imports_and_formal_entry_edges():

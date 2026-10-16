@@ -338,7 +338,7 @@ def _local_result(name: str, errors: list[str], log: Path, seconds: float) -> St
 
 
 def _source_hashes(root: Path) -> dict[str, str]:
-    """対象コード・設定・モデルをfingerprintする。大きな評価/学習資産は読み込まない。"""
+    """対象コード・設定・モデル・課題仕様をfingerprintする。評価/学習資産は読まない。"""
     sources = [
         root / name
         for name in (
@@ -346,7 +346,7 @@ def _source_hashes(root: Path) -> dict[str, str]:
             'requirements-dev.txt',
             'pytest.ini',
             'AGENTS.md',
-            'プログラム開発方法.md',
+            'docs/プログラム開発方法.md',
         )
     ]
     sources.extend(

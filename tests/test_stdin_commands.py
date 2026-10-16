@@ -97,7 +97,7 @@ def test_live_rejected_move_preserves_board(player, command):
     record_expectation('rejected-move', inputs={'command': command, 'initial_board': INITIAL_BOARD},
                        expected={'response': ['NG'], 'board': INITIAL_BOARD}, expectation_kind='fixed',
                        model='docs/harness_architecture.md:親Player/外部script',
-                       contract='プログラム開発方法.md:play/初期盤面', implementation='harness.protocol.Player.command')
+                       contract='docs/プログラム開発方法.md:play/初期盤面', implementation='harness.protocol.Player.command')
     response = player.command(command)
     record_observation('rejected-move', {'response': response})
     assert response == ['NG']

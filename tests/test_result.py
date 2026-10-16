@@ -221,7 +221,7 @@ def test_all_eight_directions_flip_together():
     record_expectation('eight-directions', inputs={'board': before, 'color': 'B', 'position': [3, 3]},
                        expected={'board': expected, 'stdout': 'OK\nOK\n'}, expectation_kind='fixed',
                        model='docs/harness_architecture.md:referee/外部script',
-                       contract='プログラム開発方法.md:リバーシのルール', implementation='reversi_player.reversi.Board.play')
+                       contract='docs/プログラム開発方法.md:リバーシのルール', implementation='reversi_player.reversi.Board.play')
     board = Board()
     board.cell = [list(row) for row in before]
     output = io.StringIO()

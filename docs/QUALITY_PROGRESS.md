@@ -3,6 +3,34 @@
 開始日: 2026-10-14。開始commit: `8712843ee81ac6fbf7ce2ab2d9e8da8f54b298ae`。
 開始時Gitはclean、mainとorigin/mainは一致。commit・push・branch操作は行わない。
 
+## 資料配置の整理（2026-10-16）
+
+資料の削除・統合ではなく配置のみを整理する。ルートのAGENTS.mdを維持し、README.mdを資料と操作の入口として追加する。従来ルートの現行資料8件と授業メモ2件をdocs/へ移動し、既存の設計・契約、archive/、reports/はその分類を維持する。未追跡のリバーシAI段階開発・評価設計書.mdは移動・編集・ステージ対象に含めず、元の場所とbytesを保護する。
+
+コードより先にarchitecture第11節の品質図/snapshot説明とcontracts第13節の配置契約を更新した。意味の変更は資料の実パスのみであり、AI・GUI・探索・通信・正式評価・schema・既存10必須検査・13strict対象は変更しない。Phase 10は引き続き未実装・非PASS。
+
+品質ゲートの課題仕様参照はdocs/プログラム開発方法.mdへ追従させる。仕様原文を変更せず、新パスを開始/終了source_hashesへ記録する。manifestのmodel_contract_hashesは既存のdocs/接頭辞抽出を維持するので、仕様も含む3文書となる。旧ルートに囮の同名ファイルがあっても使わない。保存済みquality/evidence/traceのパス/hashは修復しない。現行資料と履歴Markdownのリンク先・AGENTSの参照・3テストの仕様参照metadataだけを新配置へ合わせる。履歴本文のHEAD/件数/当時のパスは維持する。以下の過去記録の「今回」や変更禁止はそれぞれの作業時点の記述であり、本整理の変更範囲ではない。
+
+追加回帰は5ケース。ローカル文書リンク1件、新パスの仕様bytes採用1件、正常/検査中の仕様変更/削除のgate・snapshot・manifest照合3件。後者はfake runnerによる集約試験であり、実コマンド全体の動作確認は別途フルゲートで行う。文書リンク検査はファイル・ディレクトリの存在のみで、見出しanchorや外部URL、Mermaidの実描画までは検査しない。
+
+変更前に直接CPython3.13.5で `python -B tools/quality.py` を実行し、quality-4055bf7ca355410abb3d5cc3e47888e7へ新規保存して全必須成功を確認した。参照変更前の `python -B -m pytest -q tests/test_quality.py -k relocated_specification -p no:cacheprovider` は4失敗・159除外（5.22秒）。旧実装が旧ルートの仕様を採用し、新配置を記録しないことを確認した。資料移動の初回PowerShellはSplit-Pathのパラメーター不整合で最初の移動前に停止した。親パス取得をGetDirectoryNameへ修正し、全パスをworkspace内と確認してから上書きなしで10件を移動した。
+
+整理後の実行結果:
+
+| 実行 | 結果 |
+|---|---|
+| 新規5回帰（仕様の新パス4ケース＋文書リンク） | 5成功・0失敗・158除外、5.35秒 |
+| Ruff format check | 初回に新規テストの2整形差分を検出。差分を修正し、再確認で2ファイルとも整形済み |
+| 変更前の統合品質ゲート | 全10必須成功。全pytest745成功・0失敗・0skip、gate計測796.85秒。独立smoke1成功、8.26秒 |
+| 変更後の統合品質ゲート | 全10必須成功。全pytest750成功・0失敗・0skip、gate計測885.02秒。独立smoke1成功、8.20秒。既存13strictを維持 |
+| 保存証拠・現行モデル | 31sourceの開始/終了/現在hash一致、仕様を含むdocs/3文書のmetadata一致、収集complete/errors=[]、publication/model=[]、Markdown再生成一致、pendingなし |
+
+変更後の新規証拠は `evaluation_results/quality-8558f3106a014858811530dfbc347fd0/`。表のgate計測秒は外部プロセス全体で、JUnit内のtestsuite時間とは別である。新しい5回帰も全pytestに含めて再検証した。実行時コードはtools/quality.pyの仕様参照1文字列とdocstringだけの変更であること、他3テストも仕様参照metadataだけの変更であることをHEAD原文との比較で確認した。必須判定・時間上限・評価契約・型設定・AI/GUI・harness本体を変更していない。
+
+実行はすべてルートから、`PYTHONIOENCODING=utf-8`を設定して直接CPython `C:/Users/taaai/AppData/Local/Programs/Python/Python313/python.exe` の `-B` で行った。主要argvは `tools/quality.py`（変更前/後各1回）、`-m pytest -q tests/test_quality.py -k relocated_specification -p no:cacheprovider`（参照変更前の4失敗）、`-m pytest -q tests/test_quality.py -k "relocated_specification or documentation_file_links" -p no:cacheprovider`（5成功）、`-m ruff format --check tools/quality.py tests/test_quality.py`。全pytest・独立smoke・strictの実argvと全結果は保存証拠を参照する。`git diff --check`とvalidate_modelも不一致なし。
+
+保全照合では、移動先対応で元69追跡ファイルの欠損がないこと、仕様・AIモデル運用方針・停止事項・授業メモ2件の純移動5件が元bytesと一致することを確認した。本文変更22件以外の47件は移動先対応でbytes不変であり、既存未追跡設計書のhashも開始時と一致する。履歴Markdownはリンク以外を更新せず、過去の評価データ・元証拠は上書きしていない。最終追記はこの進捗文書のみ（31source対象外）であり、コード検証結果を後から別のsourceへ読み替えない。外部URL、見出しanchor、Mermaid実描画、実ブラウザ操作、remote CIは今回未検証。Phase 10の対象漏れ防止も引き続き未実装である。
+
 ## 現行strict方針（2026-10-16改定）
 
 この節が今後のstrict範囲とPhase 3/10の判断の正本である。以降の過去記録にある「Phase 3保留」「GUI未移行」「将来再開」は、その時点の履歴として残し、本方針を優先する。元の品質基盤Goal 3とstrict移行Phase 3は別の番号であり、GoalのPASSをGUI移行のPASSと読み替えない。

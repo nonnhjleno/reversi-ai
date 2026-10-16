@@ -40,7 +40,7 @@ def test_response_contract_accepts_exact_wire_format_without_mutation(command, l
     before = copy.deepcopy(lines)
     record_expectation('wire-format', inputs={'command': command, 'lines': lines},
                        expected={'result': None, 'lines': before}, expectation_kind='fixed',
-                       model='docs/harness_architecture.md:protocol', contract='プログラム開発方法.md:コマンド仕様',
+                       model='docs/harness_architecture.md:protocol', contract='docs/プログラム開発方法.md:コマンド仕様',
                        implementation='harness.protocol.validate_response')
     result = validate_response(command, lines)
     record_observation('wire-format', {'result': result, 'lines': lines})
