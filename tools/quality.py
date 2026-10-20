@@ -10,6 +10,7 @@ import signal
 import subprocess
 import sys
 import time
+import tomllib
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -55,6 +56,121 @@ class QualityReport(TypedDict):
 
 
 Runner = Callable[[Step, Path, Path], StepResult]
+
+PRODUCTION_ROOTS = ('harness', 'reversi_player', 'tools')
+STRICT_BASELINE = frozenset(
+    (
+        'harness/referee.py harness/seeded_player.py harness/statistics.py '
+        'harness/openings.py harness/protocol.py harness/search_budget.py '
+        'harness/contracts.py harness/analysis.py harness/evaluate.py '
+        'reversi_player/reversi.py reversi_player/ai_engine.py '
+        'tools/quality.py tools/evidence.py tools/evidence_plugin.py'
+    ).split()
+)
+REFERENCE_SCRIPTS = frozenset({'reversi_01.py', '102400-games/data.py'})
+NON_PRODUCTION_DIRS = frozenset(
+    {
+        '.git',
+        '.venv',
+        'venv',
+        '__pycache__',
+        '.pytest_cache',
+        '.mypy_cache',
+        '.ruff_cache',
+        'evaluation_results',
+        'baselines',
+        'tests',
+    }
+)
+
+
+def python_inventory(root: Path) -> list[Path]:
+    """本番と未分類のPythonを列挙する。固定資産・テスト・依存/生成物は別用途。"""
+
+    def unreadable(failure: OSError) -> None:
+        """走査不能な下位領域を未存在として無視しない。"""
+        raise failure
+
+    paths: list[Path] = []
+    for directory, children, files in os.walk(root, followlinks=False, onerror=unreadable):
+        children[:] = [
+            name
+            for name in children
+            if name != '__pycache__'
+            and not (Path(directory) == root and name in NON_PRODUCTION_DIRS)
+        ]
+        paths.extend(
+            Path(directory) / name for name in files if name.lower().endswith(('.py', '.pyi'))
+        )
+        paths.extend(
+            Path(directory) / name
+            for name in children
+            if (Path(directory) / name).is_symlink() or (Path(directory) / name).is_junction()
+        )
+    return sorted(paths)
+
+
+def validate_scope(root: Path) -> list[str]:
+    """本番inventoryと明示strictを照合する。唯一の例外は配布GUI、緩和設定は許可しない。"""
+    try:
+        config = tomllib.loads((root / 'pyproject.toml').read_text(encoding='utf-8'))
+        mypy = config['tool']['mypy']
+        if set(mypy) != {'python_version', 'strict', 'explicit_package_bases', 'files'}:
+            return ['typing_scope: 未承認のmypy設定/抑制']
+        if (
+            mypy['strict'] is not True
+            or mypy['explicit_package_bases'] is not True
+            or mypy['python_version'] != '3.13'
+        ):
+            return ['typing_scope: strict設定不一致']
+        files = mypy['files']
+        if not isinstance(files, list) or not all(isinstance(item, str) for item in files):
+            return ['typing_scope: files不正']
+        errors = []
+        for item in files:
+            path = Path(item)
+            if (
+                path.is_absolute()
+                or path.as_posix() != item
+                or '..' in path.parts
+                or not (root / path).is_file()
+            ):
+                errors.append('typing_scope: 非正規/欠損パス: ' + item)
+        if len({item.casefold() for item in files}) != len(files):
+            errors.append('typing_scope: 重複/別名パス')
+        production = set()
+        for path in python_inventory(root):
+            name = path.relative_to(root).as_posix()
+            if path.is_symlink() or path.is_junction() or path.suffix.lower() == '.pyi':
+                errors.append('typing_scope: 未承認stub/別名: ' + name)
+            elif name.split('/')[0] in PRODUCTION_ROOTS:
+                production.add(name)
+            elif name not in REFERENCE_SCRIPTS:
+                errors.append('typing_scope: 未分類Python: ' + name)
+        expected = production - {'reversi_player/web.py'}
+        errors.extend('typing_scope: 未登録: ' + name for name in sorted(expected - set(files)))
+        errors.extend(
+            'typing_scope: 余分/例外登録: ' + name for name in sorted(set(files) - expected)
+        )
+        errors.extend(
+            'typing_scope: 既存本番欠損: ' + name for name in sorted(STRICT_BASELINE - production)
+        )
+        ruff = config['tool']['ruff']
+        if ruff['include'] != [
+            'harness/**/*.py',
+            'reversi_player/**/*.py',
+            'tests/**/*.py',
+            'tools/**/*.py',
+        ] or any(key in ruff for key in ('exclude', 'extend-exclude', 'force-exclude')):
+            errors.append('typing_scope: Lint対象不一致')
+        if ruff['lint'] != {
+            'select': ['E4', 'E7', 'E9', 'F'],
+            'per-file-ignores': {'tests/fixtures/budget_player.py': ['E402']},
+        }:
+            errors.append('typing_scope: Lint抑制不一致')
+        return errors
+    except (OSError, ValueError, KeyError, TypeError) as failure:
+        return ['typing_scope: 設定読取不能: ' + type(failure).__name__]
 
 
 def _imports(path: Path) -> set[str]:
@@ -355,9 +471,10 @@ def _source_hashes(root: Path) -> dict[str, str]:
     sources.append(root / '.github/workflows/quality.yml')
     for directory in ('harness', 'reversi_player', 'tests', 'tools'):
         sources.extend((root / directory).rglob('*.py'))
+    sources.extend(python_inventory(root))
     return {
         path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in sorted(sources)
+        for path in sorted(set(sources))
         if path.is_file()
     }
 
@@ -407,6 +524,23 @@ def run_gate(root: Path, output: Path, runner: Runner = run_step) -> QualityRepo
     results.append(
         _local_result('model', model_errors, output / 'model.txt', time.perf_counter() - started)
     )
+    started = time.perf_counter()
+    scope_errors = validate_scope(root)
+    results.append(
+        _local_result(
+            'typing_scope', scope_errors, output / 'typing_scope.txt', time.perf_counter() - started
+        )
+    )
+    scope_plan: dict[str, object] = {
+        'name': 'typing_scope',
+        'step_id': output.name + ':typing_scope',
+        'command': ['internal:typing_scope'],
+        'timeout_seconds': None,
+    }
+    manifest_steps = manifest_data['steps']
+    if not isinstance(manifest_steps, list):
+        raise ValueError('manifest_steps_invalid')
+    manifest_steps.append(scope_plan)
     for step in steps:
         log = output / f'{step.name}.txt'
         if environment_errors:
@@ -432,6 +566,7 @@ def run_gate(root: Path, output: Path, runner: Runner = run_step) -> QualityRepo
     started = time.perf_counter()
     hashes_after = _source_hashes(root)
     snapshot_errors = [] if hashes_before == hashes_after else ['検査中に対象sourceが変更された']
+    snapshot_errors.extend(validate_scope(root))
     results.append(
         _local_result(
             'snapshot', snapshot_errors, output / 'snapshot.txt', time.perf_counter() - started
@@ -443,7 +578,13 @@ def run_gate(root: Path, output: Path, runner: Runner = run_step) -> QualityRepo
         'passed': all(
             item['passed'] and item['exit_code'] == 0 and item['error'] is None for item in results
         ),
-        'planned_steps': ['environment', 'model', *(step.name for step in steps), 'snapshot'],
+        'planned_steps': [
+            'environment',
+            'model',
+            'typing_scope',
+            *(step.name for step in steps),
+            'snapshot',
+        ],
         'steps': results,
         'model_errors': model_errors,
         'environment': {

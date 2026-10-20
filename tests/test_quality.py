@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -16,8 +17,47 @@ import pytest
 
 from tools import quality
 from tools import evidence
+from tools.evidence_plugin import record_expectation, record_observation
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.mark.parametrize('missing', range(9))
+def test_scope_batch_requires_every_independent_diagnostic(missing):
+    """他の8件がnonzeroを作っても、1対象の検査漏れを成功にしない。"""
+    expected = {(f'probe_{index}.py', 3, 'no-untyped-def') for index in range(9)}
+    lines = [
+        f'probe_{index}.py:3: error: Function is missing a type annotation  [no-untyped-def]'
+        for index in range(9)
+    ]
+    complete = subprocess.CompletedProcess([], 1, '\n'.join(lines), '')
+    _assert_scope_diagnostics(complete, expected, ROOT)
+    lines.pop(missing)
+    incomplete = subprocess.CompletedProcess([], 1, '\n'.join(lines), '')
+    with pytest.raises(AssertionError):
+        _assert_scope_diagnostics(incomplete, expected, ROOT)
+
+
+@pytest.mark.parametrize(
+    'mutation', ['code', 'line', 'path', 'duplicate', 'extra', 'exit', 'stderr']
+)
+def test_scope_batch_rejects_non_equivalent_diagnostics(mutation):
+    """終了値だけの成功判定へ戻ることや、誤った診断を黙って無視することを防ぐ。"""
+    line = 'probe.py:3: error: Function is missing a type annotation  [no-untyped-def]'
+    changed = {
+        'code': line.replace('no-untyped-def', 'syntax'),
+        'line': line.replace(':3:', ':4:'),
+        'path': line.replace('probe.py', 'other.py'),
+        'duplicate': line + '\n' + line,
+        'extra': line + '\nother.py:1: error: bad  [syntax]',
+        'exit': line,
+        'stderr': line,
+    }[mutation]
+    result = subprocess.CompletedProcess(
+        [], 2 if mutation == 'exit' else 1, changed, 'abnormal' if mutation == 'stderr' else ''
+    )
+    with pytest.raises(AssertionError):
+        _assert_scope_diagnostics(result, {('probe.py', 3, 'no-untyped-def')}, ROOT)
 
 
 def _model_copy(root: Path) -> None:
@@ -30,6 +70,11 @@ def _model_copy(root: Path) -> None:
     shutil.copy2(ROOT / 'docs/harness_contracts.md', root / 'docs/harness_contracts.md')
     (root / 'tests/fixtures').mkdir(parents=True)
     shutil.copy2(ROOT / 'tests/fixtures/budget_player.py', root / 'tests/fixtures/budget_player.py')
+    for directory in ('tools', 'reversi_player'):
+        shutil.copytree(
+            ROOT / directory, root / directory, ignore=shutil.ignore_patterns('__pycache__')
+        )
+    shutil.copy2(ROOT / 'pyproject.toml', root / 'pyproject.toml')
 
 
 def _fake_result(step: quality.Step, log: Path, code: int) -> quality.StepResult:
@@ -237,6 +282,24 @@ def test_gate_environment_unavailable_is_not_executed_or_successful(tmp_path, mo
     )
 
 
+def test_scope_failure_cannot_be_covered_by_successful_commands(tmp_path, monkeypatch):
+    """全外部検査と証拠収集が成功でも、必須scope失敗をFull成功へ昇格しない。"""
+    monkeypatch.setattr(quality, 'validate_scope', lambda root: ['未登録の本番module'])
+
+    def runner(step, root, log):
+        """整合する成功journal/JUnitを返し、scope以外の失敗で隠さない。"""
+        return _fake_result(step, log, 0)
+
+    output = tmp_path / 'run'
+    report = quality.run_gate(ROOT, output, runner)
+    assert not report['passed']
+    assert {step['name'] for step in report['steps'] if not step['passed']} == {
+        'typing_scope',
+        'snapshot',
+    }
+    assert evidence.verify_publication(output) == []
+
+
 def test_gate_missing_model_cannot_be_covered_by_successful_commands(tmp_path, monkeypatch):
     def missing_model(root):
         """モデル読込不能は既知の過不足とは別の理由でgateを失敗にする。"""
@@ -401,7 +464,7 @@ def test_gate_main_propagates_output_failure(monkeypatch, tmp_path):
 def test_real_quality_cli_rejects_intentional_lint_type_and_test_failures(tmp_path):
     """一時repoの壊れたコードで実CLIを呼び、個々のnonzeroと総合終了1を確認する。"""
     _model_copy(tmp_path)
-    (tmp_path / 'tools').mkdir()
+    (tmp_path / 'tools').mkdir(exist_ok=True)
     shutil.copy2(ROOT / 'tools/quality.py', tmp_path / 'tools/quality.py')
     shutil.copy2(ROOT / 'tools/__init__.py', tmp_path / 'tools/__init__.py')
     shutil.copy2(ROOT / 'tools/evidence.py', tmp_path / 'tools/evidence.py')
@@ -646,8 +709,8 @@ def test_evidence_publication_hashes_and_json_markdown_agree(tmp_path):
     assert bundle['manifest']['run_id'] == 'run'
     assert 'test_command' in markdown
     assert bundle['validation_passed']
-    assert len(bundle['manifest']['steps']) == 10
-    assert len(bundle['manifest']['checks']) == 9
+    assert len(bundle['manifest']['steps']) == 11
+    assert len(bundle['manifest']['checks']) == 10
     before = (output / 'evidence.json').read_bytes()
     with pytest.raises(FileExistsError):
         evidence.save_new(output / 'evidence.json', 'changed')
@@ -1089,50 +1152,197 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
     assert not json.loads((output / 'quality.json').read_text(encoding='utf-8'))['passed']
 
 
-@pytest.mark.parametrize(
-    'relative_path',
-    [
-        'harness/statistics.py',
-        'reversi_player/reversi.py',
-        'harness/openings.py',
-        'harness/protocol.py',
-        'harness/search_budget.py',
-        'harness/contracts.py',
-        'harness/analysis.py',
-        'harness/evaluate.py',
-        'reversi_player/ai_engine.py',
-    ],
+STRICT_SCOPE_PATHS = (
+    'harness/statistics.py',
+    'reversi_player/reversi.py',
+    'harness/openings.py',
+    'harness/protocol.py',
+    'harness/search_budget.py',
+    'harness/contracts.py',
+    'harness/analysis.py',
+    'harness/evaluate.py',
+    'reversi_player/ai_engine.py',
 )
-def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):
-    """通常のgate argvで昇格済moduleの未注釈関数を拒否し、対象漏れを検出する。"""
-    source = ROOT / relative_path
-    shadow = tmp_path / source.name
-    shadow.write_text(
+
+
+def _assert_scope_diagnostics(result, expected, root):
+    """独立した全パス・追加行・codeの一致を要求し、別エラーによるnonzeroを拒否する。"""
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert not result.stderr, result.stderr
+    matches = re.findall(r'^(.*?):(\d+): error: .*?\[([a-z-]+)\]\s*$', result.stdout, re.MULTILINE)
+    actual = []
+    for path, line, code in matches:
+        normalized = Path(path.replace('\\', '/'))
+        if normalized.is_absolute():
+            normalized = normalized.relative_to(root)
+        actual.append((normalized.as_posix(), int(line), code))
+    assert result.stdout.count(': error:') == len(actual), result.stdout
+    assert len(actual) == len(set(actual)), result.stdout
+    assert set(actual) == expected, result.stdout
+    return actual
+
+
+def _run_scope_probes(root, directory, paths, omit_shadow=None):
+    """新規領域にshadowと原診断を保存してfresh起動する。共有結果は呼出し側で検証する。"""
+    directory.mkdir()
+    step = next(step for step in quality.required_steps(root) if step.name == 'typing')
+    command = [*step.command, '--cache-dir', str(directory / 'mypy-cache')]
+    expected = set()
+    sources = {}
+    for relative_path in paths:
+        source = root / relative_path
+        text = (
+            source.read_text(encoding='utf-8')
+            + '\n\ndef _strict_scope_probe(value):\n'
+            + '    """型検査対象からの漏れを検出するための一時的な未注釈関数。"""\n'
+            + '    return value\n'
+        )
+        shadow = directory / 'shadows' / relative_path
+        shadow.parent.mkdir(parents=True, exist_ok=True)
+        evidence.save_new(shadow, text.replace('\n', os.linesep))
+        line = ast.parse(text).body[-1].lineno
+        expected.add((relative_path, line, 'no-untyped-def'))
+        sources[relative_path] = {
+            'source_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+            'shadow': str(shadow),
+            'shadow_sha256': hashlib.sha256(shadow.read_bytes()).hexdigest(),
+            'expected_line': line,
+        }
+        if relative_path != omit_shadow:
+            command.extend(['--shadow-file', str(source), str(shadow)])
+    inputs = {
+        'command': command,
+        'sources': sources,
+        'config_sha256': hashlib.sha256((root / 'pyproject.toml').read_bytes()).hexdigest(),
+    }
+    evidence.save_new(directory / 'inputs.json', evidence.encoded_json(inputs))
+    record_expectation(
+        'scope-batch-execution',
+        inputs=inputs,
+        expected=sorted(expected),
+        expectation_kind='fixed',
+        model='docs/harness_architecture.md:11',
+        contract='docs/harness_contracts.md:13.3',
+        implementation='mypy --no-incremental',
+    )
+    started = time.perf_counter()
+    result = subprocess.run(
+        command, cwd=root, capture_output=True, text=True, encoding='utf-8', timeout=60
+    )
+    elapsed = time.perf_counter() - started
+    evidence.save_new(directory / 'stdout.txt', result.stdout)
+    evidence.save_new(directory / 'stderr.txt', result.stderr)
+    observation = {
+        'exit_code': result.returncode,
+        'seconds': elapsed,
+        'directory': str(directory),
+        'stdout_sha256': hashlib.sha256((directory / 'stdout.txt').read_bytes()).hexdigest(),
+        'stderr_sha256': hashlib.sha256((directory / 'stderr.txt').read_bytes()).hexdigest(),
+    }
+    evidence.save_new(directory / 'result.json', evidence.encoded_json(observation))
+    record_observation('scope-batch-execution', observation)
+    return result, expected, sources
+
+
+@pytest.fixture(scope='module')
+def strict_scope_batch(tmp_path_factory, request):
+    """9caseのchecker起動だけを共有する。Fullではrun所有領域へ原証拠を残す。"""
+    step_directory = request.config.getoption('verification_evidence_dir', default=None)
+    parent = Path(step_directory) if step_directory else tmp_path_factory.mktemp('strict-scope')
+    directory = parent / 'typing-probes'
+    result, expected, sources = _run_scope_probes(ROOT, directory, STRICT_SCOPE_PATHS)
+    return result, expected, sources, directory
+
+
+@pytest.mark.parametrize('relative_path', STRICT_SCOPE_PATHS)
+def test_promoted_modules_are_checked_by_configured_strict_gate(strict_scope_batch, relative_path):
+    """元9caseを維持し、各対象の診断と全集合を共有原出力から独立に検証する。"""
+    result, expected, sources, directory = strict_scope_batch
+    target = (relative_path, sources[relative_path]['expected_line'], 'no-untyped-def')
+    record_expectation(
+        'scope-diagnostic',
+        inputs={'path': relative_path, **sources[relative_path]},
+        expected=list(target),
+        expectation_kind='fixed',
+        model='docs/harness_architecture.md:11',
+        contract='docs/harness_contracts.md:13.3',
+        implementation='tests/test_quality.py:_assert_scope_diagnostics',
+    )
+    record_observation(
+        'scope-diagnostic',
+        {
+            'exit_code': result.returncode,
+            'stdout': result.stdout,
+            'stderr': result.stderr,
+            'directory': str(directory),
+        },
+    )
+    actual = _assert_scope_diagnostics(result, expected, ROOT)
+    assert target in actual
+    evidence.save_new(
+        directory / (relative_path.replace('/', '-') + '.json'),
+        evidence.encoded_json(
+            {
+                'path': relative_path,
+                'expected': list(target),
+                'actual': list(target),
+                'source': sources[relative_path],
+            }
+        ),
+    )
+
+
+def test_scope_batch_real_missing_shadow_cannot_hide_behind_other_errors(tmp_path):
+    """実17rootの検査で1shadowを外しても、残る8エラーで全件成功にはならない。"""
+    result, expected, _ = _run_scope_probes(
+        ROOT, tmp_path / 'missing-shadow', STRICT_SCOPE_PATHS, omit_shadow=STRICT_SCOPE_PATHS[0]
+    )
+    assert result.returncode == 1
+    assert result.stdout.count('[no-untyped-def]') == 8, result.stdout
+    with pytest.raises(AssertionError):
+        _assert_scope_diagnostics(result, expected, ROOT)
+
+
+def test_scope_batch_real_missing_root_is_detected(tmp_path):
+    """importのない独立rootを1つ除き、共有実行でも対象漏れの負例を保持する。"""
+    root = tmp_path / 'source'
+    root.mkdir()
+    paths = tuple(f'probe_{index}.py' for index in range(9))
+    for path in paths:
+        (root / path).write_text('VALUE: int = 1\n', encoding='utf-8')
+    (root / 'pyproject.toml').write_text(
+        '[tool.mypy]\nstrict = true\nfiles = ' + json.dumps(paths[:-1]) + '\n', encoding='utf-8'
+    )
+    result, expected, _ = _run_scope_probes(root, tmp_path / 'missing-root', paths)
+    assert result.returncode == 1
+    assert result.stdout.count('[no-untyped-def]') == 8, result.stdout
+    with pytest.raises(AssertionError):
+        _assert_scope_diagnostics(result, expected, root)
+
+
+def test_scope_batch_shadow_retains_legacy_platform_bytes(tmp_path, monkeypatch):
+    """旧write_textの改行を保ち、診断だけ一致してshadow bytesが変わる退行を防ぐ。"""
+    root = tmp_path / 'source'
+    root.mkdir()
+    (root / 'pyproject.toml').write_text('[tool.mypy]\nstrict=true\n', encoding='utf-8')
+    source = root / 'sample.py'
+    source.write_text('VALUE: int = 1\n', encoding='utf-8')
+    reference = tmp_path / 'legacy.py'
+    reference.write_text(
         source.read_text(encoding='utf-8')
         + '\n\ndef _strict_scope_probe(value):\n'
         + '    """型検査対象からの漏れを検出するための一時的な未注釈関数。"""\n'
         + '    return value\n',
         encoding='utf-8',
     )
-    step = next(step for step in quality.required_steps(ROOT) if step.name == 'typing')
-    result = subprocess.run(
-        [
-            *step.command,
-            '--cache-dir',
-            str(tmp_path / 'mypy-cache'),
-            '--shadow-file',
-            str(source),
-            str(shadow),
-        ],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        encoding='utf-8',
-        timeout=60,
-    )
-    assert result.returncode == 1, result.stdout + result.stderr
-    assert source.name + ':' in result.stdout
-    assert '[no-untyped-def]' in result.stdout
+
+    def runner(command, **kwargs):
+        """ここでは保存bytesだけを比較し、実mypyの検出能力は別回帰で確認する。"""
+        return subprocess.CompletedProcess(command, 1, '', '')
+
+    monkeypatch.setattr(subprocess, 'run', runner)
+    _, _, sources = _run_scope_probes(root, tmp_path / 'probe', ('sample.py',))
+    assert Path(sources['sample.py']['shadow']).read_bytes() == reference.read_bytes()
 
 
 def test_openings_typing_keeps_unchecked_generator_metadata_opaque(tmp_path):

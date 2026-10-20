@@ -1,0 +1,2404 @@
+{
+  "kind": "quality_probe_measurement",
+  "formal_timing": false,
+  "evidence_root": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-b-b3d52730b80144d8acb5095571b49a4d",
+  "timings": {
+    "before": {
+      "scope_mypy_seconds": [
+        42.29854450002313,
+        49.00121230003424,
+        42.927751000155695
+      ],
+      "median": 42.927751000155695,
+      "minimum": 42.29854450002313,
+      "maximum": 49.00121230003424,
+      "other17_mypy_seconds": 79.07408209977439,
+      "pytest_wall_seconds": [
+        125.18380489997799,
+        52.20005929999752,
+        47.70879389997572
+      ],
+      "source_hashes": {
+        ".github/workflows/quality.yml": "75e4edf99f2857f09fee513f9e237643267ec445a328ec2bf5e1a9bf1e814519",
+        "102400-games/data.py": "1fcf04406dbfc321112fd907cf0760657c37d1b15d3750d13cf8d3e59af29731",
+        "AGENTS.md": "828ffa167e401688d40a388d083d3c4fbf4451c6d6cb0a12c7ea029a11458a3a",
+        "docs/harness_architecture.md": "ff19f133cd8e669ff629e5ee2eceab63614d1d68b2d04fc53cee02df8f16f6f2",
+        "docs/harness_contracts.md": "18ebc31d19aa38f8a0b2a01574b1622e141794b9de6bcddb10857d98a9a98acf",
+        "docs/プログラム開発方法.md": "b0115f187e49039ff42aded6ee5249f7b58ac1294a70a20e3102a05032101cbd",
+        "harness/__init__.py": "fc1c6fe693d322e53503f124dc30270ab86735ea4c4f327a89dc993ea0e4598d",
+        "harness/analysis.py": "7653721629a8d6e31729254dd2e0ed7d84d202c64e7c252a7ba788298487b9c4",
+        "harness/contracts.py": "556b05f2c62364554da5eb6925fbc150612e6e0b100cc6369847369bb69fe3d3",
+        "harness/evaluate.py": "2ea2cc5c2a01227c51576be79e66300696d8e12ee13e19297cbf7fc57ad8adec",
+        "harness/openings.py": "11d14dc64f4ba2f66475d5f664770ef81ebe6501c339f9c6fafe469b5e88f26f",
+        "harness/protocol.py": "92d44e40e10d647ca6f907ffb2273334559f84e27db92fee207b26c62d8a5685",
+        "harness/referee.py": "350b858891c490a48290ef7c7d8f62f77b3b0836d3582051637b14514a125a5c",
+        "harness/search_budget.py": "5378748a7ccf197ddde165a59b99bed2039a94bb51dcf8566b5617554a26cb3e",
+        "harness/seeded_player.py": "28aff247d165b703e1fbdc2a025121160c141edc1918f6ac85e1ab330e656084",
+        "harness/statistics.py": "faf98ec9d7740518997ac37a35f7f1e09a306607aefc97d7a5ef0ef855d2cf65",
+        "pyproject.toml": "43939df4e4e022a10389789a61bfc044097473d735bd77a6968144abe5633ec3",
+        "pytest.ini": "1a30d28286a4c6bfd5f314452195418c2de1ca748d76a18abcbe371b0b4d4472",
+        "requirements-dev.txt": "4e7234b0d9dc1df1be118370507fe68d09b961d71c67872cc1bc9288989c5a84",
+        "reversi_01.py": "b06f882e41871da42d89fc5abe43b41a7466efc3866db82a28145eba3ad014b5",
+        "reversi_player/ai_engine.py": "3a6d69c35bf79d2a184cabde023b5274a4a1e34eb318aa4c4be42569e6401c5f",
+        "reversi_player/reversi.py": "a012c2b30c304b4716e5f3df2d0ffac4f689a5b35cb38fefe6c16f7b27428efe",
+        "reversi_player/web.py": "f563bfd39bdf612e0081d20b79c2d41f9aa8fccd99a360d0085f1d220df3f6e5",
+        "tests/fixtures/budget_player.py": "a284ac4f94df94e012ee05487a45114acd75f32c87776eb4ff9a1963ac84814c",
+        "tests/fixtures/fault_player.py": "d4b88dd295bc01e1d21bbcc0b249385a118dbe7d08affb0d73553fd377afcc89",
+        "tests/test_ai_compatibility.py": "0bfd0dbf34af7bfe531003495b24c18832bf0b0458c3f734b14034d0b11ddcc1",
+        "tests/test_ai_engine.py": "3755aa3280797ed32ce125d44e2c1430ec05c30f245c243923fc9b302a1b588a",
+        "tests/test_feedback.py": "6e629e816486271ef196c123ebcbea8229422db3b1d0f6b8635fc65e743d4c65",
+        "tests/test_harness.py": "3ace66bb64959bebc5154317e6ff3d810f7d0eb48a6a37e9eca747bf9e20eea3",
+        "tests/test_invariants.py": "b1895532363133d9d8b14e7df397295f0d7f83bea8cfa120db1e3357e73d70bb",
+        "tests/test_quality.py": "c8dbbc0c05a134df242fc16e0cbcf0490d42de85db4547415733ffaebaa8d630",
+        "tests/test_result.py": "0a9d8e28071a6f1d40ad268b4d5f39a42fb5c1b3cdddbb7ae3fcab3038c44b6f",
+        "tests/test_stdin_commands.py": "2e0b80d77526107a99fb4a25a8dde6c87ab273ab074962be2fdadec54468b59d",
+        "tools/__init__.py": "02a3c2071adedd371b1d2c6cf32eeb7c619082ba1e8b3895639c0a4094e3559d",
+        "tools/evidence.py": "62cc63ebeecdf9b9c8aa164e29ad11171233e65ac1acecdbc77ce874a1c92a91",
+        "tools/evidence_plugin.py": "8e7d0039835ba4c518601a8cbdadf707153561e5a8ba7ebfb7bbe2ab93b7761a",
+        "tools/feedback.py": "83eccec01f86a53a168c674dcf85683141f94f20d050700ba6abab108611e6a2",
+        "tools/quality.py": "5449ba4513e72d5496a32a39eb15b349620780f6c8529e3d35ba354b311bf693"
+      }
+    },
+    "after": {
+      "scope_mypy_seconds": [
+        5.9714112999499775,
+        5.94629019999411,
+        5.631235499982722
+      ],
+      "median": 5.94629019999411,
+      "minimum": 5.631235499982722,
+      "maximum": 5.9714112999499775,
+      "other17_mypy_seconds": 85.52553310012445,
+      "pytest_wall_seconds": [
+        95.28084109997144,
+        9.317130400042515,
+        8.899512399977539
+      ],
+      "source_hashes": {
+        ".github/workflows/quality.yml": "75e4edf99f2857f09fee513f9e237643267ec445a328ec2bf5e1a9bf1e814519",
+        "102400-games/data.py": "1fcf04406dbfc321112fd907cf0760657c37d1b15d3750d13cf8d3e59af29731",
+        "AGENTS.md": "828ffa167e401688d40a388d083d3c4fbf4451c6d6cb0a12c7ea029a11458a3a",
+        "docs/harness_architecture.md": "5ad31cf5573667dad066f6b329da821a190776743bd1acfccf789fd92106ba8b",
+        "docs/harness_contracts.md": "5d30bddbe0cc325d6ced25596b7d208ac1db1f370051c7394f63326c6f565cbd",
+        "docs/プログラム開発方法.md": "b0115f187e49039ff42aded6ee5249f7b58ac1294a70a20e3102a05032101cbd",
+        "harness/__init__.py": "fc1c6fe693d322e53503f124dc30270ab86735ea4c4f327a89dc993ea0e4598d",
+        "harness/analysis.py": "7653721629a8d6e31729254dd2e0ed7d84d202c64e7c252a7ba788298487b9c4",
+        "harness/contracts.py": "556b05f2c62364554da5eb6925fbc150612e6e0b100cc6369847369bb69fe3d3",
+        "harness/evaluate.py": "2ea2cc5c2a01227c51576be79e66300696d8e12ee13e19297cbf7fc57ad8adec",
+        "harness/openings.py": "11d14dc64f4ba2f66475d5f664770ef81ebe6501c339f9c6fafe469b5e88f26f",
+        "harness/protocol.py": "92d44e40e10d647ca6f907ffb2273334559f84e27db92fee207b26c62d8a5685",
+        "harness/referee.py": "350b858891c490a48290ef7c7d8f62f77b3b0836d3582051637b14514a125a5c",
+        "harness/search_budget.py": "5378748a7ccf197ddde165a59b99bed2039a94bb51dcf8566b5617554a26cb3e",
+        "harness/seeded_player.py": "28aff247d165b703e1fbdc2a025121160c141edc1918f6ac85e1ab330e656084",
+        "harness/statistics.py": "faf98ec9d7740518997ac37a35f7f1e09a306607aefc97d7a5ef0ef855d2cf65",
+        "pyproject.toml": "43939df4e4e022a10389789a61bfc044097473d735bd77a6968144abe5633ec3",
+        "pytest.ini": "1a30d28286a4c6bfd5f314452195418c2de1ca748d76a18abcbe371b0b4d4472",
+        "requirements-dev.txt": "4e7234b0d9dc1df1be118370507fe68d09b961d71c67872cc1bc9288989c5a84",
+        "reversi_01.py": "b06f882e41871da42d89fc5abe43b41a7466efc3866db82a28145eba3ad014b5",
+        "reversi_player/ai_engine.py": "3a6d69c35bf79d2a184cabde023b5274a4a1e34eb318aa4c4be42569e6401c5f",
+        "reversi_player/reversi.py": "a012c2b30c304b4716e5f3df2d0ffac4f689a5b35cb38fefe6c16f7b27428efe",
+        "reversi_player/web.py": "f563bfd39bdf612e0081d20b79c2d41f9aa8fccd99a360d0085f1d220df3f6e5",
+        "tests/fixtures/budget_player.py": "a284ac4f94df94e012ee05487a45114acd75f32c87776eb4ff9a1963ac84814c",
+        "tests/fixtures/fault_player.py": "d4b88dd295bc01e1d21bbcc0b249385a118dbe7d08affb0d73553fd377afcc89",
+        "tests/test_ai_compatibility.py": "0bfd0dbf34af7bfe531003495b24c18832bf0b0458c3f734b14034d0b11ddcc1",
+        "tests/test_ai_engine.py": "3755aa3280797ed32ce125d44e2c1430ec05c30f245c243923fc9b302a1b588a",
+        "tests/test_feedback.py": "6e629e816486271ef196c123ebcbea8229422db3b1d0f6b8635fc65e743d4c65",
+        "tests/test_harness.py": "3ace66bb64959bebc5154317e6ff3d810f7d0eb48a6a37e9eca747bf9e20eea3",
+        "tests/test_invariants.py": "b1895532363133d9d8b14e7df397295f0d7f83bea8cfa120db1e3357e73d70bb",
+        "tests/test_quality.py": "03207726933e461ca9aceecd87568dd26618454e646afe6e36baf1709915e2c8",
+        "tests/test_result.py": "0a9d8e28071a6f1d40ad268b4d5f39a42fb5c1b3cdddbb7ae3fcab3038c44b6f",
+        "tests/test_stdin_commands.py": "2e0b80d77526107a99fb4a25a8dde6c87ab273ab074962be2fdadec54468b59d",
+        "tools/__init__.py": "02a3c2071adedd371b1d2c6cf32eeb7c619082ba1e8b3895639c0a4094e3559d",
+        "tools/evidence.py": "62cc63ebeecdf9b9c8aa164e29ad11171233e65ac1acecdbc77ce874a1c92a91",
+        "tools/evidence_plugin.py": "8e7d0039835ba4c518601a8cbdadf707153561e5a8ba7ebfb7bbe2ab93b7761a",
+        "tools/feedback.py": "83eccec01f86a53a168c674dcf85683141f94f20d050700ba6abab108611e6a2",
+        "tools/quality.py": "5449ba4513e72d5496a32a39eb15b349620780f6c8529e3d35ba354b311bf693"
+      }
+    }
+  },
+  "changed_sources": [
+    "docs/harness_architecture.md",
+    "docs/harness_contracts.md",
+    "tests/test_quality.py"
+  ],
+  "same_26_node_outcomes": true,
+  "same_9_diagnostics": true,
+  "same_17_diagnostics_and_exit_codes": true,
+  "same_shadow_bytes": true,
+  "inspection_profile": [
+    {
+      "name": "valid",
+      "repetition": 1,
+      "seconds": 0.9274710000000002,
+      "status": "verified",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0009346000000000001,
+          "cumulative_seconds": 0.9278469
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0008504000000000001,
+          "cumulative_seconds": 0.027332600000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 1726,
+          "calls": 1726,
+          "self_seconds": 0.0018535000000000001,
+          "cumulative_seconds": 0.0184343
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 26,
+          "calls": 26,
+          "self_seconds": 0.0005453000000000001,
+          "cumulative_seconds": 0.017687
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 14,
+          "calls": 14,
+          "self_seconds": 5.9000000000000004e-05,
+          "cumulative_seconds": 0.0021122000000000003
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0009346000000000001,
+          "cumulative_seconds": 0.9278469
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0034136,
+          "cumulative_seconds": 0.9269123
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0035681000000000003,
+          "cumulative_seconds": 0.46237570000000006
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0012106,
+          "cumulative_seconds": 0.3042707
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.0028054,
+          "cumulative_seconds": 0.2510155
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.015148600000000002,
+          "cumulative_seconds": 0.20788250000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 11624,
+          "calls": 11624,
+          "self_seconds": 0.0777765,
+          "cumulative_seconds": 0.1898959
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.0058274,
+          "cumulative_seconds": 0.1863236
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 3,
+          "calls": 79726,
+          "self_seconds": 0.0880699,
+          "cumulative_seconds": 0.1767157
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 4,
+          "calls": 2187,
+          "self_seconds": 0.0260463,
+          "cumulative_seconds": 0.1766722
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 20,
+          "calls": 1688,
+          "self_seconds": 0.008263300000000001,
+          "cumulative_seconds": 0.1757952
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 1464,
+          "calls": 1464,
+          "self_seconds": 0.0317409,
+          "cumulative_seconds": 0.16697230000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0206056,
+          "cumulative_seconds": 0.1531091
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 94340,
+          "calls": 94340,
+          "self_seconds": 0.12388180000000001,
+          "cumulative_seconds": 0.1386272
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\search_budget.py",
+          "line": 97,
+          "function": "validate_child_lifecycle",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0126192,
+          "cumulative_seconds": 0.132682
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1039,
+          "function": "_validate_player_transcript",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0237095,
+          "cumulative_seconds": 0.1215346
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.any>",
+          "primitive_calls": 31394,
+          "calls": 31394,
+          "self_seconds": 0.0480502,
+          "cumulative_seconds": 0.10529580000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 86,
+          "function": "result",
+          "primitive_calls": 746,
+          "calls": 746,
+          "self_seconds": 0.0005389,
+          "cumulative_seconds": 0.1000936
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'dict' objects>",
+          "primitive_calls": 442737,
+          "calls": 442737,
+          "self_seconds": 0.09442070000000001,
+          "cumulative_seconds": 0.09442070000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1162,
+          "function": "check_state",
+          "primitive_calls": 252,
+          "calls": 252,
+          "self_seconds": 0.0011248,
+          "cumulative_seconds": 0.0713151
+        }
+      ]
+    },
+    {
+      "name": "valid",
+      "repetition": 2,
+      "seconds": 1.0736302999999996,
+      "status": "verified",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.00022040000000000002,
+          "cumulative_seconds": 1.0744202
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0018415,
+          "cumulative_seconds": 0.0579157
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 26,
+          "calls": 26,
+          "self_seconds": 0.0007952,
+          "cumulative_seconds": 0.024770300000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 1726,
+          "calls": 1726,
+          "self_seconds": 0.0017739000000000001,
+          "cumulative_seconds": 0.019388600000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 14,
+          "calls": 14,
+          "self_seconds": 0.00011590000000000001,
+          "cumulative_seconds": 0.0038583000000000003
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.00022040000000000002,
+          "cumulative_seconds": 1.0744202
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0035718000000000004,
+          "cumulative_seconds": 1.0741998000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0038381,
+          "cumulative_seconds": 0.5016474000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0013752,
+          "cumulative_seconds": 0.3408679
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.0028096,
+          "cumulative_seconds": 0.2770587
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.0159637,
+          "cumulative_seconds": 0.2265242
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 11624,
+          "calls": 11624,
+          "self_seconds": 0.0852069,
+          "cumulative_seconds": 0.2075856
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.00662,
+          "cumulative_seconds": 0.20329350000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 1464,
+          "calls": 1464,
+          "self_seconds": 0.036262300000000004,
+          "cumulative_seconds": 0.19347820000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 3,
+          "calls": 79726,
+          "self_seconds": 0.0899909,
+          "cumulative_seconds": 0.1832966
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 4,
+          "calls": 2187,
+          "self_seconds": 0.027879900000000003,
+          "cumulative_seconds": 0.1832425
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 20,
+          "calls": 1688,
+          "self_seconds": 0.0072107000000000004,
+          "cumulative_seconds": 0.1814393
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.022838300000000002,
+          "cumulative_seconds": 0.1734725
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 94340,
+          "calls": 94340,
+          "self_seconds": 0.1444908,
+          "cumulative_seconds": 0.16116670000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\search_budget.py",
+          "line": 97,
+          "function": "validate_child_lifecycle",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.014260100000000001,
+          "cumulative_seconds": 0.1451471
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1039,
+          "function": "_validate_player_transcript",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.026944700000000002,
+          "cumulative_seconds": 0.13732930000000002
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.any>",
+          "primitive_calls": 31394,
+          "calls": 31394,
+          "self_seconds": 0.053122300000000004,
+          "cumulative_seconds": 0.1154141
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 86,
+          "function": "result",
+          "primitive_calls": 746,
+          "calls": 746,
+          "self_seconds": 0.0006181,
+          "cumulative_seconds": 0.1105087
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'dict' objects>",
+          "primitive_calls": 442737,
+          "calls": 442737,
+          "self_seconds": 0.10331380000000001,
+          "cumulative_seconds": 0.10331380000000001
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.all>",
+          "primitive_calls": 3852,
+          "calls": 7990,
+          "self_seconds": 0.0182352,
+          "cumulative_seconds": 0.09035670000000001
+        }
+      ]
+    },
+    {
+      "name": "valid",
+      "repetition": 3,
+      "seconds": 1.0666625000000003,
+      "status": "verified",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0003378,
+          "cumulative_seconds": 1.067323
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0012095,
+          "cumulative_seconds": 0.0396566
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 26,
+          "calls": 26,
+          "self_seconds": 0.0006397,
+          "cumulative_seconds": 0.021673400000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 1726,
+          "calls": 1726,
+          "self_seconds": 0.0018194,
+          "cumulative_seconds": 0.019902800000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 14,
+          "calls": 14,
+          "self_seconds": 8.020000000000001e-05,
+          "cumulative_seconds": 0.0026984
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0003378,
+          "cumulative_seconds": 1.067323
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0039271,
+          "cumulative_seconds": 1.0669852
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0038963,
+          "cumulative_seconds": 0.46827620000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0013324,
+          "cumulative_seconds": 0.3183088
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.002811,
+          "cumulative_seconds": 0.26112840000000004
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 3,
+          "calls": 79726,
+          "self_seconds": 0.10409660000000001,
+          "cumulative_seconds": 0.2170362
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 4,
+          "calls": 2187,
+          "self_seconds": 0.0327855,
+          "cumulative_seconds": 0.21698420000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 20,
+          "calls": 1688,
+          "self_seconds": 0.014921400000000001,
+          "cumulative_seconds": 0.21493250000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.0152467,
+          "cumulative_seconds": 0.2119196
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 11624,
+          "calls": 11624,
+          "self_seconds": 0.0799325,
+          "cumulative_seconds": 0.1932423
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.006191100000000001,
+          "cumulative_seconds": 0.19020720000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 1464,
+          "calls": 1464,
+          "self_seconds": 0.034499100000000005,
+          "cumulative_seconds": 0.1837737
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0207004,
+          "cumulative_seconds": 0.1567008
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 94340,
+          "calls": 94340,
+          "self_seconds": 0.1370445,
+          "cumulative_seconds": 0.1533002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\search_budget.py",
+          "line": 97,
+          "function": "validate_child_lifecycle",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0136644,
+          "cumulative_seconds": 0.14153970000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1039,
+          "function": "_validate_player_transcript",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0252582,
+          "cumulative_seconds": 0.12814050000000002
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.any>",
+          "primitive_calls": 31394,
+          "calls": 31394,
+          "self_seconds": 0.0485434,
+          "cumulative_seconds": 0.10644580000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 86,
+          "function": "result",
+          "primitive_calls": 746,
+          "calls": 746,
+          "self_seconds": 0.0005964000000000001,
+          "cumulative_seconds": 0.10462170000000001
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'dict' objects>",
+          "primitive_calls": 442737,
+          "calls": 442737,
+          "self_seconds": 0.10203050000000001,
+          "cumulative_seconds": 0.10203050000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 521,
+          "function": "decode_input",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0001764,
+          "cumulative_seconds": 0.09803150000000001
+        }
+      ]
+    },
+    {
+      "name": "invalid",
+      "repetition": 1,
+      "seconds": 1.1324619,
+      "status": "failed",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0011105000000000002,
+          "cumulative_seconds": 1.1332829
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0012146000000000001,
+          "cumulative_seconds": 0.041533400000000005
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 1726,
+          "calls": 1726,
+          "self_seconds": 0.002546,
+          "cumulative_seconds": 0.0257344
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 26,
+          "calls": 26,
+          "self_seconds": 0.0007178,
+          "cumulative_seconds": 0.024354400000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 14,
+          "calls": 14,
+          "self_seconds": 7.59e-05,
+          "cumulative_seconds": 0.0025981000000000003
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0011105000000000002,
+          "cumulative_seconds": 1.1332829
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0047223000000000005,
+          "cumulative_seconds": 1.1321724
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.004345600000000001,
+          "cumulative_seconds": 0.5462084
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0015605,
+          "cumulative_seconds": 0.3745967
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.0029922,
+          "cumulative_seconds": 0.2778089
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.0183823,
+          "cumulative_seconds": 0.24688580000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 3,
+          "calls": 79726,
+          "self_seconds": 0.1206595,
+          "cumulative_seconds": 0.24241610000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 4,
+          "calls": 2187,
+          "self_seconds": 0.0362569,
+          "cumulative_seconds": 0.2423712
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 20,
+          "calls": 1688,
+          "self_seconds": 0.0117319,
+          "cumulative_seconds": 0.24119300000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 11624,
+          "calls": 11624,
+          "self_seconds": 0.0933389,
+          "cumulative_seconds": 0.2243844
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.0072639,
+          "cumulative_seconds": 0.22085500000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 1464,
+          "calls": 1464,
+          "self_seconds": 0.0352163,
+          "cumulative_seconds": 0.1919863
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.024908800000000002,
+          "cumulative_seconds": 0.1861576
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\search_budget.py",
+          "line": 97,
+          "function": "validate_child_lifecycle",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0162075,
+          "cumulative_seconds": 0.16428140000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 94340,
+          "calls": 94340,
+          "self_seconds": 0.1435409,
+          "cumulative_seconds": 0.16060370000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1039,
+          "function": "_validate_player_transcript",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0251158,
+          "cumulative_seconds": 0.1321662
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.any>",
+          "primitive_calls": 31394,
+          "calls": 31394,
+          "self_seconds": 0.0553663,
+          "cumulative_seconds": 0.1206238
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'dict' objects>",
+          "primitive_calls": 442748,
+          "calls": 442748,
+          "self_seconds": 0.11691370000000001,
+          "cumulative_seconds": 0.11691370000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 86,
+          "function": "result",
+          "primitive_calls": 746,
+          "calls": 746,
+          "self_seconds": 0.0006198,
+          "cumulative_seconds": 0.11377440000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1162,
+          "function": "check_state",
+          "primitive_calls": 252,
+          "calls": 252,
+          "self_seconds": 0.001152,
+          "cumulative_seconds": 0.07864700000000001
+        }
+      ]
+    },
+    {
+      "name": "invalid",
+      "repetition": 2,
+      "seconds": 1.0890933000000005,
+      "status": "failed",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0002821,
+          "cumulative_seconds": 1.0898619
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0015955000000000001,
+          "cumulative_seconds": 0.0556993
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 26,
+          "calls": 26,
+          "self_seconds": 0.0007509000000000001,
+          "cumulative_seconds": 0.0252975
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 1726,
+          "calls": 1726,
+          "self_seconds": 0.002055,
+          "cumulative_seconds": 0.021637100000000003
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 14,
+          "calls": 14,
+          "self_seconds": 0.0001286,
+          "cumulative_seconds": 0.0042806
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0002821,
+          "cumulative_seconds": 1.0898619
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.004678900000000001,
+          "cumulative_seconds": 1.0895798
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0032485,
+          "cumulative_seconds": 0.4492358
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0011871000000000002,
+          "cumulative_seconds": 0.3106412
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.0030508,
+          "cumulative_seconds": 0.2618875
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 3,
+          "calls": 79726,
+          "self_seconds": 0.11434960000000001,
+          "cumulative_seconds": 0.2321107
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 4,
+          "calls": 2187,
+          "self_seconds": 0.035507000000000004,
+          "cumulative_seconds": 0.23204860000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 20,
+          "calls": 1688,
+          "self_seconds": 0.0119272,
+          "cumulative_seconds": 0.2297468
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.014557200000000001,
+          "cumulative_seconds": 0.20438250000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 1464,
+          "calls": 1464,
+          "self_seconds": 0.036742000000000004,
+          "cumulative_seconds": 0.1952491
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 11624,
+          "calls": 11624,
+          "self_seconds": 0.07683150000000001,
+          "cumulative_seconds": 0.1876352
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.006168900000000001,
+          "cumulative_seconds": 0.18354120000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.0223292,
+          "cumulative_seconds": 0.16749180000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 94340,
+          "calls": 94340,
+          "self_seconds": 0.1453847,
+          "cumulative_seconds": 0.16281520000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1039,
+          "function": "_validate_player_transcript",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.024770200000000003,
+          "cumulative_seconds": 0.1283251
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\search_budget.py",
+          "line": 97,
+          "function": "validate_child_lifecycle",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.011968000000000001,
+          "cumulative_seconds": 0.1248236
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.any>",
+          "primitive_calls": 31394,
+          "calls": 31394,
+          "self_seconds": 0.0485388,
+          "cumulative_seconds": 0.1066768
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'dict' objects>",
+          "primitive_calls": 442748,
+          "calls": 442748,
+          "self_seconds": 0.10632580000000001,
+          "cumulative_seconds": 0.10632580000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 86,
+          "function": "result",
+          "primitive_calls": 746,
+          "calls": 746,
+          "self_seconds": 0.0005978,
+          "cumulative_seconds": 0.10534950000000001
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.all>",
+          "primitive_calls": 3852,
+          "calls": 7990,
+          "self_seconds": 0.0167716,
+          "cumulative_seconds": 0.08234480000000001
+        }
+      ]
+    },
+    {
+      "name": "invalid",
+      "repetition": 3,
+      "seconds": 1.1706303000000002,
+      "status": "failed",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0007466,
+          "cumulative_seconds": 1.1711623
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0013316,
+          "cumulative_seconds": 0.049016000000000004
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 1726,
+          "calls": 1726,
+          "self_seconds": 0.0026573,
+          "cumulative_seconds": 0.0266634
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 26,
+          "calls": 26,
+          "self_seconds": 0.0007224,
+          "cumulative_seconds": 0.0243839
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 14,
+          "calls": 14,
+          "self_seconds": 0.0001089,
+          "cumulative_seconds": 0.0041045000000000005
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0007466,
+          "cumulative_seconds": 1.1711623
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.004721,
+          "cumulative_seconds": 1.1704157000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0046682,
+          "cumulative_seconds": 0.5838584
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.00186,
+          "cumulative_seconds": 0.4110942
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.0032167000000000003,
+          "cumulative_seconds": 0.2746846
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.018955700000000002,
+          "cumulative_seconds": 0.2702948
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 11624,
+          "calls": 11624,
+          "self_seconds": 0.10066030000000001,
+          "cumulative_seconds": 0.24630900000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 11114,
+          "calls": 11114,
+          "self_seconds": 0.0078767,
+          "cumulative_seconds": 0.2428847
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.027407800000000003,
+          "cumulative_seconds": 0.2085741
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 3,
+          "calls": 79726,
+          "self_seconds": 0.09659670000000001,
+          "cumulative_seconds": 0.1985754
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 4,
+          "calls": 2187,
+          "self_seconds": 0.030719800000000002,
+          "cumulative_seconds": 0.19850320000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 20,
+          "calls": 1688,
+          "self_seconds": 0.010573200000000001,
+          "cumulative_seconds": 0.19587300000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 1464,
+          "calls": 1464,
+          "self_seconds": 0.0349282,
+          "cumulative_seconds": 0.18441020000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\search_budget.py",
+          "line": 97,
+          "function": "validate_child_lifecycle",
+          "primitive_calls": 8,
+          "calls": 8,
+          "self_seconds": 0.016789600000000002,
+          "cumulative_seconds": 0.1740218
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 94340,
+          "calls": 94340,
+          "self_seconds": 0.1373253,
+          "cumulative_seconds": 0.1536105
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1039,
+          "function": "_validate_player_transcript",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.026944700000000002,
+          "cumulative_seconds": 0.1379757
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.any>",
+          "primitive_calls": 31394,
+          "calls": 31394,
+          "self_seconds": 0.0608548,
+          "cumulative_seconds": 0.1315655
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'get' of 'dict' objects>",
+          "primitive_calls": 442748,
+          "calls": 442748,
+          "self_seconds": 0.11810970000000001,
+          "cumulative_seconds": 0.11810970000000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 86,
+          "function": "result",
+          "primitive_calls": 746,
+          "calls": 746,
+          "self_seconds": 0.0006037000000000001,
+          "cumulative_seconds": 0.1045982
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.all>",
+          "primitive_calls": 3852,
+          "calls": 7990,
+          "self_seconds": 0.021296100000000002,
+          "cumulative_seconds": 0.10363950000000001
+        }
+      ]
+    },
+    {
+      "name": "all-entries-invalid",
+      "repetition": 1,
+      "seconds": 15.031962499999999,
+      "status": "all expected rejections passed",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.006884400000000001,
+          "cumulative_seconds": 15.013122300000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0269894,
+          "cumulative_seconds": 0.835852
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 20712,
+          "calls": 20712,
+          "self_seconds": 0.030239400000000003,
+          "cumulative_seconds": 0.3485249
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 312,
+          "calls": 312,
+          "self_seconds": 0.0090022,
+          "cumulative_seconds": 0.32536750000000003
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 176,
+          "calls": 176,
+          "self_seconds": 0.0012835000000000001,
+          "cumulative_seconds": 0.056352700000000006
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\tests\\test_harness.py",
+          "line": 269,
+          "function": "_assert_temporal_rejected",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.005822600000000001,
+          "cumulative_seconds": 15.044637400000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.006884400000000001,
+          "cumulative_seconds": 15.013122300000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0521835,
+          "cumulative_seconds": 15.0062379
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 217,
+          "function": "_inspect_pair",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.0001049,
+          "cumulative_seconds": 10.02525
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 298,
+          "function": "compare",
+          "primitive_calls": 3,
+          "calls": 3,
+          "self_seconds": 0.00020800000000000001,
+          "cumulative_seconds": 7.546215
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0487732,
+          "cumulative_seconds": 6.8314478
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 96,
+          "calls": 96,
+          "self_seconds": 0.018143100000000002,
+          "cumulative_seconds": 4.7108856
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 48,
+          "calls": 48,
+          "self_seconds": 0.0385964,
+          "cumulative_seconds": 3.6230165000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 133368,
+          "calls": 133368,
+          "self_seconds": 0.22210120000000003,
+          "cumulative_seconds": 3.160485
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 50,
+          "calls": 957888,
+          "self_seconds": 1.4651265,
+          "cumulative_seconds": 2.9052861
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 62,
+          "calls": 26370,
+          "self_seconds": 0.43357880000000004,
+          "cumulative_seconds": 2.9045329
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 139488,
+          "calls": 139488,
+          "self_seconds": 1.1888545000000001,
+          "cumulative_seconds": 2.8895655000000002
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 254,
+          "calls": 20270,
+          "self_seconds": 0.10784160000000001,
+          "cumulative_seconds": 2.8734314000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 133368,
+          "calls": 133368,
+          "self_seconds": 0.08904110000000001,
+          "cumulative_seconds": 2.8382138
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 17568,
+          "calls": 17568,
+          "self_seconds": 0.5072336000000001,
+          "cumulative_seconds": 2.6792288
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 341,
+          "function": "comparison_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0046314,
+          "cumulative_seconds": 2.6482778000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\evaluate.py",
+          "line": 835,
+          "function": "compare_reports",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0017488,
+          "cumulative_seconds": 2.5046731
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 278,
+          "function": "paired",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0027028,
+          "cumulative_seconds": 2.4932679
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 96,
+          "calls": 96,
+          "self_seconds": 0.3213421,
+          "cumulative_seconds": 2.3888311
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 1132080,
+          "calls": 1132080,
+          "self_seconds": 1.9942827,
+          "cumulative_seconds": 2.2299115
+        }
+      ]
+    },
+    {
+      "name": "all-entries-invalid",
+      "repetition": 2,
+      "seconds": 14.805728999999996,
+      "status": "all expected rejections passed",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0107211,
+          "cumulative_seconds": 14.782634900000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.019724000000000002,
+          "cumulative_seconds": 0.6813344
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 20712,
+          "calls": 20712,
+          "self_seconds": 0.032345,
+          "cumulative_seconds": 0.32485630000000004
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 312,
+          "calls": 312,
+          "self_seconds": 0.008925,
+          "cumulative_seconds": 0.32452200000000003
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 176,
+          "calls": 176,
+          "self_seconds": 0.0014159,
+          "cumulative_seconds": 0.06161150000000001
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\tests\\test_harness.py",
+          "line": 269,
+          "function": "_assert_temporal_rejected",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.005888600000000001,
+          "cumulative_seconds": 14.8166927
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0107211,
+          "cumulative_seconds": 14.782634900000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.056448700000000004,
+          "cumulative_seconds": 14.7719138
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 217,
+          "function": "_inspect_pair",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.00010760000000000001,
+          "cumulative_seconds": 9.7234084
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 298,
+          "function": "compare",
+          "primitive_calls": 3,
+          "calls": 3,
+          "self_seconds": 0.00021950000000000002,
+          "cumulative_seconds": 7.400789100000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0485036,
+          "cumulative_seconds": 6.7290127
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 96,
+          "calls": 96,
+          "self_seconds": 0.0187177,
+          "cumulative_seconds": 4.6744181000000005
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 48,
+          "calls": 48,
+          "self_seconds": 0.0396902,
+          "cumulative_seconds": 3.5873506
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 133368,
+          "calls": 133368,
+          "self_seconds": 0.2243552,
+          "cumulative_seconds": 3.1138173
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 50,
+          "calls": 957888,
+          "self_seconds": 1.4425941,
+          "cumulative_seconds": 2.858309
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 62,
+          "calls": 26370,
+          "self_seconds": 0.42721260000000005,
+          "cumulative_seconds": 2.8575039
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 139488,
+          "calls": 139488,
+          "self_seconds": 1.162865,
+          "cumulative_seconds": 2.8403562
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 254,
+          "calls": 20270,
+          "self_seconds": 0.1080483,
+          "cumulative_seconds": 2.8251656
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 133368,
+          "calls": 133368,
+          "self_seconds": 0.088246,
+          "cumulative_seconds": 2.790789
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 17568,
+          "calls": 17568,
+          "self_seconds": 0.4913788,
+          "cumulative_seconds": 2.5916590000000004
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 341,
+          "function": "comparison_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.00314,
+          "cumulative_seconds": 2.4820708000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 96,
+          "calls": 96,
+          "self_seconds": 0.3228462,
+          "cumulative_seconds": 2.3946569
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\evaluate.py",
+          "line": 835,
+          "function": "compare_reports",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0040168,
+          "cumulative_seconds": 2.3905919
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 278,
+          "function": "paired",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0040766000000000005,
+          "cumulative_seconds": 2.3384427000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 1132080,
+          "calls": 1132080,
+          "self_seconds": 1.9269906,
+          "cumulative_seconds": 2.1564044
+        }
+      ]
+    },
+    {
+      "name": "all-entries-invalid",
+      "repetition": 3,
+      "seconds": 15.529449799999998,
+      "status": "all expected rejections passed",
+      "selected_functions": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.011802700000000001,
+          "cumulative_seconds": 15.5038847
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 709,
+          "function": "_validate_report",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0208582,
+          "cumulative_seconds": 0.7214794
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 692,
+          "function": "_artifact_bytes",
+          "primitive_calls": 312,
+          "calls": 312,
+          "self_seconds": 0.009151900000000001,
+          "cumulative_seconds": 0.3280285
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\json\\__init__.py",
+          "line": 299,
+          "function": "loads",
+          "primitive_calls": 20712,
+          "calls": 20712,
+          "self_seconds": 0.0310816,
+          "cumulative_seconds": 0.32013050000000004
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\pathlib\\_abc.py",
+          "line": 621,
+          "function": "read_bytes",
+          "primitive_calls": 176,
+          "calls": 176,
+          "self_seconds": 0.0015376,
+          "cumulative_seconds": 0.06566190000000001
+        }
+      ],
+      "top20": [
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\tests\\test_harness.py",
+          "line": 269,
+          "function": "_assert_temporal_rejected",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0057581,
+          "cumulative_seconds": 15.541464600000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1810,
+          "function": "inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.011802700000000001,
+          "cumulative_seconds": 15.5038847
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1405,
+          "function": "_inspect_evaluation",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.0539719,
+          "cumulative_seconds": 15.492082000000002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 217,
+          "function": "_inspect_pair",
+          "primitive_calls": 4,
+          "calls": 4,
+          "self_seconds": 0.0001228,
+          "cumulative_seconds": 10.1697413
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 298,
+          "function": "compare",
+          "primitive_calls": 3,
+          "calls": 3,
+          "self_seconds": 0.00025370000000000004,
+          "cumulative_seconds": 7.557948700000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1243,
+          "function": "_inspect_timelines",
+          "primitive_calls": 12,
+          "calls": 12,
+          "self_seconds": 0.049494,
+          "cumulative_seconds": 7.1395559
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1273,
+          "function": "inspect_player",
+          "primitive_calls": 96,
+          "calls": 96,
+          "self_seconds": 0.019754300000000002,
+          "cumulative_seconds": 4.962557400000001
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\contracts.py",
+          "line": 1140,
+          "function": "_command_contexts",
+          "primitive_calls": 48,
+          "calls": 48,
+          "self_seconds": 0.0402403,
+          "cumulative_seconds": 3.750837
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 223,
+          "function": "temporal_order",
+          "primitive_calls": 133368,
+          "calls": 133368,
+          "self_seconds": 0.235381,
+          "cumulative_seconds": 3.3312888000000003
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 119,
+          "function": "deepcopy",
+          "primitive_calls": 50,
+          "calls": 957888,
+          "self_seconds": 1.5525093,
+          "cumulative_seconds": 3.0638782
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 218,
+          "function": "_deepcopy_dict",
+          "primitive_calls": 62,
+          "calls": 26370,
+          "self_seconds": 0.4577389,
+          "cumulative_seconds": 3.063095
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 149,
+          "function": "clock_status",
+          "primitive_calls": 139488,
+          "calls": 139488,
+          "self_seconds": 1.2512085000000002,
+          "cumulative_seconds": 3.039651
+        },
+        {
+          "file": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\copy.py",
+          "line": 192,
+          "function": "_deepcopy_list",
+          "primitive_calls": 254,
+          "calls": 20270,
+          "self_seconds": 0.1111956,
+          "cumulative_seconds": 3.02753
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 181,
+          "function": "_registered_clock",
+          "primitive_calls": 133368,
+          "calls": 133368,
+          "self_seconds": 0.09471470000000001,
+          "cumulative_seconds": 2.9905002
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 62,
+          "function": "legal_moves",
+          "primitive_calls": 17568,
+          "calls": 17568,
+          "self_seconds": 0.5179869,
+          "cumulative_seconds": 2.7322781000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 278,
+          "function": "paired",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.004287,
+          "cumulative_seconds": 2.6301487000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\analysis.py",
+          "line": 341,
+          "function": "comparison_report",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0038879,
+          "cumulative_seconds": 2.54211
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\protocol.py",
+          "line": 261,
+          "function": "validate_process_timeline",
+          "primitive_calls": 96,
+          "calls": 96,
+          "self_seconds": 0.3367597,
+          "cumulative_seconds": 2.5344915
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\evaluate.py",
+          "line": 835,
+          "function": "compare_reports",
+          "primitive_calls": 1,
+          "calls": 1,
+          "self_seconds": 0.0034061,
+          "cumulative_seconds": 2.4858260000000003
+        },
+        {
+          "file": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\harness\\referee.py",
+          "line": 33,
+          "function": "flipped_cells",
+          "primitive_calls": 1132080,
+          "calls": 1132080,
+          "self_seconds": 2.034218,
+          "cumulative_seconds": 2.2716757000000003
+        }
+      ]
+    }
+  ],
+  "reduction_percent_scope_subprocess_median": 86.14814412249889,
+  "limitations": [
+    "fresh mypy caches, not evicted OS page cache",
+    "before block then after block, not interleaved pairs",
+    "CPU load/power mode not controlled",
+    "cProfile is experimental instrumentation, not formal timing"
+  ],
+  "full_verification": {
+    "run": "evaluation_results\\quality-762d0017b4304bac8391fcdc785a529b",
+    "quality_sha256": "f69534c3ecb4bde59bce143c7341dad2eef50c324a40457b5104cd89f8ff2ead",
+    "all_11_steps_passed": true,
+    "fresh_collection_counts": {
+      "pytest": 848,
+      "smoke": 1
+    },
+    "old_829_nodes_preserved": true,
+    "added_nodes": [
+      "tests/test_quality.py::test_scope_batch_real_missing_root_is_detected",
+      "tests/test_quality.py::test_scope_batch_real_missing_shadow_cannot_hide_behind_other_errors",
+      "tests/test_quality.py::test_scope_batch_rejects_non_equivalent_diagnostics[code]",
+      "tests/test_quality.py::test_scope_batch_rejects_non_equivalent_diagnostics[duplicate]",
+      "tests/test_quality.py::test_scope_batch_rejects_non_equivalent_diagnostics[exit]",
+      "tests/test_quality.py::test_scope_batch_rejects_non_equivalent_diagnostics[extra]",
+      "tests/test_quality.py::test_scope_batch_rejects_non_equivalent_diagnostics[line]",
+      "tests/test_quality.py::test_scope_batch_rejects_non_equivalent_diagnostics[path]",
+      "tests/test_quality.py::test_scope_batch_rejects_non_equivalent_diagnostics[stderr]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[0]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[1]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[2]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[3]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[4]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[5]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[6]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[7]",
+      "tests/test_quality.py::test_scope_batch_requires_every_independent_diagnostic[8]",
+      "tests/test_quality.py::test_scope_batch_shadow_retains_legacy_platform_bytes"
+    ],
+    "scope_9_raw_diagnostics": [
+      [
+        "harness/analysis.py",
+        398,
+        "no-untyped-def"
+      ],
+      [
+        "harness/contracts.py",
+        1956,
+        "no-untyped-def"
+      ],
+      [
+        "harness/evaluate.py",
+        926,
+        "no-untyped-def"
+      ],
+      [
+        "harness/openings.py",
+        375,
+        "no-untyped-def"
+      ],
+      [
+        "harness/protocol.py",
+        784,
+        "no-untyped-def"
+      ],
+      [
+        "harness/search_budget.py",
+        731,
+        "no-untyped-def"
+      ],
+      [
+        "harness/statistics.py",
+        228,
+        "no-untyped-def"
+      ],
+      [
+        "reversi_player/ai_engine.py",
+        54,
+        "no-untyped-def"
+      ],
+      [
+        "reversi_player/reversi.py",
+        330,
+        "no-untyped-def"
+      ]
+    ],
+    "source_hashes": {
+      ".github/workflows/quality.yml": "75e4edf99f2857f09fee513f9e237643267ec445a328ec2bf5e1a9bf1e814519",
+      "102400-games/data.py": "1fcf04406dbfc321112fd907cf0760657c37d1b15d3750d13cf8d3e59af29731",
+      "AGENTS.md": "828ffa167e401688d40a388d083d3c4fbf4451c6d6cb0a12c7ea029a11458a3a",
+      "docs/harness_architecture.md": "5ad31cf5573667dad066f6b329da821a190776743bd1acfccf789fd92106ba8b",
+      "docs/harness_contracts.md": "5d30bddbe0cc325d6ced25596b7d208ac1db1f370051c7394f63326c6f565cbd",
+      "docs/プログラム開発方法.md": "b0115f187e49039ff42aded6ee5249f7b58ac1294a70a20e3102a05032101cbd",
+      "harness/__init__.py": "fc1c6fe693d322e53503f124dc30270ab86735ea4c4f327a89dc993ea0e4598d",
+      "harness/analysis.py": "7653721629a8d6e31729254dd2e0ed7d84d202c64e7c252a7ba788298487b9c4",
+      "harness/contracts.py": "556b05f2c62364554da5eb6925fbc150612e6e0b100cc6369847369bb69fe3d3",
+      "harness/evaluate.py": "2ea2cc5c2a01227c51576be79e66300696d8e12ee13e19297cbf7fc57ad8adec",
+      "harness/openings.py": "11d14dc64f4ba2f66475d5f664770ef81ebe6501c339f9c6fafe469b5e88f26f",
+      "harness/protocol.py": "92d44e40e10d647ca6f907ffb2273334559f84e27db92fee207b26c62d8a5685",
+      "harness/referee.py": "350b858891c490a48290ef7c7d8f62f77b3b0836d3582051637b14514a125a5c",
+      "harness/search_budget.py": "5378748a7ccf197ddde165a59b99bed2039a94bb51dcf8566b5617554a26cb3e",
+      "harness/seeded_player.py": "28aff247d165b703e1fbdc2a025121160c141edc1918f6ac85e1ab330e656084",
+      "harness/statistics.py": "faf98ec9d7740518997ac37a35f7f1e09a306607aefc97d7a5ef0ef855d2cf65",
+      "pyproject.toml": "43939df4e4e022a10389789a61bfc044097473d735bd77a6968144abe5633ec3",
+      "pytest.ini": "1a30d28286a4c6bfd5f314452195418c2de1ca748d76a18abcbe371b0b4d4472",
+      "requirements-dev.txt": "4e7234b0d9dc1df1be118370507fe68d09b961d71c67872cc1bc9288989c5a84",
+      "reversi_01.py": "b06f882e41871da42d89fc5abe43b41a7466efc3866db82a28145eba3ad014b5",
+      "reversi_player/ai_engine.py": "3a6d69c35bf79d2a184cabde023b5274a4a1e34eb318aa4c4be42569e6401c5f",
+      "reversi_player/reversi.py": "a012c2b30c304b4716e5f3df2d0ffac4f689a5b35cb38fefe6c16f7b27428efe",
+      "reversi_player/web.py": "f563bfd39bdf612e0081d20b79c2d41f9aa8fccd99a360d0085f1d220df3f6e5",
+      "tests/fixtures/budget_player.py": "a284ac4f94df94e012ee05487a45114acd75f32c87776eb4ff9a1963ac84814c",
+      "tests/fixtures/fault_player.py": "d4b88dd295bc01e1d21bbcc0b249385a118dbe7d08affb0d73553fd377afcc89",
+      "tests/test_ai_compatibility.py": "0bfd0dbf34af7bfe531003495b24c18832bf0b0458c3f734b14034d0b11ddcc1",
+      "tests/test_ai_engine.py": "3755aa3280797ed32ce125d44e2c1430ec05c30f245c243923fc9b302a1b588a",
+      "tests/test_feedback.py": "6e629e816486271ef196c123ebcbea8229422db3b1d0f6b8635fc65e743d4c65",
+      "tests/test_harness.py": "3ace66bb64959bebc5154317e6ff3d810f7d0eb48a6a37e9eca747bf9e20eea3",
+      "tests/test_invariants.py": "b1895532363133d9d8b14e7df397295f0d7f83bea8cfa120db1e3357e73d70bb",
+      "tests/test_quality.py": "03207726933e461ca9aceecd87568dd26618454e646afe6e36baf1709915e2c8",
+      "tests/test_result.py": "0a9d8e28071a6f1d40ad268b4d5f39a42fb5c1b3cdddbb7ae3fcab3038c44b6f",
+      "tests/test_stdin_commands.py": "2e0b80d77526107a99fb4a25a8dde6c87ab273ab074962be2fdadec54468b59d",
+      "tools/__init__.py": "02a3c2071adedd371b1d2c6cf32eeb7c619082ba1e8b3895639c0a4094e3559d",
+      "tools/evidence.py": "62cc63ebeecdf9b9c8aa164e29ad11171233e65ac1acecdbc77ce874a1c92a91",
+      "tools/evidence_plugin.py": "8e7d0039835ba4c518601a8cbdadf707153561e5a8ba7ebfb7bbe2ab93b7761a",
+      "tools/feedback.py": "83eccec01f86a53a168c674dcf85683141f94f20d050700ba6abab108611e6a2",
+      "tools/quality.py": "5449ba4513e72d5496a32a39eb15b349620780f6c8529e3d35ba354b311bf693"
+    },
+    "step_seconds_sum": 658.9272732000682,
+    "step_seconds": {
+      "environment": 0.026063300028908998,
+      "model": 0.11973489995580167,
+      "typing_scope": 0.0035115000209771097,
+      "dependencies": 0.6896911999792792,
+      "lint": 0.13560730003518984,
+      "format": 0.14080940000712872,
+      "typing": 6.467686800053343,
+      "pytest": 646.2167192000197,
+      "smoke": 4.716789299971424,
+      "snapshot": 0.01894059998448938,
+      "evidence": 0.3917197000118904
+    },
+    "raw_preservation": {
+      "full_original_references": 14,
+      "full_retained_paths": 14,
+      "full_report_unchanged": true,
+      "profile_raw_files": 10,
+      "profile_raw_hashes": {
+        "opening-population.json": "0b531b6bd3c796acd6249141682e2428ad88554600f74c3f216440c12664708d",
+        "run-state.json": "e814972feda7ccb60ef067812a49b7d3de86a5b5d2e778d9a6bf60c21e26919a",
+        "determinism\\A\\0.jsonl": "3cd5a9d14a43244261c2e4c0a7f13141bfaa559c7aab8b0405210f3fed51b5e2",
+        "determinism\\A\\1.jsonl": "fb2030a3d58abeee677aea0c2d6949296798ed87b7f7c0554abee2cd31fbbd7a",
+        "determinism\\B\\0.jsonl": "b74c8ceed41b0f14d5517388843d9d60a2769877c1dd9cbc62cc0a9216d728fc",
+        "determinism\\B\\1.jsonl": "e28ae27a4686bc9c94cbde7b1f550b8fd885afaeedc709c05eb5d08c40a8e8f6",
+        "d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-0\\A.jsonl": "25000a408a7c954bb3cc6d6318a4570284ccc07361809f4e2a39cf742f6c1b5c",
+        "d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-0\\B.jsonl": "8dc85db295aae27ccf2301c2527d85e6cc1fe7d6f9fdb559f0e6ca19aca33e5e",
+        "d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-1\\A.jsonl": "5e361a88694bfc5943399608aaacb21bf8b526ad9a73e426ddb843b8bb2c664a",
+        "d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-1\\B.jsonl": "0f5a5349c94dace2c39b371293225ac9be7c57bb014ecd5e7b1d3becd54533b4"
+      },
+      "profile_sample_fresh_inspection": "verified",
+      "profile_sample": "evaluation_results\\quality-b-b3d52730b80144d8acb5095571b49a4d\\inspection-profile-final\\sample-report.json"
+    }
+  }
+}

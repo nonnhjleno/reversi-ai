@@ -281,8 +281,13 @@ def _journal_errors(events: list[dict[str, object]]) -> list[str]:
     return errors
 
 
-def collect_step(output: Path, run_id: str, step: dict[str, object]) -> dict[str, object]:
-    """一stepの元終了値・JUnit・journal・原参照を照合し、欠損も返却する。"""
+def collect_step(
+    output: Path,
+    run_id: str,
+    step: dict[str, object],
+    artifact_paths: dict[str, Path] | None = None,
+) -> dict[str, object]:
+    """元結果と原参照を照合する。保管map指定時も原path/hashを変更せず欠損を拒否する。"""
     name = str(step['name'])
     result: dict[str, object] = {
         'step_id': run_id + ':' + name,
@@ -417,6 +422,10 @@ def collect_step(output: Path, run_id: str, step: dict[str, object]) -> dict[str
                 }
                 try:
                     artifact_path = Path(str(event['path']))
+                    if artifact_paths is not None:
+                        if str(event['path']) not in artifact_paths:
+                            raise ValueError('retained_artifact_missing')
+                        artifact_path = artifact_paths[str(event['path'])]
                     data = _read(artifact_path)
                     if hashlib.sha256(data).hexdigest() != event.get('sha256'):
                         raise ValueError('artifact_hash_mismatch')

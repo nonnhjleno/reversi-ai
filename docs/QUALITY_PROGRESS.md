@@ -1,5 +1,50 @@
 # 品質基盤導入の進捗と検証証拠
 
+## 品質監査C（2026-10-20、PASS）
+
+利用者はcommit/push/PR・CI確認・mainのPR/quality必須設定まで承認した。mainへのmergeは行わない。作業開始HEAD95ae51f、refactor/quality-gate-optimization。既存AGENTS.mdのステージ済み追記はそのまま保護する。モデル図11.C・契約13.4を先行更新し、CIイベント頻度と保守的auto routingのみを変更する。Full11工程・strict17・直列journal・AI/GUI/時計/予算/正式資格は不変。
+
+実装前の回帰は36失敗・4成功・41除外（10.10秒）。修正後の関連回帰は99成功（20.21秒）。新規58件はCI契約15、実Git層別差分・競合・不正形式・CLI・保存routing照合43。通常mypy17対象、Ruff lint、変更3ファイルformatも成功。全pytest/独立smoke/補助実行/実CI/保護設定は以下の最終記録まで未確認。[C実施記録](reports/20261020_quality_ci_implementation.md)へ原証拠・外部状態を残す。次段階の並列化・AI変更は行わない。
+
+ローカル最終: auto CLIの共有変更→Full fallbackを実行し全11工程PASS、pytest906成功・0失敗/skip（外部394.484秒）、独立smoke1成功。旧848 node保全＋58追加。Quick274成功（runner31.357秒）・Standard296成功（59.846秒）はFullと別kind。3実行の39sourceと現在hash一致、publication・fresh再収集・補助verifyエラー0。原証拠は上記C記録の保存先。外部CI/保護設定の適用だけは引き続き未確認であり、C全体PASSとはまだしない。
+
+外部最終: 上記の未確認は実施途中の記録。実装b370c79をpushし、mainの既存方針commitをremote featureへ統合した66dfb31で[PR #3](https://github.com/nonnhjleno/reversi-ai/pull/3)を作成。[実CI 39418825153](https://github.com/nonnhjleno/reversi-ai/actions/runs/39418825153)は全11工程、pytest906・独立smoke1成功。artifactのmanifestはPR合成merge b418195、check-runの対象はhead66dfb31であり、両者を区別して照合した。mainのPR必須・strict quality（GitHub Actions app15368）・管理者にも適用・force/delete禁止を設定しAPIで再確認。main HEAD b57485dは変更せずPRはopenのまま。コード/試験/図契約と外部設定を含めCをPASSとする。最終文書追記のCIはPRの最新checkを参照する。
+
+元worktreeのAGENTS bytes/indexを維持するため、remote側のmain方針反映と最終文書commit後の自動fast-forwardは行わない。最終報告は隔離publication worktreeからcommitし、原証拠は元worktreeのevaluation_results/quality-c-1792490955に保管する。PR merge前のmainでは旧workflowが現行であり、Cのイベント整理がmainへ反映されるのはこのPRのmerge後。main merge、worker、別OS、実AIの正式資格は今回の完了範囲外。
+
+## 品質監査B1/B2（2026-10-20、PASS）
+
+以下の「最終Full検証中」「未確認」は途中記録であり、末尾の最終結果まで検証済み。
+
+開始HEADは`3c4f108`、`refactor/quality-gate-optimization`上のclean状態から開始。AのFull PASSを確認し、対応する直接CPython 3.13.5でenvironment/scope/modelのエラーなしを再確認した。モデル図と契約13.3を先行更新し、9scope自己テストのchecker起動だけをmodule fixtureへ共有した。元9node ID・通常typing argv・17strict登録・Full 11工程・正式評価のfresh検証は維持する。他17型probeのテスト本体はASTで変更なしを確認した。
+
+新規診断検査の実装前16回帰は16失敗（未実装helperのNameError）。実装後の元9＋新規18回帰は27成功。before/after照合でshadowのLF/CRLF差を検出したため、旧write_textと同じOS改行へ修正し専用回帰を追加、最終新規19回帰は19成功（10.52秒）。最終26論理caseの成否・診断path/行/code/message・shadow bytesは一致、各3回の開始/終了source hashも一致した。mypy subprocessの9件分中央値は42.928→5.946秒（86.15%短縮）。これは統制済みFull全体の短縮率ではなく、OS cache未消去・before群の後にafter群を測った限定結果である。
+
+B2では他17probeの正7/負10の判定と原診断を維持し、正常/時系列不正inspection各3回、全公開入口の不正拒否3回をcProfileした。原証拠10ファイル不変。parse/readだけの寄与は小さく、timeline/deepcopy/ルール再生の寄与が大きい。公開入口間のfresh検証共有やcacheは採用せず、positive/negative shadow群の追加batchも独立設計・計測まで保留する。
+
+現時点ではBのFull PASSは未確認。最終結果・正負行列・原証拠・残るリスクは[B実装記録](reports/20261020_quality_probe_optimization.md)と[機械可読計測](reports/20261020_quality_probe_metrics.json)へ記録する。C、AI/GUI/harness/品質runner/CIの変更、commit/pushは実施しない。
+
+最終判定: **B1実装・B2計測/群別判断 PASS**。Fullは`evaluation_results/quality-762d0017b4304bac8391fcdc785a529b/`へ新規保存し全11工程PASS。全pytest **848成功・0失敗・0skip**（表示644.69秒、外部pytest工程646.217秒）、独立smoke **1成功**（JUnit 3.818秒、外部4.717秒）。工程秒の和658.927秒はCLI全体wallではない。mypy17対象・Lint・format・scope/model成功。元829nodeを全保全して19追加、smokeのnodeも不変。38sourceの開始/終了/現在および最終限定測定のhash一致、publicationと全pytest/smokeのfresh再収集エラー0、Full保存の9shadow bytes・原診断・case別記録の再照合も成功した。追加batch・inspection cache・並列化・Cへは進まず停止する。CI実行、他OS、統制した反復Full性能比較は未実施。
+
+証拠寿命の最終確認として、B2の原traceを新規run内basetempへ保持した限定profileも1成功（55.77秒）、保存原報告のfresh inspection=verified・10原ファイル不変を確認。Full既存原参照14件は同一bytesの監査用コピーを保管し、元quality/journal/pathは無変更。追加文書リンク回帰1成功（0.94秒）、Git差分確認成功。Bのraw保存・集計・契約を確定し、未コミットのまま停止する。
+
+## 品質監査A1〜A3（2026-10-20、PASS）
+
+監査第12節Aだけを対象とする。過去のPhase 10未実装の記述は当時の履歴。今回の先行設計では既存10検査を残してtyping_scopeを必須追加（11工程）、3本番ルートの全Pythonとstrict filesを照合する。既存14対象にinitializer2件とfeedbackを加えて17対象。利用者はreversi_01.py・102400-games/data.pyを保管/参考用途として承認した。web.pyだけが本番strict例外で、AI/GUI/評価契約は変更しない。
+
+Quick/Standard_AIはFullと別kindの補助証拠とし、共有/未知変更はFullへ戻す。個別計測はmeasure-profileを明記し、Full未合格を常に保存する。設計図・契約・操作を先行更新後、実装前の新規回帰17失敗を確認。実装後は追加40回帰が成功（15.74秒）、strict17対象・Lint・format成功。途中のリスト注釈不足と整形差分取込時の末尾構文エラーは修正して再検証した。これから同一ソースでQuick/Standard_AIとFullを実行し、共通結果と原証拠を照合する。現時点でA完了/Full PASSとはしない。
+
+最終結果・保存先は[品質監査A実装記録](reports/20261020_quality_feedback.md)へ記録する。Bのmypy起動共有・fixture最適化、CのCI/並列化は実施しない。commit/pushも行わない。
+
+最終判定: **A1/A2/A3 PASS**。上記の「これから」は作業途中の記録で、以降に以下の実行・照合を完了した。既存CLI回帰でfixtureコピー後のtools再作成を検出し、期待値を変えずexist_okで修正。品質回帰149成功・16除外（149.22秒）後、全829成功のFullを確認。最終照合で品質図の静的検査→collect-only順と操作資料の古い13対象表記を修正し、資料版まで揃えて再実行した。
+
+- Quick: 231成功、598未選択、0失敗/skip、runner内wall 36.793秒。`evaluation_results/feedback-9f6311cccf7a4607a19b0b4babe66ab5/`。
+- Standard_AI: 253成功、576未選択、0失敗/skip、runner内wall 82.981秒。`evaluation_results/feedback-8bf64766bef94d94ac97a583f95245cc/`。
+- Full: 全11工程PASS、pytest 829成功・0失敗/skip（表示737.49秒）、独立smoke 1成功（JUnit 4.033秒）。工程秒の和753.881秒はCLI全体wallとは区別する。`evaluation_results/quality-9285910144e444a4bff556b67e5571d1/`。
+- 既存787 caseを全保全し42追加。strict17、scope/モデル照合エラー0、38 sourceの開始/終了/現在および3実行間hash一致。Fullのpublication/再収集エラー0、両補助報告の再検証エラー0、共通case結果不一致0。Standardの原参照12件はrun内へ保管済み。
+
+本番/GUI/ハーネス/固定baseline/CI workflowは変更なし。QuickとStandardの成功はFull成功でも正式AI資格でもない。Full自体の最適化、CI実行、実ブラウザ、別OS、統制した反復性能測定は未実施。詳細な実argv・hash・集計は[検証集計](reports/20261020_quality_feedback_metrics.json)。Aで停止しB/Cへ進まない。
+
 開始日: 2026-10-14。開始commit: `8712843ee81ac6fbf7ce2ab2d9e8da8f54b298ae`。
 開始時Gitはclean、mainとorigin/mainは一致。commit・push・branch操作は行わない。
 

@@ -1,0 +1,4833 @@
+{
+  "report_kind": "quality_gate_audit",
+  "format_version": 1,
+  "audit_date": "2026-10-20",
+  "analysis_only": true,
+  "mypy_scope_split": {"configured_roots_items":24,"configured_roots_phase_seconds":191.602902,"explicit_probe_items":2,"explicit_probe_phase_seconds":6.668166,"explicit_probe_base_tests":["tests/test_quality.py::test_analysis_typing_opaque_values_are_not_numeric_certificates","tests/test_quality.py::test_evaluate_typing_opaque_fields_and_call_arguments_are_not_certified"],"basis":"mypy files is fallback only when no command-line file targets; https://mypy.readthedocs.io/en/stable/config_file.html#confval-files"},
+  "test_structure_count_policy": "historical_measurements.test_structure[].functions counts top-level test functions only (251); inventory_analysis.source_test_definitions includes 11 collected unittest methods (262 total).",
+  "branch": "refactor/quality-gate-optimization",
+  "base_commit": "73990eccbb4a10d96013f771e8925759a73e137f",
+  "evidence_role": "Derived audit measurements; not quality_gate, verification_evidence, or formal AI evaluation.",
+  "measurement_policy": {
+    "full_pytest_runs_in_audit": 0,
+    "additional_performance_runs": 0,
+    "historical_runs": 3,
+    "ci_runs_started_in_audit": 0,
+    "new_document_validation": "Recorded in Markdown after execution; not an optimization benchmark."
+  },
+  "path_policy": "User profile and temporary directory prefixes are normalized only in this derived audit. Raw evidence is unchanged.",
+  "historical_measurements": {
+    "audit_kind": "existing_evidence_analysis",
+    "source_head": "73990eccbb4a10d96013f771e8925759a73e137f",
+    "runs": [
+      {
+        "run": "quality-bc3a980bc75e4c8f99b278b403e707ec",
+        "passed": true,
+        "steps": {
+          "environment": 0.032806,
+          "model": 0.119481,
+          "dependencies": 0.663291,
+          "lint": 0.133952,
+          "format": 0.125825,
+          "typing": 4.149056,
+          "pytest": 539.010913,
+          "smoke": 8.134993,
+          "snapshot": 0.018442,
+          "evidence": 0.504518
+        },
+        "step_sum": 552.893277,
+        "environment": {
+          "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+          "executable": "<USERPROFILE>\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "packages": {
+          "pytest": "8.4.2",
+          "ruff": "0.17.0",
+          "mypy": "2.4.0",
+          "hypothesis": "6.169.0"
+        },
+        "hashes": {
+          "quality.json": "71e67b624b2b0726e125cf3a714f82a687e99aa0ab2d0a038f013c9165d7e18e",
+          "evidence.json": "e96534404754719c0b89bdd3d5de4c105a9278b9c789f5e2c4b2ad5962e794e5",
+          "pytest/events.jsonl": "1059abe6bba6a89c5b1f7dded1cec3002d6e82f3527f8970203d8dfb1b549585",
+          "pytest/pytest.xml": "d2e24f5837ad54b09f9afd33c30370885df1c9bc5b932da7fdfd760335991cf0",
+          "pytest.txt": "b925d9cc0b36cf4d39431d652bf9cb3331ff6a26f4dc54ddf071592f07a8c00c"
+        },
+        "source_mismatches": {},
+        "source_missing_from_saved": [],
+        "snapshot_equal": true,
+        "publication_errors": [],
+        "junit_count": 787,
+        "junit_seconds_sum": 534.333,
+        "phase_totals": {
+          "setup": 9.964127,
+          "call": 523.992151,
+          "teardown": 0.375923,
+          "total": 534.332201
+        },
+        "files": [
+          {
+            "name": "tests/test_harness.py",
+            "count": 511,
+            "setup": 6.52605,
+            "call": 260.882381,
+            "teardown": 0.125871,
+            "total": 267.534302
+          },
+          {
+            "name": "tests/test_quality.py",
+            "count": 164,
+            "setup": 1.877443,
+            "call": 261.014693,
+            "teardown": 0.055666,
+            "total": 262.947802
+          },
+          {
+            "name": "tests/test_stdin_commands.py",
+            "count": 13,
+            "setup": 1.527959,
+            "call": 0.42956,
+            "teardown": 0.17044,
+            "total": 2.127958
+          },
+          {
+            "name": "tests/test_result.py",
+            "count": 61,
+            "setup": 0.026058,
+            "call": 0.590809,
+            "teardown": 0.018486,
+            "total": 0.635353
+          },
+          {
+            "name": "tests/test_ai_compatibility.py",
+            "count": 9,
+            "setup": 0.002608,
+            "call": 0.609283,
+            "teardown": 0.001817,
+            "total": 0.613708
+          },
+          {
+            "name": "tests/test_invariants.py",
+            "count": 2,
+            "setup": 0.00048,
+            "call": 0.392556,
+            "teardown": 0.000789,
+            "total": 0.393824
+          },
+          {
+            "name": "tests/test_ai_engine.py",
+            "count": 27,
+            "setup": 0.003529,
+            "call": 0.072869,
+            "teardown": 0.002854,
+            "total": 0.079253
+          }
+        ],
+        "smoke_nodeids": [
+          "tests/test_harness.py::test_paired_complete_games_are_reproducible_and_serializable"
+        ],
+        "smoke_full_seconds": 1.787574,
+        "groups": [
+          {
+            "name": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate",
+            "count": 9,
+            "setup": 0.046228,
+            "call": 61.458908,
+            "teardown": 0.002978,
+            "total": 61.508115
+          },
+          {
+            "name": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata",
+            "count": 6,
+            "setup": 0.069491,
+            "call": 51.432419,
+            "teardown": 0.002934,
+            "total": 51.504845
+          },
+          {
+            "name": "tests/test_quality.py::test_budget_typing_does_not_certify_opaque_metadata",
+            "count": 4,
+            "setup": 0.027303,
+            "call": 34.347248,
+            "teardown": 0.001168,
+            "total": 34.375718
+          },
+          {
+            "name": "tests/test_harness.py::test_temporal_all_child_events_are_revalidated",
+            "count": 11,
+            "setup": 0.033643,
+            "call": 34.121141,
+            "teardown": 0.002803,
+            "total": 34.157587
+          },
+          {
+            "name": "tests/test_harness.py::test_temporal_rehashed_trace_is_semantically_checked",
+            "count": 8,
+            "setup": 0.02554,
+            "call": 25.369383,
+            "teardown": 0.002381,
+            "total": 25.397304
+          },
+          {
+            "name": "tests/test_harness.py::test_saved_trace_semantics_block_formal_statistics_even_with_new_hash",
+            "count": 13,
+            "setup": 0.051433,
+            "call": 24.906336,
+            "teardown": 0.003379,
+            "total": 24.961148
+          },
+          {
+            "name": "tests/test_quality.py::test_protocol_typing_legacy_frequency_is_not_certified",
+            "count": 2,
+            "setup": 0.017335,
+            "call": 17.844726,
+            "teardown": 0.000879,
+            "total": 17.86294
+          },
+          {
+            "name": "tests/test_quality.py::test_contract_typing_dependency_accepts_readonly_command_sequence",
+            "count": 2,
+            "setup": 0.013711,
+            "call": 17.84676,
+            "teardown": 0.001226,
+            "total": 17.861698
+          },
+          {
+            "name": "tests/test_harness.py::test_evaluation_records_faults_and_continues",
+            "count": 5,
+            "setup": 0.001639,
+            "call": 15.350422,
+            "teardown": 0.001968,
+            "total": 15.35403
+          },
+          {
+            "name": "tests/test_harness.py::test_confirmatory_evaluation_verifies_trace_and_estimates_paired_scores",
+            "count": 1,
+            "setup": 0.00634,
+            "call": 14.632447,
+            "teardown": 0.000208,
+            "total": 14.638995
+          },
+          {
+            "name": "tests/test_harness.py::test_temporal_public_apis_and_saved_clis_agree",
+            "count": 4,
+            "setup": 0.009501,
+            "call": 14.408697,
+            "teardown": 0.001009,
+            "total": 14.419206
+          },
+          {
+            "name": "tests/test_harness.py::test_temporal_host_lifetime_cannot_bypass_formal_entries",
+            "count": 4,
+            "setup": 0.00098,
+            "call": 12.768705,
+            "teardown": 0.001582,
+            "total": 12.771266
+          },
+          {
+            "name": "tests/test_harness.py::test_population_aliases_cannot_create_false_census",
+            "count": 8,
+            "setup": 0.002994,
+            "call": 12.3562,
+            "teardown": 0.003279,
+            "total": 12.362473
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_missing_or_mismatched_reports_never_become_complete",
+            "count": 8,
+            "setup": 0.035262,
+            "call": 10.147857,
+            "teardown": 0.003799,
+            "total": 10.186918
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_matches_real_pytest_phases_and_junit",
+            "count": 7,
+            "setup": 0.025911,
+            "call": 9.447609,
+            "teardown": 0.002034,
+            "total": 9.475554
+          },
+          {
+            "name": "tests/test_quality.py::test_openings_typing_keeps_unchecked_generator_metadata_opaque",
+            "count": 1,
+            "setup": 0.008503,
+            "call": 8.480734,
+            "teardown": 0.00035,
+            "total": 8.489587
+          },
+          {
+            "name": "tests/test_harness.py::test_schema5_cli_saves_reloads_and_reanalyses",
+            "count": 3,
+            "setup": 0.008967,
+            "call": 8.041911,
+            "teardown": 0.001006,
+            "total": 8.051885
+          },
+          {
+            "name": "tests/test_harness.py::test_consistency_malformed_sources_fail_all_public_entries",
+            "count": 12,
+            "setup": 0.003542,
+            "call": 7.864227,
+            "teardown": 0.003037,
+            "total": 7.870806
+          },
+          {
+            "name": "tests/test_harness.py::test_omitted_games_uses_all_fixed_openings_and_confirmatory_requires_explicit",
+            "count": 1,
+            "setup": 0.006239,
+            "call": 6.557108,
+            "teardown": 0.000493,
+            "total": 6.563841
+          },
+          {
+            "name": "tests/test_quality.py::test_real_quality_cli_rejects_intentional_lint_type_and_test_failures",
+            "count": 1,
+            "setup": 0.002133,
+            "call": 5.455853,
+            "teardown": 0.000205,
+            "total": 5.458192
+          },
+          {
+            "name": "tests/test_harness.py::test_census_requires_all_archived_cases_and_both_legs",
+            "count": 1,
+            "setup": 0.003037,
+            "call": 5.393444,
+            "teardown": 0.000189,
+            "total": 5.39667
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_missing_explicit_or_final_save_evidence_cannot_certify_pass",
+            "count": 4,
+            "setup": 0.018718,
+            "call": 5.29259,
+            "teardown": 0.001441,
+            "total": 5.31275
+          },
+          {
+            "name": "tests/test_harness.py::test_schema5_incomplete_temporal_cannot_issue_formal",
+            "count": 1,
+            "setup": 2.094125,
+            "call": 3.106581,
+            "teardown": 0.000485,
+            "total": 5.201191
+          },
+          {
+            "name": "tests/test_harness.py::test_initial_position_multiple_pairs_remain_descriptive_and_comparable",
+            "count": 1,
+            "setup": 0.004272,
+            "call": 4.720553,
+            "teardown": 0.000205,
+            "total": 4.72503
+          },
+          {
+            "name": "tests/test_harness.py::test_time_budget_comparison_accepts_different_legal_games_without_formal_ci",
+            "count": 1,
+            "setup": 0.004407,
+            "call": 4.396935,
+            "teardown": 0.000677,
+            "total": 4.402019
+          },
+          {
+            "name": "tests/test_harness.py::test_baseline_exemption_is_local_and_does_not_skip_candidate_trace",
+            "count": 1,
+            "setup": 0.002437,
+            "call": 4.129399,
+            "teardown": 0.000264,
+            "total": 4.1321
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_explicit_expectation_and_original_artifact_correspondence",
+            "count": 3,
+            "setup": 0.010548,
+            "call": 4.044749,
+            "teardown": 0.00088,
+            "total": 4.056177
+          },
+          {
+            "name": "tests/test_harness.py::test_schema5_reference_generation_roundtrip",
+            "count": 2,
+            "setup": 2.188133,
+            "call": 1.385517,
+            "teardown": 0.000425,
+            "total": 3.574075
+          },
+          {
+            "name": "tests/test_harness.py::test_bad_player_is_terminated",
+            "count": 5,
+            "setup": 0.002176,
+            "call": 3.366675,
+            "teardown": 0.001593,
+            "total": 3.370444
+          },
+          {
+            "name": "tests/test_quality.py::test_evaluate_typing_opaque_fields_and_call_arguments_are_not_certified",
+            "count": 1,
+            "setup": 0.005132,
+            "call": 3.343064,
+            "teardown": 0.000388,
+            "total": 3.348584
+          },
+          {
+            "name": "tests/test_quality.py::test_analysis_typing_opaque_values_are_not_numeric_certificates",
+            "count": 1,
+            "setup": 0.00922,
+            "call": 3.310183,
+            "teardown": 0.000179,
+            "total": 3.319582
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_abrupt_pytest_preserves_partial_journal_and_log",
+            "count": 2,
+            "setup": 0.009046,
+            "call": 3.1526,
+            "teardown": 0.000428,
+            "total": 3.162074
+          },
+          {
+            "name": "tests/test_harness.py::test_consistency_q3_internal_metrics_match_raw",
+            "count": 4,
+            "setup": 0.00129,
+            "call": 2.719903,
+            "teardown": 0.001994,
+            "total": 2.723187
+          },
+          {
+            "name": "tests/test_harness.py::test_temporal_legacy4_missing_lifecycle_is_not_upgraded",
+            "count": 2,
+            "setup": 0.006007,
+            "call": 2.647813,
+            "teardown": 0.000354,
+            "total": 2.654175
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_collection_failure_is_not_a_passing_test",
+            "count": 2,
+            "setup": 0.005849,
+            "call": 2.576162,
+            "teardown": 0.00078,
+            "total": 2.582791
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_same_nodeid_in_different_steps_has_distinct_execution_ids",
+            "count": 1,
+            "setup": 0.003942,
+            "call": 2.543626,
+            "teardown": 0.000421,
+            "total": 2.547988
+          },
+          {
+            "name": "tests/test_harness.py::test_consistency_formal_entry_closure_and_arithmetic_boundary",
+            "count": 1,
+            "setup": 0.000194,
+            "call": 2.437084,
+            "teardown": 0.000188,
+            "total": 2.437466
+          },
+          {
+            "name": "tests/test_harness.py::test_schema5_unvalidated_lifetime_is_held_at_formal_entries",
+            "count": 1,
+            "setup": 0.000585,
+            "call": 2.317051,
+            "teardown": 0.000911,
+            "total": 2.318547
+          },
+          {
+            "name": "tests/test_quality.py::test_timeout_stops_owned_child_process_tree",
+            "count": 1,
+            "setup": 0.002904,
+            "call": 2.267584,
+            "teardown": 0.000534,
+            "total": 2.271022
+          },
+          {
+            "name": "tests/test_harness.py::test_consistency_q1_saved_budget_hierarchy_cannot_bypass_entries",
+            "count": 1,
+            "setup": 0.000523,
+            "call": 2.263162,
+            "teardown": 0.000135,
+            "total": 2.26382
+          },
+          {
+            "name": "tests/test_quality.py::test_model_detects_import_and_formal_entry_contract_drift",
+            "count": 5,
+            "setup": 0.025156,
+            "call": 2.227102,
+            "teardown": 0.001858,
+            "total": 2.254116
+          },
+          {
+            "name": "tests/test_harness.py::test_temporal_real_startup_model_load_is_separate_from_search",
+            "count": 1,
+            "setup": 0.00394,
+            "call": 2.234546,
+            "teardown": 0.000423,
+            "total": 2.23891
+          },
+          {
+            "name": "tests/test_harness.py::test_deployment_profile_verifies_equal_time_budget_without_formal_interval",
+            "count": 1,
+            "setup": 0.005433,
+            "call": 2.168694,
+            "teardown": 0.000443,
+            "total": 2.17457
+          },
+          {
+            "name": "tests/test_harness.py::test_analysis_changes_do_not_change_experiment_identity",
+            "count": 1,
+            "setup": 0.000807,
+            "call": 2.109063,
+            "teardown": 0.000371,
+            "total": 2.110242
+          },
+          {
+            "name": "tests/test_quality.py::test_evidence_journal_lifecycle_failure_reaches_public_gate",
+            "count": 6,
+            "setup": 0.019926,
+            "call": 2.086522,
+            "teardown": 0.001491,
+            "total": 2.107938
+          }
+        ],
+        "top30": [
+          {
+            "nodeid": "tests/test_harness.py::test_confirmatory_evaluation_verifies_trace_and_estimates_paired_scores",
+            "setup": 0.00634,
+            "call": 14.632447,
+            "teardown": 0.000208,
+            "total": 14.638995
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[harness/contracts.py]",
+            "setup": 0.005086,
+            "call": 9.625715,
+            "teardown": 0.000498,
+            "total": 9.631299
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_budget_typing_does_not_certify_opaque_metadata[int-measurement]",
+            "setup": 0.009275,
+            "call": 9.602777,
+            "teardown": 0.000314,
+            "total": 9.612365
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata[int-reference_ns]",
+            "setup": 0.009378,
+            "call": 9.251508,
+            "teardown": 0.000342,
+            "total": 9.261228
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_protocol_typing_legacy_frequency_is_not_certified[False]",
+            "setup": 0.011565,
+            "call": 9.152777,
+            "teardown": 0.000436,
+            "total": 9.164777
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_dependency_accepts_readonly_command_sequence[True]",
+            "setup": 0.006477,
+            "call": 9.093514,
+            "teardown": 0.000788,
+            "total": 9.10078
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[harness/search_budget.py]",
+            "setup": 0.005564,
+            "call": 8.93832,
+            "teardown": 0.000443,
+            "total": 8.944327
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata[object-decoded]",
+            "setup": 0.009753,
+            "call": 8.917539,
+            "teardown": 0.000503,
+            "total": 8.927794
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata[int-snapshot]",
+            "setup": 0.030236,
+            "call": 8.823716,
+            "teardown": 0.000502,
+            "total": 8.854455
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_budget_typing_does_not_certify_opaque_metadata[object-measurement]",
+            "setup": 0.004243,
+            "call": 8.798476,
+            "teardown": 0.000184,
+            "total": 8.802902
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_dependency_accepts_readonly_command_sequence[False]",
+            "setup": 0.007234,
+            "call": 8.753246,
+            "teardown": 0.000438,
+            "total": 8.760918
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_protocol_typing_legacy_frequency_is_not_certified[True]",
+            "setup": 0.005771,
+            "call": 8.691949,
+            "teardown": 0.000443,
+            "total": 8.698162
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_budget_typing_does_not_certify_opaque_metadata[object-search]",
+            "setup": 0.009429,
+            "call": 8.652784,
+            "teardown": 0.000341,
+            "total": 8.662554
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata[int-decoded]",
+            "setup": 0.006875,
+            "call": 8.550761,
+            "teardown": 0.001035,
+            "total": 8.558671
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata[object-snapshot]",
+            "setup": 0.006709,
+            "call": 8.50391,
+            "teardown": 0.000317,
+            "total": 8.510936
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_openings_typing_keeps_unchecked_generator_metadata_opaque",
+            "setup": 0.008503,
+            "call": 8.480734,
+            "teardown": 0.00035,
+            "total": 8.489587
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[reversi_player/ai_engine.py]",
+            "setup": 0.007546,
+            "call": 7.808386,
+            "teardown": 0.000354,
+            "total": 7.816286
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[harness/evaluate.py]",
+            "setup": 0.005275,
+            "call": 7.465805,
+            "teardown": 0.000383,
+            "total": 7.471463
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[harness/analysis.py]",
+            "setup": 0.007441,
+            "call": 7.384329,
+            "teardown": 0.000312,
+            "total": 7.392083
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata[object-reference_ns]",
+            "setup": 0.006541,
+            "call": 7.384984,
+            "teardown": 0.000235,
+            "total": 7.39176
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_budget_typing_does_not_certify_opaque_metadata[int-search]",
+            "setup": 0.004357,
+            "call": 7.293211,
+            "teardown": 0.000329,
+            "total": 7.297897
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[harness/protocol.py]",
+            "setup": 0.003885,
+            "call": 6.683488,
+            "teardown": 0.000329,
+            "total": 6.687702
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_omitted_games_uses_all_fixed_openings_and_confirmatory_requires_explicit",
+            "setup": 0.006239,
+            "call": 6.557108,
+            "teardown": 0.000493,
+            "total": 6.563841
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_real_quality_cli_rejects_intentional_lint_type_and_test_failures",
+            "setup": 0.002133,
+            "call": 5.455853,
+            "teardown": 0.000205,
+            "total": 5.458192
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_census_requires_all_archived_cases_and_both_legs",
+            "setup": 0.003037,
+            "call": 5.393444,
+            "teardown": 0.000189,
+            "total": 5.39667
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_schema5_incomplete_temporal_cannot_issue_formal",
+            "setup": 2.094125,
+            "call": 3.106581,
+            "teardown": 0.000485,
+            "total": 5.201191
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[harness/openings.py]",
+            "setup": 0.003837,
+            "call": 5.147749,
+            "teardown": 0.000231,
+            "total": 5.151817
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_initial_position_multiple_pairs_remain_descriptive_and_comparable",
+            "setup": 0.004272,
+            "call": 4.720553,
+            "teardown": 0.000205,
+            "total": 4.72503
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_time_budget_comparison_accepts_different_legal_games_without_formal_ci",
+            "setup": 0.004407,
+            "call": 4.396935,
+            "teardown": 0.000677,
+            "total": 4.402019
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate[harness/statistics.py]",
+            "setup": 0.003676,
+            "call": 4.313574,
+            "teardown": 0.00021,
+            "total": 4.317459
+          }
+        ],
+        "top_setup10": [
+          {
+            "nodeid": "tests/test_harness.py::test_schema5_reference_generation_roundtrip[real]",
+            "setup": 2.186013,
+            "call": 0.575295,
+            "teardown": 0.000208,
+            "total": 2.761516
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_schema5_incomplete_temporal_cannot_issue_formal",
+            "setup": 2.094125,
+            "call": 3.106581,
+            "teardown": 0.000485,
+            "total": 5.201191
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_paired_complete_games_are_reproducible_and_serializable",
+            "setup": 1.719106,
+            "call": 0.068221,
+            "teardown": 0.000248,
+            "total": 1.787574
+          },
+          {
+            "nodeid": "tests/test_quality.py::test_evidence_journal_lifecycle_rejects_resequenced_events[duplicate_finish-duplicate_test_finish]",
+            "setup": 1.220273,
+            "call": 0.076253,
+            "teardown": 0.000381,
+            "total": 1.296906
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play B 3 3]",
+            "setup": 0.185336,
+            "call": 0.001636,
+            "teardown": 0.021438,
+            "total": 0.20841
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_initial_ask_for_both_colors_preserves_board",
+            "setup": 0.170717,
+            "call": 0.031556,
+            "teardown": 0.021317,
+            "total": 0.223591
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards[14-D-expected_rows2]",
+            "setup": 0.167948,
+            "call": 0.044219,
+            "teardown": 0.022143,
+            "total": 0.23431
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play B 0 0]",
+            "setup": 0.161448,
+            "call": 0.001482,
+            "teardown": 0.018898,
+            "total": 0.181828
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards[0-W-expected_rows0]",
+            "setup": 0.159728,
+            "call": 0.036631,
+            "teardown": 0.014315,
+            "total": 0.210674
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play W 8 4]",
+            "setup": 0.146289,
+            "call": 0.002159,
+            "teardown": 0.020405,
+            "total": 0.168852
+          }
+        ],
+        "top_teardown10": [
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards[14-D-expected_rows2]",
+            "setup": 0.167948,
+            "call": 0.044219,
+            "teardown": 0.022143,
+            "total": 0.23431
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play B 3 3]",
+            "setup": 0.185336,
+            "call": 0.001636,
+            "teardown": 0.021438,
+            "total": 0.20841
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_initial_ask_for_both_colors_preserves_board",
+            "setup": 0.170717,
+            "call": 0.031556,
+            "teardown": 0.021317,
+            "total": 0.223591
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play W 8 4]",
+            "setup": 0.146289,
+            "call": 0.002159,
+            "teardown": 0.020405,
+            "total": 0.168852
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards[3-B-expected_rows1]",
+            "setup": 0.12554,
+            "call": 0.040133,
+            "teardown": 0.018984,
+            "total": 0.184656
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play B 0 0]",
+            "setup": 0.161448,
+            "call": 0.001482,
+            "teardown": 0.018898,
+            "total": 0.181828
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play W 2 3]",
+            "setup": 0.134022,
+            "call": 0.001361,
+            "teardown": 0.017393,
+            "total": 0.152777
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards[0-W-expected_rows0]",
+            "setup": 0.159728,
+            "call": 0.036631,
+            "teardown": 0.014315,
+            "total": 0.210674
+          },
+          {
+            "nodeid": "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board[play B -1 3]",
+            "setup": 0.129655,
+            "call": 0.001822,
+            "teardown": 0.01384,
+            "total": 0.145317
+          },
+          {
+            "nodeid": "tests/test_harness.py::test_evaluate_typing_probe_keeps_partial_diagnostic_reference",
+            "setup": 0.001865,
+            "call": 0.000684,
+            "teardown": 0.002726,
+            "total": 0.005274
+          }
+        ],
+        "all_base_function_count": 262
+      },
+      {
+        "run": "quality-c1e5e48e0616406fb55c8274a9654107",
+        "passed": true,
+        "steps": {
+          "environment": 0.033007,
+          "model": 0.102788,
+          "dependencies": 0.732478,
+          "lint": 0.136322,
+          "format": 0.125367,
+          "typing": 4.368066,
+          "pytest": 493.072014,
+          "smoke": 3.791486,
+          "snapshot": 0.011712,
+          "evidence": 0.287124
+        },
+        "step_sum": 502.660364,
+        "environment": {
+          "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+          "executable": "<USERPROFILE>\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "packages": {
+          "pytest": "8.4.2",
+          "ruff": "0.17.0",
+          "mypy": "2.4.0",
+          "hypothesis": "6.169.0"
+        },
+        "hashes": {
+          "quality.json": "8400df5320196eac74d58dde96f073c650c19e4430c3da172ce7898bf3e350aa",
+          "evidence.json": "0c415b9c39c65dba279fd530d2f85c733ca6bd919a5db3fdf6b34b05ef26d431",
+          "pytest/events.jsonl": "7c87f8d4d61ed61438aab1fcb1f4244678a309c490b2be49f0ea53be8f17c92c",
+          "pytest/pytest.xml": "2d7ae2094980832d1316436f6b6416a61ceb81b4c8660757fc46c836427eb926",
+          "pytest.txt": "7f7304ccee2c07ef1f68a17cbce9d8718345b7170902989173a16b2c1911d11b"
+        },
+        "source_mismatches": {
+          ".github/workflows/quality.yml": {
+            "saved": "8b7daf34186825fc8521947289638658cdaa084d7e2a2c83f4947d09432ed344",
+            "current": "75e4edf99f2857f09fee513f9e237643267ec445a328ec2bf5e1a9bf1e814519"
+          },
+          "AGENTS.md": {
+            "saved": "e1d01add825f3d6a4581c562e7eb981eed5d5301346c5040cbdd4016db74ba7d",
+            "current": "828ffa167e401688d40a388d083d3c4fbf4451c6d6cb0a12c7ea029a11458a3a"
+          },
+          "docs/harness_architecture.md": {
+            "saved": "020322297dc1d714e5da1c5651c9bf39100984311107d9f28afb7f37d41b7355",
+            "current": "4753b5054d93c2731dba32fd8a001994e1f2b868eb054c83f4a7b662a69b25bf"
+          },
+          "docs/harness_contracts.md": {
+            "saved": "2e148946bc165f5d9276ff1baa4c076dc06a7cea2569f18675bda2c309043b31",
+            "current": "dddf1d3badd6b28f7a3dbfcbb82846ce7bcf78bfadd5018bfbdeddd7a6ea89b3"
+          }
+        },
+        "source_missing_from_saved": [],
+        "snapshot_equal": true,
+        "publication_errors": [
+          "publication_unavailable:FileNotFoundError"
+        ],
+        "junit_count": 787,
+        "junit_seconds_sum": 490.093,
+        "phase_totals": {
+          "setup": 10.215358,
+          "call": 479.587951,
+          "teardown": 0.296775,
+          "total": 490.100085
+        },
+        "files": [
+          {
+            "name": "tests/test_harness.py",
+            "count": 511,
+            "setup": 6.870678,
+            "call": 288.715059,
+            "teardown": 0.14207,
+            "total": 295.727807
+          },
+          {
+            "name": "tests/test_quality.py",
+            "count": 164,
+            "setup": 2.351189,
+            "call": 189.090443,
+            "teardown": 0.047367,
+            "total": 191.488999
+          },
+          {
+            "name": "tests/test_stdin_commands.py",
+            "count": 13,
+            "setup": 0.977141,
+            "call": 0.262298,
+            "teardown": 0.094837,
+            "total": 1.334276
+          },
+          {
+            "name": "tests/test_ai_compatibility.py",
+            "count": 9,
+            "setup": 0.001945,
+            "call": 0.576679,
+            "teardown": 0.001704,
+            "total": 0.580328
+          },
+          {
+            "name": "tests/test_invariants.py",
+            "count": 2,
+            "setup": 0.001005,
+            "call": 0.519743,
+            "teardown": 0.000463,
+            "total": 0.521211
+          },
+          {
+            "name": "tests/test_result.py",
+            "count": 61,
+            "setup": 0.009852,
+            "call": 0.349821,
+            "teardown": 0.007439,
+            "total": 0.367112
+          },
+          {
+            "name": "tests/test_ai_engine.py",
+            "count": 27,
+            "setup": 0.003548,
+            "call": 0.07391,
+            "teardown": 0.002895,
+            "total": 0.080353
+          }
+        ],
+        "smoke_nodeids": [
+          "tests/test_harness.py::test_paired_complete_games_are_reproducible_and_serializable"
+        ],
+        "smoke_full_seconds": 1.915084
+      },
+      {
+        "run": "quality-31d29272b409461294ffb0c45a9474bb",
+        "passed": true,
+        "steps": {
+          "environment": 0.029777,
+          "model": 0.105716,
+          "dependencies": 2.478583,
+          "lint": 1.577961,
+          "format": 0.126518,
+          "typing": 5.804079,
+          "pytest": 495.216321,
+          "smoke": 5.488035,
+          "snapshot": 0.007483,
+          "evidence": 0.327488
+        },
+        "step_sum": 511.16196,
+        "environment": {
+          "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+          "executable": "<USERPROFILE>\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "packages": {
+          "pytest": "8.4.2",
+          "ruff": "0.17.0",
+          "mypy": "2.4.0",
+          "hypothesis": "6.169.0"
+        },
+        "hashes": {
+          "quality.json": "386abfc0065471aae41b53d0e5c7c467398b762649f3cb8af8e51c611df4d596",
+          "evidence.json": "6cf3d9f4e58070f275b7d6b93744490c91227291647c399cb25693c238a369ae",
+          "pytest/events.jsonl": "3aadebb392030b16af4748b17f960dce2f95def3f9e85088abf5594f9632ebe3",
+          "pytest/pytest.xml": "5d61890123c405f832b8437dd74cb3ba77065f7f34b68de2ac8bbeb15636d4d2",
+          "pytest.txt": "cc4f5539e032bd5f3d0b9b4e1413a582b61630a26a77a3585a524ddcb0bbc478"
+        },
+        "source_mismatches": {
+          ".github/workflows/quality.yml": {
+            "saved": "8b7daf34186825fc8521947289638658cdaa084d7e2a2c83f4947d09432ed344",
+            "current": "75e4edf99f2857f09fee513f9e237643267ec445a328ec2bf5e1a9bf1e814519"
+          },
+          "AGENTS.md": {
+            "saved": "e1d01add825f3d6a4581c562e7eb981eed5d5301346c5040cbdd4016db74ba7d",
+            "current": "828ffa167e401688d40a388d083d3c4fbf4451c6d6cb0a12c7ea029a11458a3a"
+          },
+          "docs/harness_architecture.md": {
+            "saved": "020322297dc1d714e5da1c5651c9bf39100984311107d9f28afb7f37d41b7355",
+            "current": "4753b5054d93c2731dba32fd8a001994e1f2b868eb054c83f4a7b662a69b25bf"
+          },
+          "docs/harness_contracts.md": {
+            "saved": "2e148946bc165f5d9276ff1baa4c076dc06a7cea2569f18675bda2c309043b31",
+            "current": "dddf1d3badd6b28f7a3dbfcbb82846ce7bcf78bfadd5018bfbdeddd7a6ea89b3"
+          }
+        },
+        "source_missing_from_saved": [],
+        "snapshot_equal": true,
+        "publication_errors": [
+          "publication_unavailable:FileNotFoundError"
+        ],
+        "junit_count": 787,
+        "junit_seconds_sum": 491.206,
+        "phase_totals": {
+          "setup": 9.228681,
+          "call": 481.742877,
+          "teardown": 0.271779,
+          "total": 491.243336
+        },
+        "files": [
+          {
+            "name": "tests/test_harness.py",
+            "count": 511,
+            "setup": 6.465005,
+            "call": 277.109828,
+            "teardown": 0.121763,
+            "total": 283.696596
+          },
+          {
+            "name": "tests/test_quality.py",
+            "count": 164,
+            "setup": 1.995544,
+            "call": 202.978187,
+            "teardown": 0.051529,
+            "total": 205.025261
+          },
+          {
+            "name": "tests/test_stdin_commands.py",
+            "count": 13,
+            "setup": 0.751701,
+            "call": 0.247307,
+            "teardown": 0.085495,
+            "total": 1.084503
+          },
+          {
+            "name": "tests/test_ai_compatibility.py",
+            "count": 9,
+            "setup": 0.001686,
+            "call": 0.535815,
+            "teardown": 0.001558,
+            "total": 0.53906
+          },
+          {
+            "name": "tests/test_invariants.py",
+            "count": 2,
+            "setup": 0.000548,
+            "call": 0.457854,
+            "teardown": 0.000737,
+            "total": 0.45914
+          },
+          {
+            "name": "tests/test_result.py",
+            "count": 61,
+            "setup": 0.010488,
+            "call": 0.332693,
+            "teardown": 0.007711,
+            "total": 0.350892
+          },
+          {
+            "name": "tests/test_ai_engine.py",
+            "count": 27,
+            "setup": 0.003707,
+            "call": 0.081193,
+            "teardown": 0.002985,
+            "total": 0.087886
+          }
+        ],
+        "smoke_nodeids": [
+          "tests/test_harness.py::test_paired_complete_games_are_reproducible_and_serializable"
+        ],
+        "smoke_full_seconds": 1.798553
+      }
+    ],
+    "test_structure": [
+      {
+        "file": "tests/test_ai_compatibility.py",
+        "functions": 5,
+        "fixtures": []
+      },
+      {
+        "file": "tests/test_ai_engine.py",
+        "functions": 17,
+        "fixtures": []
+      },
+      {
+        "file": "tests/test_harness.py",
+        "functions": 155,
+        "fixtures": [
+          {
+            "name": "schema5_reference_reports",
+            "line": 76,
+            "decorators": [
+              "pytest.fixture(scope='module')"
+            ]
+          },
+          {
+            "name": "integrity_report",
+            "line": 747,
+            "decorators": [
+              "pytest.fixture(scope='module')"
+            ]
+          },
+          {
+            "name": "smoke_reports",
+            "line": 1704,
+            "decorators": [
+              "pytest.fixture(scope='module')"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "tests/test_invariants.py",
+        "functions": 2,
+        "fixtures": []
+      },
+      {
+        "file": "tests/test_quality.py",
+        "functions": 58,
+        "fixtures": [
+          {
+            "name": "journal_template",
+            "line": 880,
+            "decorators": [
+              "pytest.fixture(scope='module')"
+            ]
+          },
+          {
+            "name": "journal_sample",
+            "line": 899,
+            "decorators": [
+              "pytest.fixture"
+            ]
+          }
+        ]
+      },
+      {
+        "file": "tests/test_result.py",
+        "functions": 10,
+        "fixtures": []
+      },
+      {
+        "file": "tests/test_stdin_commands.py",
+        "functions": 4,
+        "fixtures": [
+          {
+            "name": "player",
+            "line": 73,
+            "decorators": [
+              "pytest.fixture"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "inventory_analysis": {
+    "inventory_columns": [
+      "base_nodeid",
+      "source_line",
+      "category",
+      "items",
+      "setup",
+      "call",
+      "teardown",
+      "total"
+    ],
+    "inventory": [
+      [
+        "tests/test_ai_compatibility.py::test_random_v0_reference_copy_matches_its_manifest",
+        113,
+        "ai_compatibility",
+        1,
+        0.000569,
+        0.000905,
+        0.000313,
+        0.001787
+      ],
+      [
+        "tests/test_ai_compatibility.py::test_seeded_full_game_matches_frozen_random_v0",
+        125,
+        "ai_compatibility",
+        5,
+        0.001548,
+        0.606816,
+        0.001111,
+        0.609475
+      ],
+      [
+        "tests/test_ai_compatibility.py::test_genmove_preserves_candidate_order_shuffle_count_and_rng_state",
+        130,
+        "ai_compatibility",
+        1,
+        0.000201,
+        0.000776,
+        0.000145,
+        0.001121
+      ],
+      [
+        "tests/test_ai_compatibility.py::test_no_legal_move_does_not_shuffle_or_consume_random_state",
+        165,
+        "ai_compatibility",
+        1,
+        0.000153,
+        0.000486,
+        0.000133,
+        0.000772
+      ],
+      [
+        "tests/test_ai_compatibility.py::test_board_construction_and_rule_operations_do_not_consume_random_state",
+        185,
+        "ai_compatibility",
+        1,
+        0.000138,
+        0.000301,
+        0.000114,
+        0.000553
+      ],
+      [
+        "tests/test_ai_engine.py::test_position_weights_match_the_fixed_8_by_8_table",
+        50,
+        "ai_engine",
+        1,
+        0.00014,
+        0.000133,
+        0.000123,
+        0.000396
+      ],
+      [
+        "tests/test_ai_engine.py::test_positional_selector_uses_y_then_x_for_weight_lookup",
+        58,
+        "ai_engine",
+        1,
+        0.000197,
+        0.000131,
+        0.00012,
+        0.000448
+      ],
+      [
+        "tests/test_ai_engine.py::test_positional_selector_uses_y_then_x_as_deterministic_tie_break",
+        73,
+        "ai_engine",
+        1,
+        0.000135,
+        0.000147,
+        0.000103,
+        0.000385
+      ],
+      [
+        "tests/test_ai_engine.py::test_positional_selector_is_deterministic_and_does_not_consume_random_state",
+        84,
+        "ai_engine",
+        1,
+        0.00011,
+        0.000188,
+        0.000101,
+        0.000398
+      ],
+      [
+        "tests/test_ai_engine.py::test_positional_selector_only_returns_a_supplied_legal_candidate",
+        104,
+        "ai_engine",
+        2,
+        0.000312,
+        0.000237,
+        0.000205,
+        0.000754
+      ],
+      [
+        "tests/test_ai_engine.py::test_positional_selector_handles_empty_and_singleton_candidates",
+        114,
+        "ai_engine",
+        1,
+        0.000107,
+        0.000113,
+        0.000089,
+        0.000309
+      ],
+      [
+        "tests/test_ai_engine.py::test_default_board_uses_positional_selector_and_applies_one_move",
+        120,
+        "ai_engine",
+        1,
+        0.000096,
+        0.000612,
+        0.000137,
+        0.000845
+      ],
+      [
+        "tests/test_ai_engine.py::test_random_selector_shuffles_a_copy_once_and_preserves_inputs",
+        135,
+        "ai_engine",
+        1,
+        0.000109,
+        0.00038,
+        0.000104,
+        0.000592
+      ],
+      [
+        "tests/test_ai_engine.py::test_random_selector_returns_none_without_shuffle_for_empty_moves",
+        160,
+        "ai_engine",
+        1,
+        0.000101,
+        0.00031,
+        0.000097,
+        0.000508
+      ],
+      [
+        "tests/test_ai_engine.py::test_board_passes_immutable_snapshot_and_ordered_root_moves_to_selector",
+        174,
+        "ai_engine",
+        1,
+        0.000097,
+        0.000282,
+        0.000089,
+        0.000468
+      ],
+      [
+        "tests/test_ai_engine.py::test_falsey_selector_is_not_replaced_by_the_default",
+        209,
+        "ai_engine",
+        1,
+        0.000104,
+        0.000277,
+        0.000089,
+        0.00047
+      ],
+      [
+        "tests/test_ai_engine.py::test_no_legal_move_does_not_call_injected_selector",
+        222,
+        "ai_engine",
+        1,
+        0.000097,
+        0.000163,
+        0.000088,
+        0.000349
+      ],
+      [
+        "tests/test_ai_engine.py::test_invalid_selector_result_fails_before_board_application",
+        264,
+        "ai_engine",
+        10,
+        0.001387,
+        0.003459,
+        0.001033,
+        0.005878
+      ],
+      [
+        "tests/test_ai_engine.py::test_selector_exception_propagates_without_board_or_stdout_change",
+        286,
+        "ai_engine",
+        1,
+        0.000091,
+        0.00026,
+        0.000088,
+        0.000439
+      ],
+      [
+        "tests/test_ai_engine.py::test_failed_real_move_does_not_emit_a_successful_coordinate",
+        306,
+        "ai_engine",
+        1,
+        0.000093,
+        0.000468,
+        0.000119,
+        0.00068
+      ],
+      [
+        "tests/test_ai_engine.py::test_engine_has_no_reverse_import_to_board_gui_or_harness",
+        328,
+        "ai_engine",
+        1,
+        0.000251,
+        0.001219,
+        0.000105,
+        0.001575
+      ],
+      [
+        "tests/test_ai_engine.py::test_module_execution_keeps_the_existing_command_protocol",
+        350,
+        "ai_engine",
+        1,
+        0.000103,
+        0.064491,
+        0.000166,
+        0.064759
+      ],
+      [
+        "tests/test_harness.py::test_response_contract_accepts_exact_wire_format_without_mutation",
+        38,
+        "wire_format",
+        8,
+        0.001376,
+        0.001659,
+        0.000873,
+        0.003907
+      ],
+      [
+        "tests/test_harness.py::test_response_contract_rejects_malformed_output_without_mutation",
+        60,
+        "wire_format",
+        17,
+        0.002902,
+        0.003276,
+        0.001634,
+        0.007812
+      ],
+      [
+        "tests/test_harness.py::test_schema5_reference_generation_roundtrip",
+        90,
+        "schema5_roots",
+        2,
+        2.188133,
+        1.385517,
+        0.000425,
+        3.574075
+      ],
+      [
+        "tests/test_harness.py::test_schema5_decode_diagnostics",
+        115,
+        "schema5_roots",
+        2,
+        0.000564,
+        0.144752,
+        0.000408,
+        0.145723
+      ],
+      [
+        "tests/test_harness.py::test_schema5_acquisition_failure_has_explicit_diagnostic",
+        134,
+        "schema5_roots",
+        1,
+        0.000178,
+        0.001499,
+        0.000306,
+        0.001984
+      ],
+      [
+        "tests/test_harness.py::test_schema5_incomplete_temporal_cannot_issue_formal",
+        140,
+        "schema5_roots",
+        1,
+        2.094125,
+        3.106581,
+        0.000485,
+        5.201191
+      ],
+      [
+        "tests/test_harness.py::test_schema5_missing_binding_evidence_is_unknown",
+        163,
+        "schema5_roots",
+        4,
+        0.001603,
+        2.052917,
+        0.001343,
+        2.055863
+      ],
+      [
+        "tests/test_harness.py::test_schema5_saved_summary_is_not_silently_repaired",
+        179,
+        "schema5_roots",
+        1,
+        0.000165,
+        0.562197,
+        0.000471,
+        0.562833
+      ],
+      [
+        "tests/test_harness.py::test_schema5_unvalidated_lifetime_is_held_at_formal_entries",
+        192,
+        "schema5_roots",
+        1,
+        0.000585,
+        2.317051,
+        0.000911,
+        2.318547
+      ],
+      [
+        "tests/test_harness.py::test_schema5_saved_positive_assessment_cannot_open_formal_gate",
+        207,
+        "schema5_roots",
+        1,
+        0.000791,
+        0.286209,
+        0.000188,
+        0.287189
+      ],
+      [
+        "tests/test_harness.py::test_schema5_cli_saves_reloads_and_reanalyses",
+        220,
+        "schema5_roots",
+        3,
+        0.008967,
+        8.041911,
+        0.001006,
+        8.051885
+      ],
+      [
+        "tests/test_harness.py::test_temporal_host_lifetime_cannot_bypass_formal_entries",
+        283,
+        "temporal_lifecycle",
+        4,
+        0.00098,
+        12.768705,
+        0.001582,
+        12.771266
+      ],
+      [
+        "tests/test_harness.py::test_temporal_rehashed_trace_is_semantically_checked",
+        306,
+        "temporal_lifecycle",
+        8,
+        0.02554,
+        25.369383,
+        0.002381,
+        25.397304
+      ],
+      [
+        "tests/test_harness.py::test_temporal_public_assessment_requires_original_source",
+        342,
+        "temporal_lifecycle",
+        1,
+        0.000399,
+        0.433342,
+        0.000208,
+        0.433949
+      ],
+      [
+        "tests/test_harness.py::test_temporal_normal_schema5_reaches_all_formal_entries",
+        349,
+        "temporal_lifecycle",
+        1,
+        0.000253,
+        1.529561,
+        0.000313,
+        1.530127
+      ],
+      [
+        "tests/test_harness.py::test_temporal_all_child_events_are_revalidated",
+        383,
+        "temporal_lifecycle",
+        11,
+        0.033643,
+        34.121141,
+        0.002803,
+        34.157587
+      ],
+      [
+        "tests/test_harness.py::test_temporal_popen_return_is_not_child_initialization_barrier",
+        426,
+        "temporal_lifecycle",
+        2,
+        0.000303,
+        0.000709,
+        0.0002,
+        0.001211
+      ],
+      [
+        "tests/test_harness.py::test_temporal_model_load_evidence_distinguishes_missing_from_invalid",
+        491,
+        "temporal_lifecycle",
+        6,
+        0.002836,
+        0.002019,
+        0.001908,
+        0.006763
+      ],
+      [
+        "tests/test_harness.py::test_temporal_qpc_boundaries_preserve_ambiguity",
+        506,
+        "temporal_lifecycle",
+        5,
+        0.001814,
+        0.00157,
+        0.001574,
+        0.004957
+      ],
+      [
+        "tests/test_harness.py::test_temporal_bad_type_survives_missing_clock_or_endpoint",
+        521,
+        "temporal_lifecycle",
+        7,
+        0.004138,
+        0.003057,
+        0.0026,
+        0.009794
+      ],
+      [
+        "tests/test_harness.py::test_temporal_missing_domain_is_unknown_not_known_conflict",
+        529,
+        "temporal_lifecycle",
+        1,
+        0.002581,
+        0.747419,
+        0.000341,
+        0.750341
+      ],
+      [
+        "tests/test_harness.py::test_temporal_reused_session_is_rejected_with_consistent_aliases",
+        544,
+        "temporal_lifecycle",
+        1,
+        0.004544,
+        0.728959,
+        0.000182,
+        0.733685
+      ],
+      [
+        "tests/test_harness.py::test_temporal_actor_move_must_precede_peer_play",
+        580,
+        "temporal_lifecycle",
+        1,
+        0.000202,
+        0.418275,
+        0.00017,
+        0.418647
+      ],
+      [
+        "tests/test_harness.py::test_temporal_public_apis_and_saved_clis_agree",
+        603,
+        "temporal_lifecycle",
+        4,
+        0.009501,
+        14.408697,
+        0.001009,
+        14.419206
+      ],
+      [
+        "tests/test_harness.py::test_temporal_real_startup_model_load_is_separate_from_search",
+        654,
+        "temporal_lifecycle",
+        1,
+        0.00394,
+        2.234546,
+        0.000423,
+        2.23891
+      ],
+      [
+        "tests/test_harness.py::test_temporal_legacy4_missing_lifecycle_is_not_upgraded",
+        685,
+        "temporal_lifecycle",
+        2,
+        0.006007,
+        2.647813,
+        0.000354,
+        2.654175
+      ],
+      [
+        "tests/test_harness.py::test_inspection_uses_archive_size_and_revalidates_saved_report",
+        788,
+        "consistency_persistence",
+        1,
+        0.000388,
+        1.555689,
+        0.000544,
+        1.55662
+      ],
+      [
+        "tests/test_harness.py::test_consistency_q1_saved_budget_hierarchy_cannot_bypass_entries",
+        806,
+        "consistency_persistence",
+        1,
+        0.000523,
+        2.263162,
+        0.000135,
+        2.26382
+      ],
+      [
+        "tests/test_harness.py::test_consistency_q2_search_cannot_exceed_host_interval",
+        821,
+        "consistency_persistence",
+        1,
+        0.001602,
+        1.070525,
+        0.000266,
+        1.072393
+      ],
+      [
+        "tests/test_harness.py::test_consistency_q3_internal_metrics_match_raw",
+        839,
+        "consistency_persistence",
+        4,
+        0.00129,
+        2.719903,
+        0.001994,
+        2.723187
+      ],
+      [
+        "tests/test_harness.py::test_consistency_q4_zero_started_players_are_not_exempt",
+        856,
+        "consistency_persistence",
+        1,
+        0.002383,
+        0.040063,
+        0.000192,
+        0.042638
+      ],
+      [
+        "tests/test_harness.py::test_consistency_q5_invalid_input_is_not_ci_not_requested",
+        874,
+        "consistency_persistence",
+        2,
+        0.000458,
+        0.075125,
+        0.000516,
+        0.0761
+      ],
+      [
+        "tests/test_harness.py::test_consistency_q6_post_start_save_failure_is_operational",
+        888,
+        "consistency_persistence",
+        1,
+        0.004182,
+        0.385976,
+        0.000529,
+        0.390687
+      ],
+      [
+        "tests/test_harness.py::test_consistency_measured_interval_boundaries",
+        923,
+        "consistency_persistence",
+        13,
+        0.003485,
+        0.003716,
+        0.002142,
+        0.009343
+      ],
+      [
+        "tests/test_harness.py::test_consistency_original_hold_is_not_automatically_recovered",
+        969,
+        "consistency_persistence",
+        2,
+        0.000676,
+        1.223837,
+        0.000688,
+        1.225201
+      ],
+      [
+        "tests/test_harness.py::test_consistency_probe_host_transcript_is_required",
+        986,
+        "consistency_persistence",
+        3,
+        0.001104,
+        0.889142,
+        0.001646,
+        0.891891
+      ],
+      [
+        "tests/test_harness.py::test_consistency_probe_time_failure_is_in_timing_axis",
+        1002,
+        "consistency_persistence",
+        1,
+        0.003156,
+        0.741393,
+        0.000177,
+        0.744726
+      ],
+      [
+        "tests/test_harness.py::test_consistency_reducer_has_exact_integer_metrics",
+        1016,
+        "consistency_persistence",
+        1,
+        0.000152,
+        0.000207,
+        0.000172,
+        0.000531
+      ],
+      [
+        "tests/test_harness.py::test_consistency_malformed_sources_fail_all_public_entries",
+        1038,
+        "consistency_persistence",
+        12,
+        0.003542,
+        7.864227,
+        0.003037,
+        7.870806
+      ],
+      [
+        "tests/test_harness.py::test_consistency_formal_entry_closure_and_arithmetic_boundary",
+        1071,
+        "consistency_persistence",
+        1,
+        0.000194,
+        2.437084,
+        0.000188,
+        2.437466
+      ],
+      [
+        "tests/test_harness.py::test_consistency_legacy_source_preserves_reference_without_time_upgrade",
+        1095,
+        "consistency_persistence",
+        1,
+        0.000172,
+        0.509609,
+        0.000326,
+        0.510106
+      ],
+      [
+        "tests/test_harness.py::test_consistency_pair_roots_require_exactly_two",
+        1116,
+        "consistency_persistence",
+        4,
+        0.001584,
+        0.001573,
+        0.001027,
+        0.004184
+      ],
+      [
+        "tests/test_harness.py::test_consistency_shared_writer_classifies_operational_failures",
+        1124,
+        "consistency_persistence",
+        15,
+        0.051179,
+        0.018522,
+        0.004609,
+        0.07431
+      ],
+      [
+        "tests/test_harness.py::test_consistency_writer_race_preserves_existing_asset",
+        1161,
+        "consistency_persistence",
+        1,
+        0.001472,
+        0.002108,
+        0.000121,
+        0.0037
+      ],
+      [
+        "tests/test_harness.py::test_consistency_seed_adapter_is_in_acquisition_fingerprint",
+        1170,
+        "consistency_persistence",
+        1,
+        0.000103,
+        0.001797,
+        0.000105,
+        0.002005
+      ],
+      [
+        "tests/test_harness.py::test_consistency_cli_invalid_root_is_exit_two",
+        1178,
+        "consistency_persistence",
+        6,
+        0.017108,
+        1.355785,
+        0.001473,
+        1.374365
+      ],
+      [
+        "tests/test_harness.py::test_consistency_raw_nonfinite_is_evidence_failure_not_input",
+        1201,
+        "consistency_persistence",
+        1,
+        0.002084,
+        0.763216,
+        0.000327,
+        0.765627
+      ],
+      [
+        "tests/test_harness.py::test_consistency_second_player_start_failure_keeps_roles_and_cleanup",
+        1216,
+        "consistency_persistence",
+        1,
+        0.004206,
+        1.534543,
+        0.000499,
+        1.539248
+      ],
+      [
+        "tests/test_harness.py::test_consistency_prepare_failure_is_after_preflight",
+        1241,
+        "consistency_persistence",
+        1,
+        0.00218,
+        0.005124,
+        0.000265,
+        0.007569
+      ],
+      [
+        "tests/test_harness.py::test_consistency_config_write_is_still_prepare",
+        1259,
+        "consistency_persistence",
+        1,
+        0.003023,
+        0.008643,
+        0.000254,
+        0.01192
+      ],
+      [
+        "tests/test_harness.py::test_consistency_analysis_spec_is_not_silently_reinterpreted",
+        1275,
+        "consistency_persistence",
+        2,
+        0.00119,
+        0.726985,
+        0.001024,
+        0.729199
+      ],
+      [
+        "tests/test_harness.py::test_consistency_secondary_checkpoint_error_preserves_primary",
+        1285,
+        "consistency_persistence",
+        1,
+        0.008657,
+        0.031527,
+        0.000382,
+        0.040566
+      ],
+      [
+        "tests/test_harness.py::test_consistency_persisted_strict_requirement_is_not_weakened",
+        1307,
+        "consistency_persistence",
+        1,
+        0.000276,
+        0.514231,
+        0.000174,
+        0.51468
+      ],
+      [
+        "tests/test_harness.py::test_consistency_model_load_is_separate_measured_interval",
+        1324,
+        "consistency_persistence",
+        6,
+        0.001447,
+        0.000855,
+        0.001242,
+        0.003543
+      ],
+      [
+        "tests/test_harness.py::test_consistency_checkpoint_failure_leaves_started_processes_closed",
+        1332,
+        "consistency_persistence",
+        1,
+        0.00372,
+        0.2561,
+        0.000244,
+        0.260064
+      ],
+      [
+        "tests/test_harness.py::test_population_aliases_cannot_create_false_census",
+        1366,
+        "population_trace_reanalysis",
+        8,
+        0.002994,
+        12.3562,
+        0.003279,
+        12.362473
+      ],
+      [
+        "tests/test_harness.py::test_population_size_requires_present_strict_positive_int",
+        1388,
+        "population_trace_reanalysis",
+        5,
+        0.001774,
+        1.517873,
+        0.00207,
+        1.521717
+      ],
+      [
+        "tests/test_harness.py::test_saved_trace_semantics_block_formal_statistics_even_with_new_hash",
+        1397,
+        "population_trace_reanalysis",
+        13,
+        0.051433,
+        24.906336,
+        0.003379,
+        24.961148
+      ],
+      [
+        "tests/test_harness.py::test_saved_game_and_protocol_are_validated_together",
+        1444,
+        "population_trace_reanalysis",
+        8,
+        0.00197,
+        1.77082,
+        0.002322,
+        1.775112
+      ],
+      [
+        "tests/test_harness.py::test_missing_population_and_trace_never_pass_joint_gate",
+        1468,
+        "population_trace_reanalysis",
+        1,
+        0.002823,
+        0.875556,
+        0.000214,
+        0.878593
+      ],
+      [
+        "tests/test_harness.py::test_direct_paired_requires_mutual_conditions",
+        1481,
+        "population_trace_reanalysis",
+        1,
+        0.000238,
+        1.040175,
+        0.000381,
+        1.040794
+      ],
+      [
+        "tests/test_harness.py::test_evidence_root_override_preserves_source_identity",
+        1493,
+        "population_trace_reanalysis",
+        1,
+        0.004147,
+        0.937903,
+        0.000224,
+        0.942275
+      ],
+      [
+        "tests/test_harness.py::test_census_requires_all_archived_cases_and_both_legs",
+        1507,
+        "population_trace_reanalysis",
+        1,
+        0.003037,
+        5.393444,
+        0.000189,
+        5.39667
+      ],
+      [
+        "tests/test_harness.py::test_unapproved_none_cannot_be_verified_by_valid_trace",
+        1530,
+        "population_trace_reanalysis",
+        1,
+        0.000209,
+        0.002096,
+        0.000241,
+        0.002545
+      ],
+      [
+        "tests/test_harness.py::test_baseline_exemption_is_local_and_does_not_skip_candidate_trace",
+        1540,
+        "population_trace_reanalysis",
+        1,
+        0.002437,
+        4.129399,
+        0.000264,
+        4.1321
+      ],
+      [
+        "tests/test_harness.py::test_saved_probe_is_revalidated_not_just_hash_checked",
+        1576,
+        "population_trace_reanalysis",
+        1,
+        0.004328,
+        0.448399,
+        0.000169,
+        0.452897
+      ],
+      [
+        "tests/test_harness.py::test_reanalysis_does_not_launch_ai_or_require_original_validator",
+        1586,
+        "population_trace_reanalysis",
+        1,
+        0.000175,
+        0.417437,
+        0.000231,
+        0.417843
+      ],
+      [
+        "tests/test_harness.py::test_reanalysis_cli_writes_separate_result_and_exits_nonzero_when_unavailable",
+        1608,
+        "population_trace_reanalysis",
+        1,
+        0.002627,
+        1.020825,
+        0.000354,
+        1.023806
+      ],
+      [
+        "tests/test_harness.py::test_initial_position_multiple_pairs_remain_descriptive_and_comparable",
+        1633,
+        "population_trace_reanalysis",
+        1,
+        0.004272,
+        4.720553,
+        0.000205,
+        4.72503
+      ],
+      [
+        "tests/test_harness.py::test_sampling_runtime_unknown_blocks_interval_without_claiming_corruption",
+        1642,
+        "population_trace_reanalysis",
+        1,
+        0.00016,
+        0.478133,
+        0.000391,
+        0.478684
+      ],
+      [
+        "tests/test_harness.py::test_time_budget_comparison_accepts_different_legal_games_without_formal_ci",
+        1656,
+        "population_trace_reanalysis",
+        1,
+        0.004407,
+        4.396935,
+        0.000677,
+        4.402019
+      ],
+      [
+        "tests/test_harness.py::test_each_artifact_is_read_once_per_inspection",
+        1685,
+        "population_trace_reanalysis",
+        1,
+        0.000787,
+        0.28638,
+        0.000717,
+        0.287884
+      ],
+      [
+        "tests/test_harness.py::test_paired_complete_games_are_reproducible_and_serializable",
+        1710,
+        "smoke_comparison",
+        1,
+        1.719106,
+        0.068221,
+        0.000248,
+        1.787574
+      ],
+      [
+        "tests/test_harness.py::test_comparison_rejects_changed_conditions_or_opponent",
+        1739,
+        "smoke_comparison",
+        1,
+        0.000204,
+        0.638728,
+        0.000241,
+        0.639172
+      ],
+      [
+        "tests/test_harness.py::test_evaluation_requires_balanced_game_count",
+        1754,
+        "budget_contract_typing_runtime",
+        4,
+        0.000869,
+        0.000833,
+        0.000674,
+        0.002376
+      ],
+      [
+        "tests/test_harness.py::test_budget_typing_preserves_normalization_and_opaque_search",
+        1768,
+        "budget_contract_typing_runtime",
+        6,
+        0.000942,
+        0.000759,
+        0.000606,
+        0.002307
+      ],
+      [
+        "tests/test_harness.py::test_budget_typing_preserves_limit_rejection",
+        1792,
+        "budget_contract_typing_runtime",
+        9,
+        0.00204,
+        0.002099,
+        0.001156,
+        0.005295
+      ],
+      [
+        "tests/test_harness.py::test_budget_typing_preserves_exemption_identity_and_overflow",
+        1797,
+        "budget_contract_typing_runtime",
+        1,
+        0.00028,
+        0.000185,
+        0.000137,
+        0.000602
+      ],
+      [
+        "tests/test_harness.py::test_budget_typing_preserves_model_load_states",
+        1815,
+        "budget_contract_typing_runtime",
+        6,
+        0.001309,
+        0.001039,
+        0.000976,
+        0.003325
+      ],
+      [
+        "tests/test_harness.py::test_budget_typing_preserves_model_overlap_and_raw_operand_failure",
+        1826,
+        "budget_contract_typing_runtime",
+        1,
+        0.000117,
+        0.000155,
+        0.000097,
+        0.000369
+      ],
+      [
+        "tests/test_harness.py::test_budget_typing_preserves_search_interval_and_inputs",
+        1846,
+        "budget_contract_typing_runtime",
+        6,
+        0.001684,
+        0.002273,
+        0.001378,
+        0.005335
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_preserves_input_rejection",
+        1879,
+        "budget_contract_typing_runtime",
+        10,
+        0.002549,
+        0.002161,
+        0.00203,
+        0.00674
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_keeps_legacy_metadata_and_fresh_snapshot",
+        1884,
+        "budget_contract_typing_runtime",
+        1,
+        0.000116,
+        0.000984,
+        0.000104,
+        0.001204
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_preserves_role_budget_precedence",
+        1911,
+        "budget_contract_typing_runtime",
+        8,
+        0.001409,
+        0.000975,
+        0.001071,
+        0.003455
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_preserves_game_count_resolution",
+        1921,
+        "budget_contract_typing_runtime",
+        4,
+        0.001036,
+        0.000879,
+        0.000799,
+        0.002715
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_preserves_game_count_rejection",
+        1933,
+        "budget_contract_typing_runtime",
+        5,
+        0.001007,
+        0.001059,
+        0.000577,
+        0.002643
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_preserves_writer_error_identity",
+        1938,
+        "budget_contract_typing_runtime",
+        1,
+        0.00451,
+        0.003223,
+        0.000333,
+        0.008065
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_preserves_none_get_failure",
+        1949,
+        "budget_contract_typing_runtime",
+        1,
+        0.000224,
+        0.000384,
+        0.000159,
+        0.000768
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_preserves_get_container_identity",
+        1961,
+        "budget_contract_typing_runtime",
+        1,
+        0.000283,
+        0.000615,
+        0.00022,
+        0.001117
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_temporal_reason_metadata_keeps_original_alias",
+        1970,
+        "budget_contract_typing_runtime",
+        2,
+        0.000513,
+        0.000382,
+        0.000334,
+        0.001228
+      ],
+      [
+        "tests/test_harness.py::test_contract_typing_reference_metrics_do_not_convert_uncertified_ns",
+        1979,
+        "budget_contract_typing_runtime",
+        1,
+        0.000157,
+        0.000242,
+        0.000136,
+        0.000535
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_preserves_missing_pipe_failure",
+        2021,
+        "protocol_typing_runtime",
+        5,
+        0.001819,
+        0.002327,
+        0.001027,
+        0.005173
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_does_not_cache_mutable_stdin",
+        2043,
+        "protocol_typing_runtime",
+        2,
+        0.000446,
+        0.00057,
+        0.000503,
+        0.00152
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_preserves_exchange_measurement_call_order",
+        2067,
+        "protocol_typing_runtime",
+        1,
+        0.000231,
+        0.000377,
+        0.000189,
+        0.000797
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_preserves_os_abort_and_cleanup",
+        2111,
+        "protocol_typing_runtime",
+        3,
+        0.000862,
+        0.000941,
+        0.00066,
+        0.002464
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_preserves_spawn_endpoints_context_and_options",
+        2154,
+        "protocol_typing_runtime",
+        6,
+        0.002093,
+        0.002131,
+        0.001425,
+        0.005649
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_preserves_raw_deadline_rejection",
+        2241,
+        "protocol_typing_runtime",
+        7,
+        0.001036,
+        0.001226,
+        0.000917,
+        0.003179
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_exit_view_does_not_normalize_saved_value",
+        2253,
+        "protocol_typing_runtime",
+        2,
+        0.000299,
+        0.000425,
+        0.000269,
+        0.000993
+      ],
+      [
+        "tests/test_harness.py::test_protocol_typing_legacy_clock_metadata_remains_unverified",
+        2272,
+        "protocol_typing_runtime",
+        1,
+        0.000087,
+        0.000157,
+        0.0001,
+        0.000344
+      ],
+      [
+        "tests/test_harness.py::test_evaluation_records_faults_and_continues",
+        2284,
+        "protocol_live_faults",
+        5,
+        0.001639,
+        15.350422,
+        0.001968,
+        15.35403
+      ],
+      [
+        "tests/test_harness.py::test_bad_player_is_terminated",
+        2304,
+        "protocol_live_faults",
+        5,
+        0.002176,
+        3.366675,
+        0.001593,
+        3.370444
+      ],
+      [
+        "tests/test_harness.py::test_startup_has_its_own_timeout",
+        2321,
+        "protocol_live_faults",
+        1,
+        0.000234,
+        0.798862,
+        0.000221,
+        0.799318
+      ],
+      [
+        "tests/test_harness.py::test_failed_games_are_not_used_to_claim_performance_improvement",
+        2331,
+        "protocol_live_faults",
+        1,
+        0.000146,
+        0.304623,
+        0.000547,
+        0.305316
+      ],
+      [
+        "tests/test_harness.py::test_genmove_uses_its_longer_deadline",
+        2341,
+        "protocol_live_faults",
+        1,
+        0.000462,
+        0.232576,
+        0.00023,
+        0.233269
+      ],
+      [
+        "tests/test_harness.py::test_total_response_time_is_checked_after_validation",
+        2350,
+        "protocol_live_faults",
+        1,
+        0.000358,
+        0.857513,
+        0.000482,
+        0.858353
+      ],
+      [
+        "tests/test_harness.py::test_opening_population_is_reproducible_validated_and_sampled_without_replacement",
+        2370,
+        "opening_validation",
+        1,
+        0.004937,
+        0.091238,
+        0.000221,
+        0.096395
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_preserves_validation_aliases_and_extensions",
+        2391,
+        "opening_validation",
+        1,
+        0.00333,
+        0.018566,
+        0.000567,
+        0.022463
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_keeps_generator_metadata_unverified",
+        2419,
+        "opening_validation",
+        3,
+        0.001002,
+        0.008225,
+        0.000864,
+        0.010091
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_preserves_untrusted_position_rejection",
+        2442,
+        "opening_validation",
+        6,
+        0.002254,
+        0.011826,
+        0.001544,
+        0.015625
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_preserves_strict_integer_generation_inputs",
+        2458,
+        "opening_validation",
+        4,
+        0.001571,
+        0.00249,
+        0.001371,
+        0.005432
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_preserves_selection_rejections",
+        2471,
+        "opening_validation",
+        4,
+        0.001071,
+        0.017024,
+        0.000676,
+        0.018771
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_preserves_canonical_json_and_raw_byte_digest",
+        2479,
+        "opening_validation",
+        1,
+        0.000123,
+        0.000168,
+        0.000276,
+        0.000568
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_preserves_nonfinite_json_rejection",
+        2487,
+        "opening_validation",
+        2,
+        0.000804,
+        0.000686,
+        0.000396,
+        0.001886
+      ],
+      [
+        "tests/test_harness.py::test_opening_typing_preserves_exclusion_and_symmetric_attempt_limit",
+        2492,
+        "opening_validation",
+        1,
+        0.004756,
+        0.011443,
+        0.000624,
+        0.016823
+      ],
+      [
+        "tests/test_harness.py::test_opening_evaluation_replays_forced_moves_to_both_players",
+        2505,
+        "opening_validation",
+        1,
+        0.004038,
+        1.105972,
+        0.000519,
+        1.11053
+      ],
+      [
+        "tests/test_harness.py::test_budget_config_rejects_invalid_values_and_exemption_hash_mismatch",
+        2526,
+        "budget_formal_integration",
+        1,
+        0.000442,
+        0.001528,
+        0.000311,
+        0.002282
+      ],
+      [
+        "tests/test_harness.py::test_confirmatory_evaluation_verifies_trace_and_estimates_paired_scores",
+        2550,
+        "budget_formal_integration",
+        1,
+        0.00634,
+        14.632447,
+        0.000208,
+        14.638995
+      ],
+      [
+        "tests/test_harness.py::test_deployment_profile_verifies_equal_time_budget_without_formal_interval",
+        2606,
+        "budget_formal_integration",
+        1,
+        0.005433,
+        2.168694,
+        0.000443,
+        2.17457
+      ],
+      [
+        "tests/test_harness.py::test_trace_validation_rejects_bad_types_depth_and_unapproved_exemption",
+        2634,
+        "budget_formal_integration",
+        1,
+        0.00395,
+        0.008018,
+        0.000391,
+        0.012358
+      ],
+      [
+        "tests/test_harness.py::test_trace_artifacts_are_unique_and_survive_evaluation",
+        2681,
+        "budget_formal_integration",
+        1,
+        0.002431,
+        1.571795,
+        0.00021,
+        1.574436
+      ],
+      [
+        "tests/test_harness.py::test_analysis_changes_do_not_change_experiment_identity",
+        2702,
+        "budget_formal_integration",
+        1,
+        0.000807,
+        2.109063,
+        0.000371,
+        2.110242
+      ],
+      [
+        "tests/test_harness.py::test_legacy_optional_budget_invalid_sources_fail_all_public_entries",
+        2771,
+        "legacy_cli",
+        22,
+        0.006756,
+        0.495621,
+        0.006324,
+        0.508701
+      ],
+      [
+        "tests/test_harness.py::test_legacy_optional_budget_valid_sources_preserve_reference",
+        2817,
+        "legacy_cli",
+        12,
+        0.003292,
+        0.07729,
+        0.002489,
+        0.083071
+      ],
+      [
+        "tests/test_harness.py::test_legacy_optional_budget_cli_invalid_is_exit_two",
+        2856,
+        "legacy_cli",
+        12,
+        0.044195,
+        1.916639,
+        0.003328,
+        1.964163
+      ],
+      [
+        "tests/test_harness.py::test_legacy_optional_budget_cli_valid_reference_is_exit_zero",
+        2875,
+        "legacy_cli",
+        4,
+        0.017469,
+        0.724588,
+        0.001447,
+        0.743503
+      ],
+      [
+        "tests/test_harness.py::test_legacy_comparison_cannot_claim_budget_verification",
+        2901,
+        "legacy_cli",
+        1,
+        0.000264,
+        0.003709,
+        0.000247,
+        0.004219
+      ],
+      [
+        "tests/test_harness.py::test_cli_saves_v5_and_rejects_unverified_budget_comparison",
+        2921,
+        "legacy_cli",
+        1,
+        0.004071,
+        1.835718,
+        0.000444,
+        1.840233
+      ],
+      [
+        "tests/test_harness.py::test_omitted_games_uses_all_fixed_openings_and_confirmatory_requires_explicit",
+        2951,
+        "coverage_interruption",
+        1,
+        0.006239,
+        6.557108,
+        0.000493,
+        6.563841
+      ],
+      [
+        "tests/test_harness.py::test_interrupted_evaluation_keeps_partial_checkpoint",
+        2971,
+        "coverage_interruption",
+        1,
+        0.004419,
+        0.058957,
+        0.000408,
+        0.063784
+      ],
+      [
+        "tests/test_harness.py::test_finite_population_interval_handles_constant_scores_and_census",
+        3003,
+        "statistics_analysis_runtime",
+        1,
+        0.000189,
+        0.000275,
+        0.000152,
+        0.000615
+      ],
+      [
+        "tests/test_harness.py::test_statistics_typing_preserves_pair_values_and_arithmetic_scope",
+        3026,
+        "statistics_analysis_runtime",
+        3,
+        0.000459,
+        0.000615,
+        0.000306,
+        0.00138
+      ],
+      [
+        "tests/test_harness.py::test_statistics_typing_preserves_invalid_pair_reasons",
+        3063,
+        "statistics_analysis_runtime",
+        12,
+        0.002029,
+        0.001792,
+        0.001646,
+        0.005466
+      ],
+      [
+        "tests/test_harness.py::test_statistics_typing_preserves_missing_values_and_empty_pairs",
+        3071,
+        "statistics_analysis_runtime",
+        1,
+        0.000093,
+        0.000133,
+        0.000088,
+        0.000313
+      ],
+      [
+        "tests/test_harness.py::test_statistics_typing_preserves_interval_boundary_errors",
+        3098,
+        "statistics_analysis_runtime",
+        10,
+        0.002635,
+        0.002736,
+        0.001929,
+        0.0073
+      ],
+      [
+        "tests/test_harness.py::test_statistics_typing_does_not_repair_malformed_input",
+        3108,
+        "statistics_analysis_runtime",
+        3,
+        0.000494,
+        0.000399,
+        0.000402,
+        0.001295
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_confidence_uses_original_value",
+        3124,
+        "statistics_analysis_runtime",
+        3,
+        0.000388,
+        0.00033,
+        0.000282,
+        0.000999
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_confidence_rejects_same_values",
+        3133,
+        "statistics_analysis_runtime",
+        12,
+        0.001382,
+        0.001548,
+        0.001095,
+        0.004025
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_metadata_get_preserves_native_exception",
+        3139,
+        "statistics_analysis_runtime",
+        4,
+        0.000624,
+        0.000525,
+        0.000455,
+        0.001604
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_budget_truthiness_is_not_early_normalized",
+        3148,
+        "statistics_analysis_runtime",
+        4,
+        0.00055,
+        0.000544,
+        0.000392,
+        0.001486
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_updates_original_arithmetic_result",
+        3162,
+        "statistics_analysis_runtime",
+        2,
+        0.000458,
+        0.000393,
+        0.000317,
+        0.001168
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_arithmetic_preserves_unvalidated_ids",
+        3193,
+        "statistics_analysis_runtime",
+        1,
+        0.000226,
+        0.000254,
+        0.000137,
+        0.000617
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_arithmetic_preserves_attribute_errors",
+        3204,
+        "statistics_analysis_runtime",
+        2,
+        0.000427,
+        0.000373,
+        0.000287,
+        0.001087
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_comparison_does_not_repair_null_metadata",
+        3213,
+        "statistics_analysis_runtime",
+        4,
+        0.000921,
+        0.000755,
+        0.000573,
+        0.00225
+      ],
+      [
+        "tests/test_harness.py::test_analysis_typing_derived_mapping_does_not_certify_fields",
+        3225,
+        "statistics_analysis_runtime",
+        3,
+        0.000842,
+        0.737239,
+        0.000891,
+        0.738972
+      ],
+      [
+        "tests/test_harness.py::test_statistics_typing_preserves_difference_direction_and_coverage",
+        3234,
+        "statistics_analysis_runtime",
+        1,
+        0.000391,
+        0.000624,
+        0.000326,
+        0.001342
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_call_preserves_values_and_exception_identity",
+        3250,
+        "evaluate_typing_runtime",
+        3,
+        0.001106,
+        0.000963,
+        0.001466,
+        0.003535
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_failure_keeps_role_and_command",
+        3275,
+        "evaluate_typing_runtime",
+        2,
+        0.001017,
+        0.001173,
+        0.000734,
+        0.002924
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_config_keeps_unknown_and_source_metadata",
+        3284,
+        "evaluate_typing_runtime",
+        3,
+        0.010781,
+        0.007386,
+        0.000739,
+        0.018906
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_config_does_not_repair_invalid_input",
+        3302,
+        "evaluate_typing_runtime",
+        3,
+        0.000687,
+        0.000505,
+        0.000336,
+        0.001528
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_state_check_keeps_command_order_and_diagnostics",
+        3310,
+        "evaluate_typing_runtime",
+        3,
+        0.000436,
+        0.000619,
+        0.000297,
+        0.001352
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_checkpoint_preserves_source_and_leg_accounting",
+        3332,
+        "evaluate_typing_runtime",
+        1,
+        0.002794,
+        0.027029,
+        0.000363,
+        0.030187
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_checkpoint_serialization_failure_stays_operational",
+        3350,
+        "evaluate_typing_runtime",
+        3,
+        0.007779,
+        0.001336,
+        0.000426,
+        0.009541
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_private_missing_operation_keeps_attribute_error",
+        3358,
+        "evaluate_typing_runtime",
+        1,
+        0.001706,
+        0.003235,
+        0.000133,
+        0.005074
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_default_game_is_partial_not_a_fabricated_loss",
+        3368,
+        "evaluate_typing_runtime",
+        1,
+        0.000109,
+        0.000184,
+        0.000095,
+        0.000388
+      ],
+      [
+        "tests/test_harness.py::test_evaluate_typing_probe_keeps_partial_diagnostic_reference",
+        3379,
+        "evaluate_typing_runtime",
+        1,
+        0.001865,
+        0.000684,
+        0.002726,
+        0.005274
+      ],
+      [
+        "tests/test_invariants.py::test_reachable_moves_preserve_board_and_capture_invariants",
+        39,
+        "invariants",
+        1,
+        0.000119,
+        0.294684,
+        0.00037,
+        0.295172
+      ],
+      [
+        "tests/test_invariants.py::test_reachable_genmove_pass_and_result_are_consistent",
+        84,
+        "invariants",
+        1,
+        0.000361,
+        0.097872,
+        0.00042,
+        0.098653
+      ],
+      [
+        "tests/test_quality.py::test_documentation_file_links_resolve",
+        93,
+        "quality_docs_model",
+        1,
+        0.000514,
+        0.032696,
+        0.000375,
+        0.033585
+      ],
+      [
+        "tests/test_quality.py::test_source_hashes_use_relocated_specification",
+        108,
+        "quality_docs_model",
+        1,
+        0.003416,
+        0.020279,
+        0.000316,
+        0.024011
+      ],
+      [
+        "tests/test_quality.py::test_gate_tracks_relocated_specification_in_snapshots_and_manifest",
+        121,
+        "quality_docs_model",
+        3,
+        0.008524,
+        1.812791,
+        0.0007,
+        1.822014
+      ],
+      [
+        "tests/test_quality.py::test_model_matches_current_imports_and_formal_entry_edges",
+        161,
+        "quality_docs_model",
+        1,
+        0.000152,
+        0.128892,
+        0.000169,
+        0.129212
+      ],
+      [
+        "tests/test_quality.py::test_model_detects_import_and_formal_entry_contract_drift",
+        168,
+        "quality_docs_model",
+        5,
+        0.025156,
+        2.227102,
+        0.001858,
+        2.254116
+      ],
+      [
+        "tests/test_quality.py::test_gate_propagates_each_required_nonzero_and_keeps_other_results",
+        206,
+        "quality_runner_process",
+        6,
+        0.018232,
+        2.020219,
+        0.001834,
+        2.040285
+      ],
+      [
+        "tests/test_quality.py::test_gate_environment_unavailable_is_not_executed_or_successful",
+        224,
+        "quality_runner_process",
+        1,
+        0.002317,
+        0.298683,
+        0.000251,
+        0.30125
+      ],
+      [
+        "tests/test_quality.py::test_gate_missing_model_cannot_be_covered_by_successful_commands",
+        240,
+        "quality_runner_process",
+        1,
+        0.002369,
+        0.177207,
+        0.000363,
+        0.179938
+      ],
+      [
+        "tests/test_quality.py::test_environment_detects_missing_or_changed_development_contract",
+        256,
+        "quality_runner_process",
+        4,
+        0.01128,
+        0.018698,
+        0.000757,
+        0.030736
+      ],
+      [
+        "tests/test_quality.py::test_gate_positive_aggregation_and_existing_output_protection",
+        278,
+        "quality_runner_process",
+        1,
+        0.002798,
+        0.385608,
+        0.000465,
+        0.388871
+      ],
+      [
+        "tests/test_quality.py::test_gate_detects_source_changes_between_required_checks",
+        295,
+        "quality_runner_process",
+        1,
+        0.004172,
+        0.545314,
+        0.000384,
+        0.54987
+      ],
+      [
+        "tests/test_quality.py::test_run_step_rejects_real_nonzero_unavailable_and_timeout",
+        316,
+        "quality_runner_process",
+        3,
+        0.008348,
+        0.988556,
+        0.000807,
+        0.997711
+      ],
+      [
+        "tests/test_quality.py::test_timeout_stops_owned_child_process_tree",
+        334,
+        "quality_runner_process",
+        1,
+        0.002904,
+        2.267584,
+        0.000534,
+        2.271022
+      ],
+      [
+        "tests/test_quality.py::test_taskkill_unavailable_still_collects_direct_child_and_reports_failure",
+        359,
+        "quality_runner_process",
+        1,
+        0.003725,
+        1.636489,
+        0.000215,
+        1.640429
+      ],
+      [
+        "tests/test_quality.py::test_gate_main_propagates_output_failure",
+        391,
+        "quality_runner_process",
+        1,
+        0.002972,
+        0.000472,
+        0.000152,
+        0.003596
+      ],
+      [
+        "tests/test_quality.py::test_real_quality_cli_rejects_intentional_lint_type_and_test_failures",
+        401,
+        "quality_runner_process",
+        1,
+        0.002133,
+        5.455853,
+        0.000205,
+        5.458192
+      ],
+      [
+        "tests/test_quality.py::test_evidence_matches_real_pytest_phases_and_junit",
+        511,
+        "quality_evidence_integration",
+        7,
+        0.025911,
+        9.447609,
+        0.002034,
+        9.475554
+      ],
+      [
+        "tests/test_quality.py::test_evidence_collection_failure_is_not_a_passing_test",
+        527,
+        "quality_evidence_integration",
+        2,
+        0.005849,
+        2.576162,
+        0.00078,
+        2.582791
+      ],
+      [
+        "tests/test_quality.py::test_evidence_abrupt_pytest_preserves_partial_journal_and_log",
+        538,
+        "quality_evidence_integration",
+        2,
+        0.009046,
+        3.1526,
+        0.000428,
+        3.162074
+      ],
+      [
+        "tests/test_quality.py::test_evidence_missing_or_mismatched_reports_never_become_complete",
+        566,
+        "quality_evidence_integration",
+        8,
+        0.035262,
+        10.147857,
+        0.003799,
+        10.186918
+      ],
+      [
+        "tests/test_quality.py::test_evidence_same_nodeid_in_different_steps_has_distinct_execution_ids",
+        597,
+        "quality_evidence_integration",
+        1,
+        0.003942,
+        2.543626,
+        0.000421,
+        2.547988
+      ],
+      [
+        "tests/test_quality.py::test_evidence_save_failure_changes_gate_not_original_test_results",
+        608,
+        "quality_evidence_integration",
+        2,
+        0.007981,
+        0.651194,
+        0.001129,
+        0.660303
+      ],
+      [
+        "tests/test_quality.py::test_evidence_publication_hashes_and_json_markdown_agree",
+        633,
+        "quality_evidence_integration",
+        1,
+        0.002718,
+        0.502913,
+        0.000152,
+        0.505783
+      ],
+      [
+        "tests/test_quality.py::test_evidence_junit_preexisting_output_is_not_overwritten",
+        661,
+        "quality_evidence_integration",
+        1,
+        0.003591,
+        0.002007,
+        0.00015,
+        0.005748
+      ],
+      [
+        "tests/test_quality.py::test_evidence_explicit_expectation_and_original_artifact_correspondence",
+        674,
+        "quality_evidence_integration",
+        3,
+        0.010548,
+        4.044749,
+        0.00088,
+        4.056177
+      ],
+      [
+        "tests/test_quality.py::test_evidence_secret_metadata_failure_does_not_modify_pytest_pass",
+        704,
+        "quality_evidence_integration",
+        1,
+        0.004968,
+        1.222986,
+        0.000221,
+        1.228176
+      ],
+      [
+        "tests/test_quality.py::test_evidence_missing_explicit_or_final_save_evidence_cannot_certify_pass",
+        735,
+        "quality_evidence_integration",
+        4,
+        0.018718,
+        5.29259,
+        0.001441,
+        5.31275
+      ],
+      [
+        "tests/test_quality.py::test_evidence_missing_junit_with_success_exit_fails_public_gate",
+        746,
+        "quality_evidence_integration",
+        1,
+        0.005977,
+        0.344674,
+        0.00058,
+        0.351231
+      ],
+      [
+        "tests/test_quality.py::test_evidence_final_quality_save_failure_leaves_partial_not_publication",
+        764,
+        "quality_evidence_integration",
+        1,
+        0.004107,
+        0.273015,
+        0.00042,
+        0.277542
+      ],
+      [
+        "tests/test_quality.py::test_evidence_fsync_failure_never_publishes_complete_filename",
+        787,
+        "quality_evidence_integration",
+        3,
+        0.007022,
+        0.003441,
+        0.000425,
+        0.010888
+      ],
+      [
+        "tests/test_quality.py::test_evidence_link_failure_does_not_publish_or_replace",
+        801,
+        "quality_evidence_integration",
+        1,
+        0.002145,
+        0.006602,
+        0.000225,
+        0.008973
+      ],
+      [
+        "tests/test_quality.py::test_evidence_publication_race_preserves_winner",
+        815,
+        "quality_evidence_integration",
+        1,
+        0.002475,
+        0.007419,
+        0.000135,
+        0.010029
+      ],
+      [
+        "tests/test_quality.py::test_evidence_pending_of_another_writer_is_protected",
+        831,
+        "quality_evidence_integration",
+        1,
+        0.002074,
+        0.001871,
+        0.000113,
+        0.004059
+      ],
+      [
+        "tests/test_quality.py::test_evidence_real_fsync_failure_at_public_cli_cannot_leave_positive_marker",
+        842,
+        "quality_evidence_integration",
+        1,
+        0.002028,
+        0.378524,
+        0.000385,
+        0.380937
+      ],
+      [
+        "tests/test_quality.py::test_evidence_journal_lifecycle_rejects_resequenced_events",
+        1026,
+        "quality_journal_lifecycle",
+        21,
+        1.372553,
+        0.531317,
+        0.00721,
+        1.911081
+      ],
+      [
+        "tests/test_quality.py::test_evidence_journal_lifecycle_accepts_fixture_metadata_and_serial_tests",
+        1036,
+        "quality_journal_lifecycle",
+        1,
+        0.005832,
+        0.003881,
+        0.000159,
+        0.009872
+      ],
+      [
+        "tests/test_quality.py::test_evidence_journal_lifecycle_failure_reaches_public_gate",
+        1047,
+        "quality_journal_lifecycle",
+        6,
+        0.019926,
+        2.086522,
+        0.001491,
+        2.107938
+      ],
+      [
+        "tests/test_quality.py::test_evidence_journal_lifecycle_failure_reaches_cli",
+        1070,
+        "quality_journal_lifecycle",
+        2,
+        0.010271,
+        0.776278,
+        0.000938,
+        0.787487
+      ],
+      [
+        "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate",
+        1106,
+        "quality_type_boundaries",
+        9,
+        0.046228,
+        61.458908,
+        0.002978,
+        61.508115
+      ],
+      [
+        "tests/test_quality.py::test_openings_typing_keeps_unchecked_generator_metadata_opaque",
+        1138,
+        "quality_type_boundaries",
+        1,
+        0.008503,
+        8.480734,
+        0.00035,
+        8.489587
+      ],
+      [
+        "tests/test_quality.py::test_contract_typing_limits_views_and_preserves_raw_boundary",
+        1231,
+        "quality_type_boundaries",
+        1,
+        0.000193,
+        0.106988,
+        0.00022,
+        0.107401
+      ],
+      [
+        "tests/test_quality.py::test_contract_typing_boundary_guard_rejects_mutations",
+        1236,
+        "quality_type_boundaries",
+        4,
+        0.001968,
+        0.240146,
+        0.002564,
+        0.244678
+      ],
+      [
+        "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata",
+        1250,
+        "quality_type_boundaries",
+        6,
+        0.069491,
+        51.432419,
+        0.002934,
+        51.504845
+      ],
+      [
+        "tests/test_quality.py::test_contract_typing_dependency_accepts_readonly_command_sequence",
+        1290,
+        "quality_type_boundaries",
+        2,
+        0.013711,
+        17.84676,
+        0.001226,
+        17.861698
+      ],
+      [
+        "tests/test_quality.py::test_budget_typing_limits_cast_to_documented_local_views",
+        1359,
+        "quality_type_boundaries",
+        1,
+        0.00037,
+        0.055501,
+        0.000646,
+        0.056517
+      ],
+      [
+        "tests/test_quality.py::test_budget_typing_boundary_guard_rejects_mutations",
+        1364,
+        "quality_type_boundaries",
+        3,
+        0.001492,
+        0.080023,
+        0.001089,
+        0.082603
+      ],
+      [
+        "tests/test_quality.py::test_budget_typing_does_not_certify_opaque_metadata",
+        1377,
+        "quality_type_boundaries",
+        4,
+        0.027303,
+        34.347248,
+        0.001168,
+        34.375718
+      ],
+      [
+        "tests/test_quality.py::test_protocol_typing_limits_cast_to_observed_exit_view",
+        1445,
+        "quality_type_boundaries",
+        1,
+        0.000373,
+        0.042399,
+        0.000431,
+        0.043204
+      ],
+      [
+        "tests/test_quality.py::test_protocol_typing_boundary_guard_rejects_mutations",
+        1450,
+        "quality_type_boundaries",
+        4,
+        0.002099,
+        0.091002,
+        0.001622,
+        0.094723
+      ],
+      [
+        "tests/test_quality.py::test_protocol_typing_legacy_frequency_is_not_certified",
+        1467,
+        "quality_type_boundaries",
+        2,
+        0.017335,
+        17.844726,
+        0.000879,
+        17.86294
+      ],
+      [
+        "tests/test_quality.py::test_analysis_typing_limits_operation_views",
+        1587,
+        "quality_type_boundaries",
+        2,
+        0.001604,
+        0.043097,
+        0.000703,
+        0.045404
+      ],
+      [
+        "tests/test_quality.py::test_analysis_typing_boundary_guard_rejects_mutations",
+        1594,
+        "quality_type_boundaries",
+        6,
+        0.005624,
+        0.115704,
+        0.002526,
+        0.123854
+      ],
+      [
+        "tests/test_quality.py::test_analysis_typing_opaque_values_are_not_numeric_certificates",
+        1608,
+        "quality_type_boundaries",
+        1,
+        0.00922,
+        3.310183,
+        0.000179,
+        3.319582
+      ],
+      [
+        "tests/test_quality.py::test_reversi_dynamic_annotations_stay_at_legacy_comparison_boundary",
+        1650,
+        "quality_type_boundaries",
+        1,
+        0.000164,
+        0.004751,
+        0.000199,
+        0.005114
+      ],
+      [
+        "tests/test_quality.py::test_reversi_dynamic_boundary_guard_rejects_mutated_source",
+        1658,
+        "quality_type_boundaries",
+        5,
+        0.001347,
+        0.020332,
+        0.000953,
+        0.022632
+      ],
+      [
+        "tests/test_quality.py::test_evaluate_typing_limits_operation_views",
+        1710,
+        "quality_type_boundaries",
+        1,
+        0.000214,
+        0.031098,
+        0.000424,
+        0.031737
+      ],
+      [
+        "tests/test_quality.py::test_evaluate_typing_boundary_guard_rejects_mutations",
+        1715,
+        "quality_type_boundaries",
+        6,
+        0.003117,
+        0.105326,
+        0.001285,
+        0.109728
+      ],
+      [
+        "tests/test_quality.py::test_evaluate_typing_opaque_fields_and_call_arguments_are_not_certified",
+        1729,
+        "quality_type_boundaries",
+        1,
+        0.005132,
+        3.343064,
+        0.000388,
+        3.348584
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_cli_flushes_result_before_receiving_next_command",
+        105,
+        "result",
+        1,
+        0.000323,
+        0.077847,
+        0.000259,
+        0.078429
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_empty_square_does_not_prevent_terminal_result",
+        81,
+        "result",
+        1,
+        0.000312,
+        0.000434,
+        0.000184,
+        0.00093
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_initial_position_is_in_progress",
+        64,
+        "result",
+        1,
+        0.000257,
+        0.000345,
+        0.000137,
+        0.000739
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_one_color_may_pass_while_the_game_continues",
+        67,
+        "result",
+        1,
+        0.000218,
+        0.000336,
+        0.000143,
+        0.000697
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_result_does_not_change_the_board",
+        97,
+        "result",
+        1,
+        0.000223,
+        0.00031,
+        0.000379,
+        0.000913
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_terminal_winner_and_draw",
+        87,
+        "result",
+        1,
+        0.000385,
+        0.000351,
+        0.000145,
+        0.000881
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_web_process_gets_board_legal_moves_and_result",
+        111,
+        "result",
+        1,
+        0.000313,
+        0.145196,
+        0.000315,
+        0.145823
+      ],
+      [
+        "tests/test_result.py::ResultCommandTests::test_web_response_handles_pass_and_terminal_result",
+        132,
+        "result",
+        1,
+        0.000335,
+        0.344921,
+        0.00044,
+        0.345696
+      ],
+      [
+        "tests/test_result.py::test_each_direction_flips_exactly_the_enclosed_stone",
+        193,
+        "result",
+        16,
+        0.00987,
+        0.007566,
+        0.006277,
+        0.023714
+      ],
+      [
+        "tests/test_result.py::test_all_eight_directions_flip_together",
+        212,
+        "result",
+        1,
+        0.000214,
+        0.000539,
+        0.000212,
+        0.000964
+      ],
+      [
+        "tests/test_result.py::test_no_capture_without_an_unbroken_opponent_ray",
+        239,
+        "result",
+        4,
+        0.001376,
+        0.001653,
+        0.000928,
+        0.003957
+      ],
+      [
+        "tests/test_result.py::test_referee_terminal_results_match_fixed_positions",
+        261,
+        "result",
+        7,
+        0.002865,
+        0.0022,
+        0.001831,
+        0.006896
+      ],
+      [
+        "tests/test_result.py::test_genmove_without_legal_moves_preserves_fixed_board",
+        271,
+        "result",
+        4,
+        0.001376,
+        0.002355,
+        0.001205,
+        0.004936
+      ],
+      [
+        "tests/test_result.py::test_pos_typing_preserves_equality_and_duck_short_circuit",
+        286,
+        "result",
+        6,
+        0.002076,
+        0.001372,
+        0.001355,
+        0.004804
+      ],
+      [
+        "tests/test_result.py::test_pos_typing_preserves_missing_coordinate_errors",
+        293,
+        "result",
+        3,
+        0.001465,
+        0.001467,
+        0.001025,
+        0.003957
+      ],
+      [
+        "tests/test_result.py::test_pos_typing_preserves_non_boolean_comparison_values",
+        315,
+        "result",
+        5,
+        0.001611,
+        0.001555,
+        0.001159,
+        0.004325
+      ],
+      [
+        "tests/test_result.py::test_pos_typing_preserves_coordinate_bounds",
+        333,
+        "result",
+        6,
+        0.00262,
+        0.002111,
+        0.002254,
+        0.006984
+      ],
+      [
+        "tests/test_result.py::test_pos_typing_preserves_addition_without_mutating_inputs",
+        339,
+        "result",
+        1,
+        0.00022,
+        0.000252,
+        0.000238,
+        0.00071
+      ],
+      [
+        "tests/test_stdin_commands.py::StandardInputCommandTests::test_genmove_returns_a_legal_position_and_updates_board",
+        53,
+        "stdin_commands",
+        1,
+        0.001073,
+        0.10169,
+        0.000283,
+        0.103046
+      ],
+      [
+        "tests/test_stdin_commands.py::StandardInputCommandTests::test_invalid_color_and_out_of_range_position",
+        64,
+        "stdin_commands",
+        1,
+        0.000235,
+        0.078322,
+        0.000733,
+        0.079291
+      ],
+      [
+        "tests/test_stdin_commands.py::StandardInputCommandTests::test_name_ask_play_showboard_result_and_quit",
+        39,
+        "stdin_commands",
+        1,
+        0.000702,
+        0.073785,
+        0.000295,
+        0.074782
+      ],
+      [
+        "tests/test_stdin_commands.py::test_live_initial_ask_for_both_colors_preserves_board",
+        78,
+        "stdin_commands",
+        1,
+        0.170717,
+        0.031556,
+        0.021317,
+        0.223591
+      ],
+      [
+        "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board",
+        96,
+        "stdin_commands",
+        5,
+        0.75675,
+        0.00846,
+        0.091973,
+        0.857184
+      ],
+      [
+        "tests/test_stdin_commands.py::test_live_all_commands_obey_response_deadlines",
+        109,
+        "stdin_commands",
+        1,
+        0.145266,
+        0.014764,
+        0.000395,
+        0.160425
+      ],
+      [
+        "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards",
+        140,
+        "stdin_commands",
+        3,
+        0.453216,
+        0.120983,
+        0.055442,
+        0.629641
+      ]
+    ],
+    "categories": [
+      {
+        "name": "quality_type_boundaries",
+        "count": 61,
+        "setup": 0.215487,
+        "call": 199.000412,
+        "teardown": 0.022764,
+        "total": 199.238663
+      },
+      {
+        "name": "temporal_lifecycle",
+        "count": 55,
+        "setup": 0.09668,
+        "call": 95.415196,
+        "teardown": 0.016046,
+        "total": 95.527923
+      },
+      {
+        "name": "population_trace_reanalysis",
+        "count": 47,
+        "setup": 0.087819,
+        "call": 64.698464,
+        "teardown": 0.015307,
+        "total": 64.801589
+      },
+      {
+        "name": "quality_evidence_integration",
+        "count": 41,
+        "setup": 0.154363,
+        "call": 40.599839,
+        "teardown": 0.013719,
+        "total": 40.767921
+      },
+      {
+        "name": "consistency_persistence",
+        "count": 87,
+        "setup": 0.121534,
+        "call": 27.000669,
+        "teardown": 0.024294,
+        "total": 27.146496
+      },
+      {
+        "name": "schema5_roots",
+        "count": 16,
+        "setup": 4.295112,
+        "call": 17.898634,
+        "teardown": 0.005544,
+        "total": 22.19929
+      },
+      {
+        "name": "protocol_live_faults",
+        "count": 14,
+        "setup": 0.005017,
+        "call": 20.910672,
+        "teardown": 0.005041,
+        "total": 20.92073
+      },
+      {
+        "name": "budget_formal_integration",
+        "count": 6,
+        "setup": 0.019404,
+        "call": 20.491545,
+        "teardown": 0.001933,
+        "total": 20.512882
+      },
+      {
+        "name": "quality_runner_process",
+        "count": 21,
+        "setup": 0.06125,
+        "call": 13.794684,
+        "teardown": 0.005968,
+        "total": 13.861902
+      },
+      {
+        "name": "coverage_interruption",
+        "count": 2,
+        "setup": 0.010658,
+        "call": 6.616066,
+        "teardown": 0.000901,
+        "total": 6.627625
+      },
+      {
+        "name": "legacy_cli",
+        "count": 52,
+        "setup": 0.076047,
+        "call": 5.053564,
+        "teardown": 0.014279,
+        "total": 5.143889
+      },
+      {
+        "name": "quality_journal_lifecycle",
+        "count": 30,
+        "setup": 1.408581,
+        "call": 3.397998,
+        "teardown": 0.009799,
+        "total": 4.816378
+      },
+      {
+        "name": "quality_docs_model",
+        "count": 11,
+        "setup": 0.037762,
+        "call": 4.221759,
+        "teardown": 0.003418,
+        "total": 4.262939
+      },
+      {
+        "name": "smoke_comparison",
+        "count": 2,
+        "setup": 1.719309,
+        "call": 0.706948,
+        "teardown": 0.000488,
+        "total": 2.426746
+      },
+      {
+        "name": "stdin_commands",
+        "count": 13,
+        "setup": 1.527959,
+        "call": 0.42956,
+        "teardown": 0.17044,
+        "total": 2.127958
+      },
+      {
+        "name": "opening_validation",
+        "count": 24,
+        "setup": 0.023888,
+        "call": 1.267638,
+        "teardown": 0.007059,
+        "total": 1.298584
+      },
+      {
+        "name": "statistics_analysis_runtime",
+        "count": 66,
+        "setup": 0.012107,
+        "call": 0.748535,
+        "teardown": 0.009278,
+        "total": 0.76992
+      },
+      {
+        "name": "result",
+        "count": 61,
+        "setup": 0.026058,
+        "call": 0.590809,
+        "teardown": 0.018486,
+        "total": 0.635353
+      },
+      {
+        "name": "ai_compatibility",
+        "count": 9,
+        "setup": 0.002608,
+        "call": 0.609283,
+        "teardown": 0.001817,
+        "total": 0.613708
+      },
+      {
+        "name": "invariants",
+        "count": 2,
+        "setup": 0.00048,
+        "call": 0.392556,
+        "teardown": 0.000789,
+        "total": 0.393824
+      },
+      {
+        "name": "ai_engine",
+        "count": 27,
+        "setup": 0.003529,
+        "call": 0.072869,
+        "teardown": 0.002854,
+        "total": 0.079253
+      },
+      {
+        "name": "evaluate_typing_runtime",
+        "count": 21,
+        "setup": 0.02828,
+        "call": 0.043114,
+        "teardown": 0.007317,
+        "total": 0.078711
+      },
+      {
+        "name": "budget_contract_typing_runtime",
+        "count": 67,
+        "setup": 0.019045,
+        "call": 0.018246,
+        "teardown": 0.010787,
+        "total": 0.048078
+      },
+      {
+        "name": "protocol_typing_runtime",
+        "count": 27,
+        "setup": 0.006875,
+        "call": 0.008154,
+        "teardown": 0.00509,
+        "total": 0.020119
+      },
+      {
+        "name": "wire_format",
+        "count": 25,
+        "setup": 0.004277,
+        "call": 0.004935,
+        "teardown": 0.002507,
+        "total": 0.011719
+      }
+    ],
+    "mypy_probes": [
+      {
+        "name": "tests/test_quality.py::test_promoted_modules_are_checked_by_configured_strict_gate",
+        "line": 1106,
+        "category": "quality_type_boundaries",
+        "count": 9,
+        "setup": 0.046228,
+        "call": 61.458908,
+        "teardown": 0.002978,
+        "total": 61.508115
+      },
+      {
+        "name": "tests/test_quality.py::test_openings_typing_keeps_unchecked_generator_metadata_opaque",
+        "line": 1138,
+        "category": "quality_type_boundaries",
+        "count": 1,
+        "setup": 0.008503,
+        "call": 8.480734,
+        "teardown": 0.00035,
+        "total": 8.489587
+      },
+      {
+        "name": "tests/test_quality.py::test_contract_typing_does_not_certify_raw_metadata",
+        "line": 1250,
+        "category": "quality_type_boundaries",
+        "count": 6,
+        "setup": 0.069491,
+        "call": 51.432419,
+        "teardown": 0.002934,
+        "total": 51.504845
+      },
+      {
+        "name": "tests/test_quality.py::test_contract_typing_dependency_accepts_readonly_command_sequence",
+        "line": 1290,
+        "category": "quality_type_boundaries",
+        "count": 2,
+        "setup": 0.013711,
+        "call": 17.84676,
+        "teardown": 0.001226,
+        "total": 17.861698
+      },
+      {
+        "name": "tests/test_quality.py::test_budget_typing_does_not_certify_opaque_metadata",
+        "line": 1377,
+        "category": "quality_type_boundaries",
+        "count": 4,
+        "setup": 0.027303,
+        "call": 34.347248,
+        "teardown": 0.001168,
+        "total": 34.375718
+      },
+      {
+        "name": "tests/test_quality.py::test_protocol_typing_legacy_frequency_is_not_certified",
+        "line": 1467,
+        "category": "quality_type_boundaries",
+        "count": 2,
+        "setup": 0.017335,
+        "call": 17.844726,
+        "teardown": 0.000879,
+        "total": 17.86294
+      },
+      {
+        "name": "tests/test_quality.py::test_analysis_typing_opaque_values_are_not_numeric_certificates",
+        "line": 1608,
+        "category": "quality_type_boundaries",
+        "count": 1,
+        "setup": 0.00922,
+        "call": 3.310183,
+        "teardown": 0.000179,
+        "total": 3.319582
+      },
+      {
+        "name": "tests/test_quality.py::test_evaluate_typing_opaque_fields_and_call_arguments_are_not_certified",
+        "line": 1729,
+        "category": "quality_type_boundaries",
+        "count": 1,
+        "setup": 0.005132,
+        "call": 3.343064,
+        "teardown": 0.000388,
+        "total": 3.348584
+      }
+    ],
+    "mypy_items": 26,
+    "mypy_phase_seconds": 198.271068,
+    "profiles": [
+      {
+        "name": "Quick",
+        "base_tests": [
+          "tests/test_ai_compatibility.py::test_board_construction_and_rule_operations_do_not_consume_random_state",
+          "tests/test_ai_compatibility.py::test_genmove_preserves_candidate_order_shuffle_count_and_rng_state",
+          "tests/test_ai_compatibility.py::test_no_legal_move_does_not_shuffle_or_consume_random_state",
+          "tests/test_ai_compatibility.py::test_random_v0_reference_copy_matches_its_manifest",
+          "tests/test_ai_compatibility.py::test_seeded_full_game_matches_frozen_random_v0",
+          "tests/test_ai_engine.py::test_board_passes_immutable_snapshot_and_ordered_root_moves_to_selector",
+          "tests/test_ai_engine.py::test_default_board_uses_positional_selector_and_applies_one_move",
+          "tests/test_ai_engine.py::test_engine_has_no_reverse_import_to_board_gui_or_harness",
+          "tests/test_ai_engine.py::test_failed_real_move_does_not_emit_a_successful_coordinate",
+          "tests/test_ai_engine.py::test_falsey_selector_is_not_replaced_by_the_default",
+          "tests/test_ai_engine.py::test_invalid_selector_result_fails_before_board_application",
+          "tests/test_ai_engine.py::test_module_execution_keeps_the_existing_command_protocol",
+          "tests/test_ai_engine.py::test_no_legal_move_does_not_call_injected_selector",
+          "tests/test_ai_engine.py::test_position_weights_match_the_fixed_8_by_8_table",
+          "tests/test_ai_engine.py::test_positional_selector_handles_empty_and_singleton_candidates",
+          "tests/test_ai_engine.py::test_positional_selector_is_deterministic_and_does_not_consume_random_state",
+          "tests/test_ai_engine.py::test_positional_selector_only_returns_a_supplied_legal_candidate",
+          "tests/test_ai_engine.py::test_positional_selector_uses_y_then_x_as_deterministic_tie_break",
+          "tests/test_ai_engine.py::test_positional_selector_uses_y_then_x_for_weight_lookup",
+          "tests/test_ai_engine.py::test_random_selector_returns_none_without_shuffle_for_empty_moves",
+          "tests/test_ai_engine.py::test_random_selector_shuffles_a_copy_once_and_preserves_inputs",
+          "tests/test_ai_engine.py::test_selector_exception_propagates_without_board_or_stdout_change",
+          "tests/test_harness.py::test_budget_config_rejects_invalid_values_and_exemption_hash_mismatch",
+          "tests/test_harness.py::test_finite_population_interval_handles_constant_scores_and_census",
+          "tests/test_harness.py::test_response_contract_accepts_exact_wire_format_without_mutation",
+          "tests/test_harness.py::test_response_contract_rejects_malformed_output_without_mutation",
+          "tests/test_harness.py::test_temporal_bad_type_survives_missing_clock_or_endpoint",
+          "tests/test_harness.py::test_temporal_model_load_evidence_distinguishes_missing_from_invalid",
+          "tests/test_harness.py::test_temporal_popen_return_is_not_child_initialization_barrier",
+          "tests/test_harness.py::test_temporal_qpc_boundaries_preserve_ambiguity",
+          "tests/test_invariants.py::test_reachable_genmove_pass_and_result_are_consistent",
+          "tests/test_invariants.py::test_reachable_moves_preserve_board_and_capture_invariants",
+          "tests/test_quality.py::test_analysis_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_analysis_typing_limits_operation_views",
+          "tests/test_quality.py::test_budget_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_budget_typing_limits_cast_to_documented_local_views",
+          "tests/test_quality.py::test_contract_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_contract_typing_limits_views_and_preserves_raw_boundary",
+          "tests/test_quality.py::test_documentation_file_links_resolve",
+          "tests/test_quality.py::test_evaluate_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_evaluate_typing_limits_operation_views",
+          "tests/test_quality.py::test_model_matches_current_imports_and_formal_entry_edges",
+          "tests/test_quality.py::test_protocol_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_protocol_typing_limits_cast_to_observed_exit_view",
+          "tests/test_result.py::ResultCommandTests::test_cli_flushes_result_before_receiving_next_command",
+          "tests/test_result.py::ResultCommandTests::test_empty_square_does_not_prevent_terminal_result",
+          "tests/test_result.py::ResultCommandTests::test_initial_position_is_in_progress",
+          "tests/test_result.py::ResultCommandTests::test_one_color_may_pass_while_the_game_continues",
+          "tests/test_result.py::ResultCommandTests::test_result_does_not_change_the_board",
+          "tests/test_result.py::ResultCommandTests::test_terminal_winner_and_draw",
+          "tests/test_result.py::ResultCommandTests::test_web_process_gets_board_legal_moves_and_result",
+          "tests/test_result.py::ResultCommandTests::test_web_response_handles_pass_and_terminal_result",
+          "tests/test_result.py::test_all_eight_directions_flip_together",
+          "tests/test_result.py::test_each_direction_flips_exactly_the_enclosed_stone",
+          "tests/test_result.py::test_genmove_without_legal_moves_preserves_fixed_board",
+          "tests/test_result.py::test_no_capture_without_an_unbroken_opponent_ray",
+          "tests/test_result.py::test_pos_typing_preserves_addition_without_mutating_inputs",
+          "tests/test_result.py::test_pos_typing_preserves_coordinate_bounds",
+          "tests/test_result.py::test_pos_typing_preserves_equality_and_duck_short_circuit",
+          "tests/test_result.py::test_pos_typing_preserves_missing_coordinate_errors",
+          "tests/test_result.py::test_pos_typing_preserves_non_boolean_comparison_values",
+          "tests/test_result.py::test_referee_terminal_results_match_fixed_positions",
+          "tests/test_stdin_commands.py::StandardInputCommandTests::test_genmove_returns_a_legal_position_and_updates_board",
+          "tests/test_stdin_commands.py::StandardInputCommandTests::test_invalid_color_and_out_of_range_position",
+          "tests/test_stdin_commands.py::StandardInputCommandTests::test_name_ask_play_showboard_result_and_quit",
+          "tests/test_stdin_commands.py::test_live_all_commands_obey_response_deadlines",
+          "tests/test_stdin_commands.py::test_live_initial_ask_for_both_colors_preserves_board",
+          "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board",
+          "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards"
+        ],
+        "items": 190,
+        "historical_phase_sum": 4.990083,
+        "caveat": "Re-selection projection, not isolated execution; scope fixture attribution and startup differ."
+      },
+      {
+        "name": "Standard_AI",
+        "base_tests": [
+          "tests/test_ai_compatibility.py::test_board_construction_and_rule_operations_do_not_consume_random_state",
+          "tests/test_ai_compatibility.py::test_genmove_preserves_candidate_order_shuffle_count_and_rng_state",
+          "tests/test_ai_compatibility.py::test_no_legal_move_does_not_shuffle_or_consume_random_state",
+          "tests/test_ai_compatibility.py::test_random_v0_reference_copy_matches_its_manifest",
+          "tests/test_ai_compatibility.py::test_seeded_full_game_matches_frozen_random_v0",
+          "tests/test_ai_engine.py::test_board_passes_immutable_snapshot_and_ordered_root_moves_to_selector",
+          "tests/test_ai_engine.py::test_default_board_uses_positional_selector_and_applies_one_move",
+          "tests/test_ai_engine.py::test_engine_has_no_reverse_import_to_board_gui_or_harness",
+          "tests/test_ai_engine.py::test_failed_real_move_does_not_emit_a_successful_coordinate",
+          "tests/test_ai_engine.py::test_falsey_selector_is_not_replaced_by_the_default",
+          "tests/test_ai_engine.py::test_invalid_selector_result_fails_before_board_application",
+          "tests/test_ai_engine.py::test_module_execution_keeps_the_existing_command_protocol",
+          "tests/test_ai_engine.py::test_no_legal_move_does_not_call_injected_selector",
+          "tests/test_ai_engine.py::test_position_weights_match_the_fixed_8_by_8_table",
+          "tests/test_ai_engine.py::test_positional_selector_handles_empty_and_singleton_candidates",
+          "tests/test_ai_engine.py::test_positional_selector_is_deterministic_and_does_not_consume_random_state",
+          "tests/test_ai_engine.py::test_positional_selector_only_returns_a_supplied_legal_candidate",
+          "tests/test_ai_engine.py::test_positional_selector_uses_y_then_x_as_deterministic_tie_break",
+          "tests/test_ai_engine.py::test_positional_selector_uses_y_then_x_for_weight_lookup",
+          "tests/test_ai_engine.py::test_random_selector_returns_none_without_shuffle_for_empty_moves",
+          "tests/test_ai_engine.py::test_random_selector_shuffles_a_copy_once_and_preserves_inputs",
+          "tests/test_ai_engine.py::test_selector_exception_propagates_without_board_or_stdout_change",
+          "tests/test_harness.py::test_bad_player_is_terminated",
+          "tests/test_harness.py::test_budget_config_rejects_invalid_values_and_exemption_hash_mismatch",
+          "tests/test_harness.py::test_comparison_rejects_changed_conditions_or_opponent",
+          "tests/test_harness.py::test_evaluation_records_faults_and_continues",
+          "tests/test_harness.py::test_finite_population_interval_handles_constant_scores_and_census",
+          "tests/test_harness.py::test_genmove_uses_its_longer_deadline",
+          "tests/test_harness.py::test_opening_evaluation_replays_forced_moves_to_both_players",
+          "tests/test_harness.py::test_paired_complete_games_are_reproducible_and_serializable",
+          "tests/test_harness.py::test_response_contract_accepts_exact_wire_format_without_mutation",
+          "tests/test_harness.py::test_response_contract_rejects_malformed_output_without_mutation",
+          "tests/test_harness.py::test_schema5_cli_saves_reloads_and_reanalyses",
+          "tests/test_harness.py::test_schema5_reference_generation_roundtrip",
+          "tests/test_harness.py::test_startup_has_its_own_timeout",
+          "tests/test_harness.py::test_temporal_bad_type_survives_missing_clock_or_endpoint",
+          "tests/test_harness.py::test_temporal_model_load_evidence_distinguishes_missing_from_invalid",
+          "tests/test_harness.py::test_temporal_normal_schema5_reaches_all_formal_entries",
+          "tests/test_harness.py::test_temporal_popen_return_is_not_child_initialization_barrier",
+          "tests/test_harness.py::test_temporal_qpc_boundaries_preserve_ambiguity",
+          "tests/test_harness.py::test_total_response_time_is_checked_after_validation",
+          "tests/test_invariants.py::test_reachable_genmove_pass_and_result_are_consistent",
+          "tests/test_invariants.py::test_reachable_moves_preserve_board_and_capture_invariants",
+          "tests/test_quality.py::test_analysis_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_analysis_typing_limits_operation_views",
+          "tests/test_quality.py::test_budget_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_budget_typing_limits_cast_to_documented_local_views",
+          "tests/test_quality.py::test_contract_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_contract_typing_limits_views_and_preserves_raw_boundary",
+          "tests/test_quality.py::test_documentation_file_links_resolve",
+          "tests/test_quality.py::test_evaluate_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_evaluate_typing_limits_operation_views",
+          "tests/test_quality.py::test_model_matches_current_imports_and_formal_entry_edges",
+          "tests/test_quality.py::test_protocol_typing_boundary_guard_rejects_mutations",
+          "tests/test_quality.py::test_protocol_typing_limits_cast_to_observed_exit_view",
+          "tests/test_result.py::ResultCommandTests::test_cli_flushes_result_before_receiving_next_command",
+          "tests/test_result.py::ResultCommandTests::test_empty_square_does_not_prevent_terminal_result",
+          "tests/test_result.py::ResultCommandTests::test_initial_position_is_in_progress",
+          "tests/test_result.py::ResultCommandTests::test_one_color_may_pass_while_the_game_continues",
+          "tests/test_result.py::ResultCommandTests::test_result_does_not_change_the_board",
+          "tests/test_result.py::ResultCommandTests::test_terminal_winner_and_draw",
+          "tests/test_result.py::ResultCommandTests::test_web_process_gets_board_legal_moves_and_result",
+          "tests/test_result.py::ResultCommandTests::test_web_response_handles_pass_and_terminal_result",
+          "tests/test_result.py::test_all_eight_directions_flip_together",
+          "tests/test_result.py::test_each_direction_flips_exactly_the_enclosed_stone",
+          "tests/test_result.py::test_genmove_without_legal_moves_preserves_fixed_board",
+          "tests/test_result.py::test_no_capture_without_an_unbroken_opponent_ray",
+          "tests/test_result.py::test_pos_typing_preserves_addition_without_mutating_inputs",
+          "tests/test_result.py::test_pos_typing_preserves_coordinate_bounds",
+          "tests/test_result.py::test_pos_typing_preserves_equality_and_duck_short_circuit",
+          "tests/test_result.py::test_pos_typing_preserves_missing_coordinate_errors",
+          "tests/test_result.py::test_pos_typing_preserves_non_boolean_comparison_values",
+          "tests/test_result.py::test_referee_terminal_results_match_fixed_positions",
+          "tests/test_stdin_commands.py::StandardInputCommandTests::test_genmove_returns_a_legal_position_and_updates_board",
+          "tests/test_stdin_commands.py::StandardInputCommandTests::test_invalid_color_and_out_of_range_position",
+          "tests/test_stdin_commands.py::StandardInputCommandTests::test_name_ask_play_showboard_result_and_quit",
+          "tests/test_stdin_commands.py::test_live_all_commands_obey_response_deadlines",
+          "tests/test_stdin_commands.py::test_live_initial_ask_for_both_colors_preserves_board",
+          "tests/test_stdin_commands.py::test_live_rejected_move_preserves_board",
+          "tests/test_stdin_commands.py::test_live_terminal_results_and_passes_with_fixed_final_boards"
+        ],
+        "items": 212,
+        "historical_phase_sum": 42.298859,
+        "caveat": "Re-selection projection, not isolated execution; scope fixture attribution and startup differ."
+      }
+    ],
+    "evidence_recheck": [
+      {
+        "run": "quality-bc3a980bc75e4c8f99b278b403e707ec",
+        "missing_original_refs": 0,
+        "missing_examples": [],
+        "details": {
+          "not_collected": 739,
+          "explicit": 49
+        },
+        "registered_checks": 49,
+        "manifest_git": {
+          "status": "available",
+          "commit": "adbd85feac0cf4093d3db617b45794a4110ed9fa",
+          "dirty": true
+        },
+        "started": "2026-10-20T04:43:30.064380+00:00",
+        "ended": "2026-10-20T04:52:42.773174+00:00"
+      },
+      {
+        "run": "quality-c1e5e48e0616406fb55c8274a9654107",
+        "missing_original_refs": 10,
+        "missing_examples": [
+          "<TEMP>\\pytest-of-taaai\\pytest-206\\integrity-report0\\runs\\206c2655ace845b4889f3f26cff9dcc3\\run-state.json",
+          "<TEMP>\\pytest-of-taaai\\pytest-206\\integrity-report0\\runs\\206c2655ace845b4889f3f26cff9dcc3\\opening-population.json",
+          "<TEMP>\\pytest-of-taaai\\pytest-206\\integrity-report0\\runs\\206c2655ace845b4889f3f26cff9dcc3\\d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-0\\A.jsonl",
+          "<TEMP>\\pytest-of-taaai\\pytest-206\\integrity-report0\\runs\\206c2655ace845b4889f3f26cff9dcc3\\d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-0\\B.jsonl"
+        ],
+        "details": {
+          "not_collected": 739,
+          "explicit": 49
+        },
+        "registered_checks": 49,
+        "manifest_git": {
+          "status": "available",
+          "commit": "eb2e860f06ac731c13c7a0169e4de93f3b8e1108",
+          "dirty": true
+        },
+        "started": "2026-10-20T02:05:20.757724+00:00",
+        "ended": "2026-10-20T02:13:43.311166+00:00"
+      },
+      {
+        "run": "quality-31d29272b409461294ffb0c45a9474bb",
+        "missing_original_refs": 10,
+        "missing_examples": [
+          "<TEMP>\\pytest-of-taaai\\pytest-205\\integrity-report0\\runs\\e84173fd00054a99803f3d00a0fe59b1\\run-state.json",
+          "<TEMP>\\pytest-of-taaai\\pytest-205\\integrity-report0\\runs\\e84173fd00054a99803f3d00a0fe59b1\\opening-population.json",
+          "<TEMP>\\pytest-of-taaai\\pytest-205\\integrity-report0\\runs\\e84173fd00054a99803f3d00a0fe59b1\\d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-0\\A.jsonl",
+          "<TEMP>\\pytest-of-taaai\\pytest-205\\integrity-report0\\runs\\e84173fd00054a99803f3d00a0fe59b1\\d129d07cc16cc88735cb6e397a037f60ce1bb1852826ac029e90fb9565a55c7a\\leg-0\\B.jsonl"
+        ],
+        "details": {
+          "not_collected": 739,
+          "explicit": 49
+        },
+        "registered_checks": 49,
+        "manifest_git": {
+          "status": "available",
+          "commit": "eb2e860f06ac731c13c7a0169e4de93f3b8e1108",
+          "dirty": true
+        },
+        "started": "2026-10-20T01:30:19.673936+00:00",
+        "ended": "2026-10-20T01:38:50.633158+00:00"
+      }
+    ],
+    "source_test_definitions": 262
+  },
+  "current_evidence_recheck": {
+    "model_errors": [],
+    "collected": [
+      {
+        "step": "pytest",
+        "collection_status": "complete",
+        "errors": [],
+        "test_count": 787
+      },
+      {
+        "step": "smoke",
+        "collection_status": "complete",
+        "errors": [],
+        "test_count": 1
+      }
+    ],
+    "source_hashes_now": {
+      ".github/workflows/quality.yml": "75e4edf99f2857f09fee513f9e237643267ec445a328ec2bf5e1a9bf1e814519",
+      "AGENTS.md": "828ffa167e401688d40a388d083d3c4fbf4451c6d6cb0a12c7ea029a11458a3a",
+      "docs/harness_architecture.md": "4753b5054d93c2731dba32fd8a001994e1f2b868eb054c83f4a7b662a69b25bf",
+      "docs/harness_contracts.md": "dddf1d3badd6b28f7a3dbfcbb82846ce7bcf78bfadd5018bfbdeddd7a6ea89b3",
+      "docs/プログラム開発方法.md": "b0115f187e49039ff42aded6ee5249f7b58ac1294a70a20e3102a05032101cbd",
+      "harness/__init__.py": "fc1c6fe693d322e53503f124dc30270ab86735ea4c4f327a89dc993ea0e4598d",
+      "harness/analysis.py": "7653721629a8d6e31729254dd2e0ed7d84d202c64e7c252a7ba788298487b9c4",
+      "harness/contracts.py": "556b05f2c62364554da5eb6925fbc150612e6e0b100cc6369847369bb69fe3d3",
+      "harness/evaluate.py": "2ea2cc5c2a01227c51576be79e66300696d8e12ee13e19297cbf7fc57ad8adec",
+      "harness/openings.py": "11d14dc64f4ba2f66475d5f664770ef81ebe6501c339f9c6fafe469b5e88f26f",
+      "harness/protocol.py": "92d44e40e10d647ca6f907ffb2273334559f84e27db92fee207b26c62d8a5685",
+      "harness/referee.py": "350b858891c490a48290ef7c7d8f62f77b3b0836d3582051637b14514a125a5c",
+      "harness/search_budget.py": "5378748a7ccf197ddde165a59b99bed2039a94bb51dcf8566b5617554a26cb3e",
+      "harness/seeded_player.py": "28aff247d165b703e1fbdc2a025121160c141edc1918f6ac85e1ab330e656084",
+      "harness/statistics.py": "faf98ec9d7740518997ac37a35f7f1e09a306607aefc97d7a5ef0ef855d2cf65",
+      "pyproject.toml": "67b5ccd7e42bed5e5e3c29a9bc5189dabe8a5a50b262cf9d3507262336e67465",
+      "pytest.ini": "1a30d28286a4c6bfd5f314452195418c2de1ca748d76a18abcbe371b0b4d4472",
+      "requirements-dev.txt": "4e7234b0d9dc1df1be118370507fe68d09b961d71c67872cc1bc9288989c5a84",
+      "reversi_player/ai_engine.py": "3a6d69c35bf79d2a184cabde023b5274a4a1e34eb318aa4c4be42569e6401c5f",
+      "reversi_player/reversi.py": "a012c2b30c304b4716e5f3df2d0ffac4f689a5b35cb38fefe6c16f7b27428efe",
+      "reversi_player/web.py": "f563bfd39bdf612e0081d20b79c2d41f9aa8fccd99a360d0085f1d220df3f6e5",
+      "tests/fixtures/budget_player.py": "a284ac4f94df94e012ee05487a45114acd75f32c87776eb4ff9a1963ac84814c",
+      "tests/fixtures/fault_player.py": "d4b88dd295bc01e1d21bbcc0b249385a118dbe7d08affb0d73553fd377afcc89",
+      "tests/test_ai_compatibility.py": "0bfd0dbf34af7bfe531003495b24c18832bf0b0458c3f734b14034d0b11ddcc1",
+      "tests/test_ai_engine.py": "3755aa3280797ed32ce125d44e2c1430ec05c30f245c243923fc9b302a1b588a",
+      "tests/test_harness.py": "3ace66bb64959bebc5154317e6ff3d810f7d0eb48a6a37e9eca747bf9e20eea3",
+      "tests/test_invariants.py": "b1895532363133d9d8b14e7df397295f0d7f83bea8cfa120db1e3357e73d70bb",
+      "tests/test_quality.py": "2589f0d4566abe51a8374f4e1b16c87b6dc941b1a2cdaa5ffab4fec7c7aeaae8",
+      "tests/test_result.py": "0a9d8e28071a6f1d40ad268b4d5f39a42fb5c1b3cdddbb7ae3fcab3038c44b6f",
+      "tests/test_stdin_commands.py": "2e0b80d77526107a99fb4a25a8dde6c87ab273ab074962be2fdadec54468b59d",
+      "tools/__init__.py": "02a3c2071adedd371b1d2c6cf32eeb7c619082ba1e8b3895639c0a4094e3559d",
+      "tools/evidence.py": "0d62a30963f74847c7ab865a376ca20497fcc2065b76e61636cb3d8e5f9f1aa7",
+      "tools/evidence_plugin.py": "8e7d0039835ba4c518601a8cbdadf707153561e5a8ba7ebfb7bbe2ab93b7761a",
+      "tools/quality.py": "4a407a79030355228c9d8f406e3db3297f9cd2843b4bc7d635c311f6f766c64f"
+    },
+    "fixture_hashes": {
+      "tests/fixtures/budget_player.py": "a284ac4f94df94e012ee05487a45114acd75f32c87776eb4ff9a1963ac84814c",
+      "tests/fixtures/fault_player.py": "d4b88dd295bc01e1d21bbcc0b249385a118dbe7d08affb0d73553fd377afcc89"
+    }
+  },
+  "ci_snapshot": {
+    "run_id": 39374393425,
+    "head_sha": "73990eccbb4a10d96013f771e8925759a73e137f",
+    "conclusion": "success",
+    "created_at": "2026-10-20T05:20:46Z",
+    "updated_at": "2026-10-20T05:29:21Z",
+    "artifact_id": 12242239526,
+    "artifact_name": "pytest-diagnostics-39374393425",
+    "tests": 787,
+    "failures": 0,
+    "junit_total": 422.932,
+    "groups": [
+      {
+        "name": "tests.test_ai_compatibility",
+        "items": 9,
+        "seconds": 0.506
+      },
+      {
+        "name": "tests.test_ai_engine",
+        "items": 27,
+        "seconds": 0.067
+      },
+      {
+        "name": "tests.test_harness",
+        "items": 511,
+        "seconds": 266.878
+      },
+      {
+        "name": "tests.test_invariants",
+        "items": 2,
+        "seconds": 0.399
+      },
+      {
+        "name": "tests.test_quality",
+        "items": 164,
+        "seconds": 153.961
+      },
+      {
+        "name": "tests.test_result",
+        "items": 53,
+        "seconds": 0.049
+      },
+      {
+        "name": "tests.test_result.ResultCommandTests",
+        "items": 8,
+        "seconds": 0.307
+      },
+      {
+        "name": "tests.test_stdin_commands",
+        "items": 10,
+        "seconds": 0.644
+      },
+      {
+        "name": "tests.test_stdin_commands.StandardInputCommandTests",
+        "items": 3,
+        "seconds": 0.121
+      }
+    ],
+    "top30": [
+      {
+        "classname": "tests.test_harness",
+        "name": "test_confirmatory_evaluation_verifies_trace_and_estimates_paired_scores",
+        "seconds": 12.511,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_omitted_games_uses_all_fixed_openings_and_confirmatory_requires_explicit",
+        "seconds": 12.458,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_quality",
+        "name": "test_real_quality_cli_rejects_intentional_lint_type_and_test_failures",
+        "seconds": 9.289,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_census_requires_all_archived_cases_and_both_legs",
+        "seconds": 5.048,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_initial_position_multiple_pairs_remain_descriptive_and_comparable",
+        "seconds": 4.901,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_schema5_incomplete_temporal_cannot_issue_formal",
+        "seconds": 4.798,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_quality",
+        "name": "test_contract_typing_dependency_accepts_readonly_command_sequence[False]",
+        "seconds": 4.751,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_quality",
+        "name": "test_contract_typing_does_not_certify_raw_metadata[int-snapshot]",
+        "seconds": 4.595,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_quality",
+        "name": "test_contract_typing_dependency_accepts_readonly_command_sequence[True]",
+        "seconds": 4.591,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_time_budget_comparison_accepts_different_legal_games_without_formal_ci",
+        "seconds": 4.011,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_public_apis_and_saved_clis_agree[host_before_spawn-failed]",
+        "seconds": 3.964,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_public_apis_and_saved_clis_agree[child_clock_missing-unknown]",
+        "seconds": 3.961,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_public_apis_and_saved_clis_agree[child_before_spawn-failed]",
+        "seconds": 3.93,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_public_apis_and_saved_clis_agree[normal-verified]",
+        "seconds": 3.925,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_baseline_exemption_is_local_and_does_not_skip_candidate_trace",
+        "seconds": 3.894,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[extra_command-failed]",
+        "seconds": 3.724,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[session-failed]",
+        "seconds": 3.709,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[ready_missing-unknown]",
+        "seconds": 3.696,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[clock_missing-unknown]",
+        "seconds": 3.688,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[received_before_spawn-failed]",
+        "seconds": 3.672,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[search_before_receive-failed]",
+        "seconds": 3.669,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[child_after_exit-failed]",
+        "seconds": 3.664,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_rehashed_trace_is_semantically_checked[search_endpoint_missing-unknown]",
+        "seconds": 3.66,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[init_after_receive-failed]",
+        "seconds": 3.66,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_rehashed_trace_is_semantically_checked[domain_missing-unknown]",
+        "seconds": 3.658,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[child_serial-failed]",
+        "seconds": 3.657,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_rehashed_trace_is_semantically_checked[search_after_response-failed]",
+        "seconds": 3.653,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_rehashed_trace_is_semantically_checked[child_before_spawn-failed]",
+        "seconds": 3.65,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[search_reversed-failed]",
+        "seconds": 3.647,
+        "failed": false
+      },
+      {
+        "classname": "tests.test_harness",
+        "name": "test_temporal_all_child_events_are_revalidated[search_before_entry-failed]",
+        "seconds": 3.646,
+        "failed": false
+      }
+    ],
+    "log_summary": "787 passed in 425.11s (0:07:05)\r ",
+    "decoded_text_utf8_sha256": {
+      "quality-6bb095a8bf9648ee86675e94700724f8/pytest/pytest.xml": "d9c6eec7538e4feba5476deabbacf41c74a730208a3dc6ad5452041aa40d621d",
+      "quality-6bb095a8bf9648ee86675e94700724f8/pytest.txt": "b64ca576f5572f821bbed0dbf0a98741966204b2d295caa1d694af5e0c6baf9e"
+    },
+    "hash_note": "CI digests were calculated after decoding text and encoding as UTF-8; these are text-derived digests, not an assertion about ZIP/raw byte hashes."
+  },
+  "ci_step_snapshots": [
+    {
+      "run_id": "39374393425",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success",
+          "seconds": 1
+        },
+        {
+          "name": "Run actions/checkout@v7",
+          "conclusion": "success",
+          "seconds": 8
+        },
+        {
+          "name": "Run actions/setup-python@v7",
+          "conclusion": "success",
+          "seconds": 50
+        },
+        {
+          "name": "Install development dependencies",
+          "conclusion": "success",
+          "seconds": 14
+        },
+        {
+          "name": "Run required quality gate",
+          "conclusion": "success",
+          "seconds": 434
+        },
+        {
+          "name": "Upload pytest diagnostics",
+          "conclusion": "success",
+          "seconds": 1
+        },
+        {
+          "name": "Post Run actions/setup-python@v7",
+          "conclusion": "success",
+          "seconds": 0
+        },
+        {
+          "name": "Post Run actions/checkout@v7",
+          "conclusion": "success",
+          "seconds": 2
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success",
+          "seconds": 0
+        }
+      ]
+    },
+    {
+      "run_id": "39372005591",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success",
+          "seconds": 1
+        },
+        {
+          "name": "Run actions/checkout@v7",
+          "conclusion": "success",
+          "seconds": 9
+        },
+        {
+          "name": "Run actions/setup-python@v7",
+          "conclusion": "success",
+          "seconds": 58
+        },
+        {
+          "name": "Install development dependencies",
+          "conclusion": "success",
+          "seconds": 17
+        },
+        {
+          "name": "Run required quality gate",
+          "conclusion": "success",
+          "seconds": 420
+        },
+        {
+          "name": "Upload pytest diagnostics",
+          "conclusion": "success",
+          "seconds": 1
+        },
+        {
+          "name": "Post Run actions/setup-python@v7",
+          "conclusion": "success",
+          "seconds": 0
+        },
+        {
+          "name": "Post Run actions/checkout@v7",
+          "conclusion": "success",
+          "seconds": 3
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success",
+          "seconds": 0
+        }
+      ]
+    },
+    {
+      "run_id": "39372000971",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success",
+          "seconds": 1
+        },
+        {
+          "name": "Run actions/checkout@v7",
+          "conclusion": "success",
+          "seconds": 8
+        },
+        {
+          "name": "Run actions/setup-python@v7",
+          "conclusion": "success",
+          "seconds": 47
+        },
+        {
+          "name": "Install development dependencies",
+          "conclusion": "success",
+          "seconds": 14
+        },
+        {
+          "name": "Run required quality gate",
+          "conclusion": "success",
+          "seconds": 420
+        },
+        {
+          "name": "Upload pytest diagnostics",
+          "conclusion": "success",
+          "seconds": 0
+        },
+        {
+          "name": "Post Run actions/setup-python@v7",
+          "conclusion": "success",
+          "seconds": 1
+        },
+        {
+          "name": "Post Run actions/checkout@v7",
+          "conclusion": "success",
+          "seconds": 2
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success",
+          "seconds": 0
+        }
+      ]
+    }
+  ],
+  "classification_policy": {
+    "kind": "manually named primary source-region categories, mutually exclusive for aggregation; not code coverage or inferred independence",
+    "harness_cutoffs": [
+      76,
+      261,
+      746,
+      1366,
+      1704,
+      1754,
+      1992,
+      2284,
+      2370,
+      2526,
+      2712,
+      2951,
+      3003,
+      3250
+    ],
+    "quality_cutoffs": [
+      204,
+      447,
+      880,
+      1091
+    ]
+  },
+  "analysis_scripts": {
+    "timing_aggregation": "\nimport ast, hashlib, json, pathlib, xml.etree.ElementTree as ET\nfrom tools import evidence, quality\nroot=pathlib.Path.cwd()\nnames=['quality-bc3a980bc75e4c8f99b278b403e707ec','quality-c1e5e48e0616406fb55c8274a9654107','quality-31d29272b409461294ffb0c45a9474bb']\ncurrent=quality._source_hashes(root);runs=[]\nfor index,name in enumerate(names):\n d=root/'evaluation_results'/name;q=json.loads((d/'quality.json').read_text(encoding='utf-8'));events=[json.loads(l) for l in (d/'pytest/events.jsonl').read_text(encoding='utf-8').splitlines()];cases={}\n for e in events:\n  if e['kind']=='phase':\n   row=cases.setdefault(e['nodeid'],dict(nodeid=e['nodeid'],setup=0.,call=0.,teardown=0.));row[e['when']]+=e['duration']\n files={};groups={}\n for n,row in cases.items():\n  row['total']=row['setup']+row['call']+row['teardown']\n  for mapping,key in ((files,n.split('::')[0]),(groups,n.split('[',1)[0])):\n   g=mapping.setdefault(key,dict(name=key,count=0,setup=0.,call=0.,teardown=0.,total=0.));g['count']+=1\n   for phase in ('setup','call','teardown','total'):g[phase]+=row[phase]\n smoke=[json.loads(l) for l in (d/'smoke/events.jsonl').read_text(encoding='utf-8').splitlines()];selected=[e['nodeids'] for e in smoke if e['kind']=='selected'][0]\n junit=ET.parse(d/'pytest/pytest.xml').findall('.//testcase')\n result=dict(run=name,passed=q['passed'],steps={s['name']:s['seconds'] for s in q['steps']},step_sum=sum(s['seconds'] for s in q['steps'] if s['seconds'] is not None),environment={k:q['environment'][k] for k in ('python','executable','platform')},packages={k:q['environment']['packages'].get(k) for k in ('pytest','ruff','mypy','hypothesis')},hashes={p.relative_to(d).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in (d/'quality.json',d/'evidence.json',d/'pytest/events.jsonl',d/'pytest/pytest.xml',d/'pytest.txt')},source_mismatches={k:dict(saved=v,current=current.get(k)) for k,v in q['source_hashes'].items() if current.get(k)!=v},source_missing_from_saved=sorted(set(current)-set(q['source_hashes'])),snapshot_equal=q['source_hashes']==q['source_hashes_end'],publication_errors=evidence.verify_publication(d),junit_count=len(junit),junit_seconds_sum=sum(float(c.get('time','0')) for c in junit),phase_totals={p:sum(c[p] for c in cases.values()) for p in ('setup','call','teardown','total')},files=sorted(files.values(),key=lambda x:x['total'],reverse=True),smoke_nodeids=selected,smoke_full_seconds=sum(cases[n]['total'] for n in selected))\n if index==0:\n  result.update(groups=sorted(groups.values(),key=lambda x:x['total'],reverse=True)[:45],top30=sorted(cases.values(),key=lambda x:x['total'],reverse=True)[:30],top_setup10=sorted(cases.values(),key=lambda x:x['setup'],reverse=True)[:10],top_teardown10=sorted(cases.values(),key=lambda x:x['teardown'],reverse=True)[:10],all_base_function_count=len(groups))\n runs.append(result)\nstructure=[]\nfor p in sorted((root/'tests').glob('test_*.py')):\n tree=ast.parse(p.read_text(encoding='utf-8'))\n structure.append(dict(file=p.relative_to(root).as_posix(),functions=sum(isinstance(n,ast.FunctionDef) and n.name.startswith('test_') for n in tree.body),fixtures=[dict(name=n.name,line=n.lineno,decorators=[ast.unparse(d) for d in n.decorator_list]) for n in tree.body if isinstance(n,ast.FunctionDef) and any(ast.unparse(d.func if isinstance(d,ast.Call) else d)=='pytest.fixture' for d in n.decorator_list)]))\ndef rounded(obj):\n if isinstance(obj,float):return round(obj,6)\n if isinstance(obj,list):return [rounded(x) for x in obj]\n if isinstance(obj,dict):return {k:rounded(v) for k,v in obj.items()}\n return obj\nprint(json.dumps(rounded(dict(audit_kind='existing_evidence_analysis',source_head='73990eccbb4a10d96013f771e8925759a73e137f',runs=runs,test_structure=structure)),ensure_ascii=True,separators=(',',':')))\n",
+    "inventory_and_profiles": "\nimport ast, collections, json, pathlib\nroot=pathlib.Path.cwd();d=root/'evaluation_results/quality-bc3a980bc75e4c8f99b278b403e707ec'\nevents=[json.loads(l) for l in (d/'pytest/events.jsonl').read_text(encoding='utf-8').splitlines()]\ncases={}\nfor e in events:\n if e['kind']=='phase':\n  r=cases.setdefault(e['nodeid'],dict(setup=0.,call=0.,teardown=0.));r[e['when']]+=e['duration']\ndefs={}\nfor p in sorted((root/'tests').glob('test_*.py')):\n tree=ast.parse(p.read_text(encoding='utf-8'));file=p.relative_to(root).as_posix()\n for node in tree.body:\n  scope=[(node,'')] if isinstance(node,ast.FunctionDef) else [(n,node.name+'::') for n in node.body if isinstance(n,ast.FunctionDef)] if isinstance(node,ast.ClassDef) else []\n  for n,prefix in scope:\n   if n.name.startswith('test_'):defs[file+'::'+prefix+n.name]=n\ndef category(file,line):\n if file!='tests/test_harness.py' and file!='tests/test_quality.py':return file.split('/')[-1][5:-3]\n if file.endswith('test_quality.py'):\n  return 'quality_docs_model' if line<204 else 'quality_runner_process' if line<447 else 'quality_evidence_integration' if line<880 else 'quality_journal_lifecycle' if line<1091 else 'quality_type_boundaries'\n return next(label for cutoff,label in [(76,'wire_format'),(261,'schema5_roots'),(746,'temporal_lifecycle'),(1366,'consistency_persistence'),(1704,'population_trace_reanalysis'),(1754,'smoke_comparison'),(1992,'budget_contract_typing_runtime'),(2284,'protocol_typing_runtime'),(2370,'protocol_live_faults'),(2526,'opening_validation'),(2712,'budget_formal_integration'),(2951,'legacy_cli'),(3003,'coverage_interruption'),(3250,'statistics_analysis_runtime'),(99999,'evaluate_typing_runtime')] if line<cutoff)\ninv={};cat={}\nfor node,timing in cases.items():\n base=node.split('[',1)[0];n=defs[base];file=base.split('::')[0];c=category(file,n.lineno)\n row=inv.setdefault(base,dict(name=base,line=n.lineno,category=c,count=0,setup=0.,call=0.,teardown=0.,total=0.))\n row['count']+=1\n for phase,v in timing.items():row[phase]+=v;row['total']+=v\n for map_,key in ((cat,c),):\n  x=map_.setdefault(key,dict(name=key,count=0,setup=0.,call=0.,teardown=0.,total=0.));x['count']+=1\n  for phase,v in timing.items():x[phase]+=v;x['total']+=v\nmypy=[row for base,row in inv.items() if 'mypy-cache' in ast.get_source_segment((root/base.split('::')[0]).read_text(encoding='utf-8'),defs[base])]\nquick_names={'test_response_contract_accepts_exact_wire_format_without_mutation','test_response_contract_rejects_malformed_output_without_mutation','test_temporal_popen_return_is_not_child_initialization_barrier','test_temporal_model_load_evidence_distinguishes_missing_from_invalid','test_temporal_qpc_boundaries_preserve_ambiguity','test_temporal_bad_type_survives_missing_clock_or_endpoint','test_finite_population_interval_handles_constant_scores_and_census','test_budget_config_rejects_invalid_values_and_exemption_hash_mismatch','test_documentation_file_links_resolve','test_model_matches_current_imports_and_formal_entry_edges'}\ncore={'tests/test_ai_compatibility.py','tests/test_ai_engine.py','tests/test_invariants.py','tests/test_result.py','tests/test_stdin_commands.py'}\nquick={b for b,n in defs.items() if b.split('::')[0] in core or n.name in quick_names or (b.startswith('tests/test_quality.py') and ('typing_limits' in n.name or 'typing_boundary_guard' in n.name))}\nstandard_extra={'test_schema5_reference_generation_roundtrip','test_schema5_cli_saves_reloads_and_reanalyses','test_paired_complete_games_are_reproducible_and_serializable','test_comparison_rejects_changed_conditions_or_opponent','test_opening_evaluation_replays_forced_moves_to_both_players','test_temporal_normal_schema5_reaches_all_formal_entries','test_evaluation_records_faults_and_continues','test_bad_player_is_terminated','test_startup_has_its_own_timeout','test_genmove_uses_its_longer_deadline','test_total_response_time_is_checked_after_validation'}\nstandard=quick|{b for b,n in defs.items() if n.name in standard_extra}\nprofiles=[]\nfor name,bases in [('Quick',quick),('Standard_AI',standard)]:\n selected={n:t for n,t in cases.items() if n.split('[',1)[0] in bases}\n profiles.append(dict(name=name,base_tests=sorted(bases),items=len(selected),historical_phase_sum=sum(sum(t.values()) for t in selected.values()),caveat='Re-selection projection, not isolated execution; scope fixture attribution and startup differ.'))\nrefs=[]\nfor name in ['quality-bc3a980bc75e4c8f99b278b403e707ec','quality-c1e5e48e0616406fb55c8274a9654107','quality-31d29272b409461294ffb0c45a9474bb']:\n run=root/'evaluation_results'/name;b=json.loads((run/'evidence.json').read_text(encoding='utf-8'));missing=[];tests=[]\n for s in b['test_steps']:\n  tests.extend(s.get('tests',[]))\n  for ref in s.get('artifacts',[]):\n   if not pathlib.Path(ref['path']).is_file():missing.append(ref['path'])\n refs.append(dict(run=name,missing_original_refs=len(missing),missing_examples=missing[:4],details=dict(collections.Counter(t.get('detail_status') for t in tests)),registered_checks=sum(len(t.get('checks',[])) for t in tests),manifest_git=b['manifest']['git'],started=b['manifest'].get('started_at_utc'),ended=b['manifest'].get('ended_at_utc')))\nout=dict(inventory_columns=['base_nodeid','source_line','category','items','setup','call','teardown','total'],inventory=[[r['name'],r['line'],r['category'],r['count'],*[round(r[p],6) for p in ('setup','call','teardown','total')]] for r in inv.values()],categories=sorted(cat.values(),key=lambda x:x['total'],reverse=True),mypy_probes=mypy,mypy_items=sum(r['count'] for r in mypy),mypy_phase_seconds=sum(r['total'] for r in mypy),profiles=profiles,evidence_recheck=refs,source_test_definitions=len(defs))\nprint(json.dumps(out,ensure_ascii=True,separators=(',',':')))\n"
+  },
+  "limitations": [
+    "Historical timings are not new executions or optimization outcomes.",
+    "Profile phase sums do not include isolated fixture reallocation, startup, collection, static checks, or publication overhead.",
+    "Missing old temporary raw references do not invalidate original execution outcomes; full publication cannot currently be reverified.",
+    "No syscall/process-level profiler, mutation score, empirical statistical coverage, parallel performance, or cache speedup was measured."
+  ]
+}
