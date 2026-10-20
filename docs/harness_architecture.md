@@ -335,6 +335,9 @@ flowchart TD
     SC --> OUT
     Q --> L["Ruff lint / 限定format / strict mypy / pip check"]
     Q --> T["全pytest / tools.evidence_plugin<br/>既存回帰・明示観測・段階別journal"]
+    T --> B9["B1: module共有fixture / fresh mypy 1起動<br/>9独立shadow・元の9 node IDを保持"]
+    B9 --> BD["パス・追加関数の行・codeの全9診断を照合<br/>欠落/重複/余剰/異常終了は失敗"]
+    BD --> BR["step内typing-probes原出力・shadow・hash<br/>case別の期待/観測をjournalへ記録"]
     T --> S["独立smoke<br/>既存の軽量参考対局"]
     M --> OUT["必須結果の集約<br/>全成功のみpassed"]
     L --> OUT
@@ -415,6 +418,10 @@ feedback→quality/evidence、pytest→feedback/evidence_pluginの依存のみ�
 状態は planned → collected → executed → evidence_verified → feedback_passed。空選択・誤選択・欠損・skip・実行失敗・snapshot不一致はfeedback_failed、原参照の後日消失は再検証不能として扱う。Full未実行は常に別軸であり成功へ昇格しない。新規テストファイル・共有fixture/品質設定の変更はFullへ戻す。既知AIテストファイルの新caseは全件選択、契約テストは明示基底名で選択する。
 
 ### 11.1 検証証拠拡張（先行設計後に実装、2026-10-14）
+
+B1/B2の変更前設計（2026-10-20）: 上図のB9/BD/BRは品質自己テスト内部だけの起動共有を表す。通常のtyping工程は従来のfresh argvを維持し、正式評価のinspection・時計・予算・統計は変更しない。共有fixtureは本番moduleをimportして判定するのではなく、既存typing argvへ9個のshadowを渡す。各testは全9診断集合と自分のパス/行/codeを確認する。共有setup失敗はsetup errorであり、他の診断のnonzeroで成功へ置き換えない。新しい本番module・依存辺・正式入口は増やさない。
+
+原出力・argv・shadow bytes・元source/config hash・case別診断はFullのowned step領域へ保存する。journalには各caseの期待/観測を保存し、通常のJUnit/journal集計へ接続する。余分な保存ファイルの真正性をpublication hashだけで証明する設計ではない。B2の計測は別の新規領域・試験用hook/cProfileで行い、helperの呼出し間cacheやfresh inspectionの共有は導入しない。詳細・実行状態は[Bの実装記録](reports/20261020_quality_probe_optimization.md)を参照する。
 
 上記品質2図を実装に先行して拡張した。導入状態・実行証拠はQUALITY_PROGRESS.mdの「検証証拠自動生成」を参照する。第2〜6節の評価モデル・schema5/trace4/validation3・正式ANDは変更しない。
 

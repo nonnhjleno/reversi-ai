@@ -357,6 +357,16 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 
 正常なテスト失敗、skip、collection失敗は記録が整合すればcompleteにできる。crash/timeoutの部分記録は診断用として保持しcompleteにしない。verify_publicationの空エラー配列はbytes対応であり、JL検査の合格や元記録の真正性を表さない。並列worker/rerunは既存どおり非対応。保存構造v1は維持し、従来正常なv1を受理して不正な状態遷移だけを排除する。
 
+### 13.3 型probeの共有実行契約（B1/B2、2026-10-20先行設計）
+
+- 対象は既存9件のpromoted module自己テストのみ。9パラメータとnode IDを維持し、source bytesと設定を固定した9shadowをmodule-scopeのfresh mypy 1回へ渡す。既存typing工程・17strict登録・Full 11工程・正式評価条件は変更しない。
+- 診断の期待は各shadow末尾の未注釈関数のパス・AST行・`no-untyped-def`。終了値1に加え全9診断の過不足なしを要求し、各testのパス/行/codeも一致させる。余剰・欠落・重複・別code・別行・異常終了・stderrエラーは失敗。共有setup失敗は成功へ変換しない。
+- Fullでの原出力/argv/source・設定hash/shadow bytes/case診断はowned step下`typing-probes`へ新規保存し、case別の期待と観測をjournalへ保存する。限定pytestでは独立tmp領域を使う。共有ファイルをcase側で書き換えない。hashは原出力の意味検証や真正性の証明ではない。
+- 他の17型probeはpositive/negativeの別起動と従来の期待を維持する。B2はまず原診断・拒否行列・fixture/inspectionのparse/replay費用を計測し、追加最適化は効果と不変条件を確認して判断する。inspectionを公開入口間でcacheしたり保存Inspectionを信頼する変更は行わない。
+- 計測用hook/cProfileの時間は正式時計/期限合格やFull合格へ転用しない。診断欠落を全9パス別に試し、実mypyでshadow・明示rootを外した反例でも残るnonzeroを合格にしない。before/after診断と全既存node ID、Full証拠・独立smokeの一致を完了条件とする。
+
+実装・計測状況は[Bの実装記録](reports/20261020_quality_probe_optimization.md)を参照する。
+
 <a id="phase1a-boundary"></a>
 
 ## 14. Phase 1AのAI内部境界（実装済み・2026-10-19確認）

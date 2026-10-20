@@ -1,5 +1,21 @@
 # 品質基盤導入の進捗と検証証拠
 
+## 品質監査B1/B2（2026-10-20、PASS）
+
+以下の「最終Full検証中」「未確認」は途中記録であり、末尾の最終結果まで検証済み。
+
+開始HEADは`3c4f108`、`refactor/quality-gate-optimization`上のclean状態から開始。AのFull PASSを確認し、対応する直接CPython 3.13.5でenvironment/scope/modelのエラーなしを再確認した。モデル図と契約13.3を先行更新し、9scope自己テストのchecker起動だけをmodule fixtureへ共有した。元9node ID・通常typing argv・17strict登録・Full 11工程・正式評価のfresh検証は維持する。他17型probeのテスト本体はASTで変更なしを確認した。
+
+新規診断検査の実装前16回帰は16失敗（未実装helperのNameError）。実装後の元9＋新規18回帰は27成功。before/after照合でshadowのLF/CRLF差を検出したため、旧write_textと同じOS改行へ修正し専用回帰を追加、最終新規19回帰は19成功（10.52秒）。最終26論理caseの成否・診断path/行/code/message・shadow bytesは一致、各3回の開始/終了source hashも一致した。mypy subprocessの9件分中央値は42.928→5.946秒（86.15%短縮）。これは統制済みFull全体の短縮率ではなく、OS cache未消去・before群の後にafter群を測った限定結果である。
+
+B2では他17probeの正7/負10の判定と原診断を維持し、正常/時系列不正inspection各3回、全公開入口の不正拒否3回をcProfileした。原証拠10ファイル不変。parse/readだけの寄与は小さく、timeline/deepcopy/ルール再生の寄与が大きい。公開入口間のfresh検証共有やcacheは採用せず、positive/negative shadow群の追加batchも独立設計・計測まで保留する。
+
+現時点ではBのFull PASSは未確認。最終結果・正負行列・原証拠・残るリスクは[B実装記録](reports/20261020_quality_probe_optimization.md)と[機械可読計測](reports/20261020_quality_probe_metrics.json)へ記録する。C、AI/GUI/harness/品質runner/CIの変更、commit/pushは実施しない。
+
+最終判定: **B1実装・B2計測/群別判断 PASS**。Fullは`evaluation_results/quality-762d0017b4304bac8391fcdc785a529b/`へ新規保存し全11工程PASS。全pytest **848成功・0失敗・0skip**（表示644.69秒、外部pytest工程646.217秒）、独立smoke **1成功**（JUnit 3.818秒、外部4.717秒）。工程秒の和658.927秒はCLI全体wallではない。mypy17対象・Lint・format・scope/model成功。元829nodeを全保全して19追加、smokeのnodeも不変。38sourceの開始/終了/現在および最終限定測定のhash一致、publicationと全pytest/smokeのfresh再収集エラー0、Full保存の9shadow bytes・原診断・case別記録の再照合も成功した。追加batch・inspection cache・並列化・Cへは進まず停止する。CI実行、他OS、統制した反復Full性能比較は未実施。
+
+証拠寿命の最終確認として、B2の原traceを新規run内basetempへ保持した限定profileも1成功（55.77秒）、保存原報告のfresh inspection=verified・10原ファイル不変を確認。Full既存原参照14件は同一bytesの監査用コピーを保管し、元quality/journal/pathは無変更。追加文書リンク回帰1成功（0.94秒）、Git差分確認成功。Bのraw保存・集計・契約を確定し、未コミットのまま停止する。
+
 ## 品質監査A1〜A3（2026-10-20、PASS）
 
 監査第12節Aだけを対象とする。過去のPhase 10未実装の記述は当時の履歴。今回の先行設計では既存10検査を残してtyping_scopeを必須追加（11工程）、3本番ルートの全Pythonとstrict filesを照合する。既存14対象にinitializer2件とfeedbackを加えて17対象。利用者はreversi_01.py・102400-games/data.pyを保管/参考用途として承認した。web.pyだけが本番strict例外で、AI/GUI/評価契約は変更しない。
