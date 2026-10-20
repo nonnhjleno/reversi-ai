@@ -1100,6 +1100,7 @@ def test_evidence_journal_lifecycle_failure_reaches_cli(tmp_path, monkeypatch, m
         'harness/contracts.py',
         'harness/analysis.py',
         'harness/evaluate.py',
+        'reversi_player/ai_engine.py',
     ],
 )
 def test_promoted_modules_are_checked_by_configured_strict_gate(tmp_path, relative_path):

@@ -21,3 +21,13 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
       - name: Run required quality gate
         run: python -B tools/quality.py
+      - name: Upload pytest diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-diagnostics-${{ github.run_id }}
+          path: |
+            evaluation_results/quality-*/pytest.txt
+            evaluation_results/quality-*/pytest/pytest.xml
+          if-no-files-found: warn
+          retention-days: 7
