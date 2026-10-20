@@ -1,5 +1,9 @@
 # リバーシAI分離設計
 
+2026-10-20更新: Phase 1A・1Bの実装、品質検証、固定random_v0との参考比較は完了。現行状態・比較版・制約の正本は[Phase 1引き継ぎ資料](phase1_handoff.md)。以下の設計時点における「未実装」表現は、その時点の記録であり、現状を示すものではない。
+
+Phase 1A設計確定日: 2026-10-19、実装・互換回帰完了: 2026-10-19。Phase 1Bの位置評価契約・比較条件は2026-10-20に確定し、selector実装・回帰・参考比較も完了。[第13節](#phase1a-design)はPhase 1Aの確定契約、現行状態と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照する。第2〜4節は現行実装、第6〜8節の探索・計測部分は将来案であり、実装済み経路と混同しない。
+
 調査・設計日: 2026-10-10。整理・照合日: 2026-10-13。状態: **設計案。AI分離は未実装**。AI境界の設計正本として旧move_selection_designの必要条件を統合した。現行ハーネスの契約は[データ契約](harness_contracts.md)、構造は[アーキテクチャ](harness_architecture.md)、実行確認は[正常化報告](reports/ハーネス正常化完了報告.md)。整理前の本文は[旧分離資料](archive/move_selection_design.md#snapshot-ai-separation)に保管する。
 
 ## 1. 結論、調査範囲、判断の根拠
@@ -26,7 +30,7 @@
 
 対象HEADは `1b934293ec66f1174f7f6dfbc47de5bbf66f34d1`。未コミットのハーネス拡張があるため、HEADだけではなく実際の作業ツリーを調査した。「コード確認」「今回の実行確認」「将来の提案」を区別する。既存資料の診断結果は今回再実行した診断とは扱わない。
 
-今回はこの文書だけを作成する。Python本体、GUI、ハーネス、テスト、既存設計資料は変更しない。
+初回の2026-10-13の整理ではこの文書だけを作成し、Python本体・GUI・ハーネス・テスト・他の設計資料は変更しなかった。2026-10-19のPhase 1Aでは第13節の確定設計に合わせ、図・契約・計画・品質記録も文書だけ更新する。
 
 ## 2. As-Is: 構造と責務一覧
 
@@ -252,7 +256,7 @@ reversi_player/
   web.py         # 既存GUI
 ```
 
-初版は `ai_engine.select_move()` の関数1つで足りる。ABC、engine factory、plugin registry、新しいAIパッケージは導入しない。将来、モデルやキャッシュの状態が必要になったら同じファイル内の小さなエンジンオブジェクトにする。Boardには任意の選択callableを渡せ、無引数Boardは従来のランダム選択を使う構築案とする。
+Phase 1Aの分離時点では`ai_engine.select_move()`の関数1つで足りた。ABC、engine factory、plugin registry、新しいAIパッケージは導入しない。Phase 1Aでは第13節の`Board(*, selector=None)`で選択callableを受け、当時の既定はランダム選択だった。Phase 1Bで既定を`select_positional_move`へ変更し、ランダム基準は`selector=ai_engine.select_move`として明示注入する。将来は同じ3引数で呼べる小さなエンジンオブジェクトに拡張できる。
 
 ```mermaid
 flowchart LR
@@ -268,7 +272,7 @@ flowchart LR
 
 AIからコピー用関数への点線は実行時の呼び出しで、`ai_engine -> reversi` のimportではない。関数は実盤面に束縛しない。仮想BoardはAIを呼ばず、モデルもロードしない。呼び出しの再帰を作らない。
 
-直接スクリプト起動では隣接 `ai_engine`、package importでは相対 `.ai_engine` を明示的に選ぶ。`__package__` を判定し、広いImportErrorを捕捉してモデル依存の欠落まで隠す方法は使わない。初版AIはPosをimportせずtuple座標を返す。
+実行時は直接起動で隣接`ai_engine`、package importで相対`.ai_engine`を明示的に選ぶ。型検査時はTYPE_CHECKINGで`reversi_player.ai_engine`へ統一する。両実行時importをそのままmypyへ見せると未解決import・再定義を診断するためである。第13節の分岐を採用し、広いImportError捕捉で依存の欠落を隠さない。AIはPosをimportせずtuple座標を返す。
 
 ### 6.2 案B: 必要になったルール・データの共通化
 
@@ -323,12 +327,12 @@ sequenceDiagram
             Note over Board,Engine: 選択器を呼ばない
             Board->>Out: NG / flush
         else 合法手あり
-            Board->>Engine: select_move(rows,color,legal_moves,context)
+            Board->>Engine: select_move(rows,color,legal_moves)
             opt 将来の探索（初版にはない）
                 Engine->>Rules: legal_moves / after_move / result(rows,...)
                 Note over Rules: 既存ルールを独立コピーへ適用
                 Rules-->>Engine: 新rows / 候補 / 結果
-                Note over Engine: 評価・探索・予算打ち切り・最終選択
+                Note over Engine: 探索・context・計測は将来の別設計で追加
             end
             Engine-->>Board: tuple座標
             Board->>Board: 型・範囲・root候補所属の検査
@@ -345,14 +349,14 @@ sequenceDiagram
 
 ### 7.1 初版の選択器
 
-概念的な署名: **`select_move(rows, color, legal_moves, *, context=None) -> tuple[int, int] | None`**。この署名は設計を表す記法であり、今回Pythonコードを追加したものではない。
+Phase 1Aの確定署名: **`select_move(rows, color, legal_moves) -> tuple[int, int] | None`**。正確な型と構築方法は[第13節](#phase1a-design)。旧案の未使用context=Noneは初版に追加せず、将来の構築設定・要求contextは必要なPhaseで型と寿命を設計する。今回Pythonコードを追加したものではない。
 
 | 項目 | 契約 |
 | --- | --- |
 | rows | 8文字のB/W/E文字列を8個持つtuple。実cellから新しく生成。行リストを共有しない |
 | color | コマンドで指定されたB/W。プロセスに固定の担当色とはしない |
 | legal_moves | tuple座標のtuple。根の盤面とcolorに対して完全な合法手集合。順序はy外側/x内側 |
-| context | 初版None。将来の予算、決定性、コピー用ルール関数等の要求データ。HTTP handlerやPlayerを渡さない |
+| context | Phase 1Aの引数には含めない。将来の型付き拡張候補であり、HTTP handlerやPlayerを渡さない |
 | 戻り値 | 非空候補では必ず候補中の整数座標。要素の型は厳密なintでboolを除く |
 | None | 空候補でしか許さない。通常本体は空候補で選択器を呼ばず、_genmoveがNoneを返す |
 | 禁止副作用 | 実盤面・入力snapshot・候補の変更、stdin読取、stdout応答、実盤面へのplay |
@@ -400,7 +404,7 @@ GUIは要求ごとにcold起動、評価は1局の間processが生きる。こ�
 
 初版randomはbudget未対応のまま。架空のnodes/depthを付けてverifiedにしない。
 
-探索を実装する段階でcontextに、正規化budgetのkindと上限、deterministic宣言、counting_definition_id、コピー用ルール接続を入れる。node/depthは整数、時間はv2の整数ns。deadlineはmonotonicなperf_counter_nsで扱う。configを渡すだけではAIへ上限を強制できない。
+探索時には型付きcontextへ正規化budget、deterministic宣言、counting_definition_id、コピー用ルール接続を入れる案とする。Phase 1Aへ先行実装せず、まず同じ3引数callableを持つengineの構築設定へ収められるか検討する。要求contextやmetricsで署名変更が必要なら全呼出側と図・契約を先に改訂する。node/depthは整数、時間はv2の整数ns。deadlineはmonotonicなperf_counter_nsで扱う。configを渡すだけではAIへ上限を強制できない。
 
 拡張contextの項目案を次のように固定する。初版ではこの型を実装しない。拡張時はai_engine.py内の小さなデータ型1つに定義し、同じ値を複数の設定箇所へ複製しない。
 
@@ -478,6 +482,8 @@ ai_engine.py、必要ならrules.py、設定・モデル・import等の実行依
 
 ### 9.1 対象ファイル
 
+以下の第3列は初回整理時点の作業範囲。Phase 1Aの設計更新と、今後実装時に必要な変更は第13節で区別する。
+
 | ファイル | 将来の変更内容 | 今回の扱い |
 | --- | --- | --- |
 | reversi_player/reversi.py | 選択callableの受渡し、snapshot/候補、結果検査、成功確認。探索時にコピー用接続 | 変更しない |
@@ -548,3 +554,168 @@ ai_engine.py、必要ならrules.py、設定・モデル・import等の実行依
 本体/GUI/AI分離はこの整理で実装・変更していない。現在の回帰・CLI確認と制約は[正常化完了報告](reports/ハーネス正常化完了報告.md)、過去の調査・hashは[旧分離資料の整理前snapshot](archive/move_selection_design.md)に保管する。
 
 AIを実装した時点で責務一覧・依存/sequence・選択器/計測契約・テスト・資産登録を更新する。ブラウザ描画、全将来局面の速度、モデルの強さを既存pytestの成功から保証しない。
+
+<a id="phase1a-design"></a>
+
+## 13. Phase 1A確定設計：ランダムAI選択器の分離
+
+> 実装状況（2026-10-20更新）: Phase 1Aの選択器分離、Phase 1Bの位置評価selector、100局descriptive比較、対応環境での品質ゲートは完了。結果と現在の制約は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照。
+
+2026-10-19、HEAD `eb2e860`、`feat/ai-phase1`で照合した。以下は**実装前の契約**であり、Phase 1Bの位置評価・探索・trace producerは未実装のままとする。予定の呼出図は[アーキテクチャ第13節](harness_architecture.md)、外部評価との境界は[契約第14節](harness_contracts.md#phase1a-boundary)。
+
+### 13.1 現物から確認した事実と互換性の範囲
+
+- 現`Board._genmove()`は64マスをy外側／x内側で走査し、`_ask()`が真のPosをlistへ格納する。0件ならNone、非空ならmodule randomのshuffleを1回呼び、先頭Posで`_play()`を1回呼んでそのPosを返す。
+- 公開`genmove(color: str)`はB/W以外を先にNGとし、正常着手後に座標を出力する。現在の_genmoveは_playのboolを無視するが、正常な単一スレッド・正しいルール・生成済み合法手ではTrueとなる。
+- テストは`from reversi_player.reversi import Board, Pos`を使う。GUIは`['python', SCRIPT]`で直接起動し、要求ごとに新プロセスを作る。seeded_playerはseed適用後にscript親をsys.pathへ追加してrunpyする。
+- 互換対象は有効盤面・通常履歴での応答、着手、盤面、パス、勝敗、乱数状態、および既存の不正色・不正着手の扱い。nameのsample、Board()、Board.cell操作、Posの動的比較を保つ。空行／EOF／不明command等の未規定経路は同時修正しない。
+- 選択器故障は新しい内部境界の契約として定義する。意図的な異常callable・破損Board・差替えルールの全挙動まで「旧版と完全同一」とはしない。計測秒、traceback位置、私有属性の追加、無seedの別起動での同一棋譜も保証対象外。
+
+### 13.2 責務・所有・依存
+
+| 対象 | 責務と状態 | 境界 |
+|---|---|---|
+| reversi.py／Board | Pos、実cell、既存ルール、完全なroot合法手、snapshot、委譲、結果検査、1回の確定適用、応答 | Phase 1Aでは評価・探索・ルール移動を行わない |
+| ai_engine.py | 不変入力から座標を選ぶ。初版はローカル候補listをshuffleして先頭を返す | Board／Pos／web／harnessをimportせず、反転・実盤面更新・標準入出力を行わない |
+| stdlib random | 既存プロセスのmodule状態を共有 | 新しいRandom、再seed、独自のstate保存復元は導入しない |
+| harness／referee | 外部取得、独立ルール照合、時間・保存・資格判定 | refereeをAIのルールとして共用しない |
+
+依存は`reversi→ai_engine→stdlib`の一方向。AI内部の型名はai_engineだけで定義し本体から参照する。Posや可変cellはengineへ渡さず、harnessとの共有型ファイルも作らない。不変値の受渡しは実cellの直接参照を避けるものであり、任意Pythonコードを隔離するsandboxではない。
+
+### 13.3 型・構築・入力前提
+
+以下は予定する型と署名であり、本番コードではない。
+
+```python
+from collections.abc import Callable
+
+type BoardRows = tuple[str, ...]
+type Move = tuple[int, int]
+type LegalMoves = tuple[Move, ...]
+type MoveSelector = Callable[[BoardRows, str, LegalMoves], Move | None]
+
+def select_move(rows: BoardRows, color: str, legal_moves: LegalMoves) -> Move | None:
+    """不変の候補から1手を選び、実盤面と入力は変更しない。"""
+    ...
+```
+
+| 項目 | 確定する意味 |
+|---|---|
+| rows | `tuple(''.join(row) for row in self.cell)`相当。8行・各8文字のB/W/E。行listを共有しない。型だけで長さ・文字集合を保証しない |
+| color | 公開入口で検査済みのB/W。静的型は既存のstrを維持。現行述語だけではmypyがLiteralへ絞らないため、型付け用の実行時判定変更・castは加えない |
+| legal_moves | `tuple((pos.x, pos.y) for pos in candidates)`相当。同じ盤面・色の完全な合法手集合を既存y/x順・重複なしで保持 |
+| selector | `Board.__init__(self, *, selector: ai_engine.MoveSelector | None = None) -> None`で受ける。Noneのときだけdefaultを選び私有`self._selector`に保持 |
+| Phase 1A時点のdefault | `ai_engine.select_move`。`selector or default`ではなく`selector is None`で分岐し、偽と評価される正当なcallableも注入可能。Phase 1BでBoard既定は`select_positional_move`へ変更され、random_v0は明示注入で保持 |
+| 戻り値 | 非空候補では候補所属のMove。空候補をengineへ直接渡した場合だけNone。通常Boardは空候補で非呼出 |
+
+入力は内部callableの前提であり、直接の不正入力すべてに新しい例外分類を保証しない。Board.cellの新たな全要素検査・正規化や、engine側での合法手二重生成を加えない。未使用context、request class、ABC、registry、新しいCLI設定は不要とする。
+
+### 13.4 呼出・適用・失敗
+
+1. 公開genmoveの色判定を維持し、`_genmove(color: str)`で従来と同じ順にPos候補を列挙する。
+2. 0件なら内部Noneへ戻る。非空だけrows／legal_movesを作り、`self._selector(rows, color, legal_moves)`を1回呼ぶ。
+3. 戻り値は厳密なtuple・長さ2、要素がそれぞれ`type(value) is int`、各0〜7、root候補所属をすべて検査する。bool、float、文字列、list、tuple派生、None、範囲外、非候補を拒否する。Pos.__eq__へtupleを渡さない。
+4. `legal_moves`上の対応位置から元のcandidatesのPosを取得し、`_play(color, pos)`を1回呼ぶ。Trueの場合だけ同じPosを返し、公開genmoveが座標を出力する。
+
+| 条件 | 結果・副作用 |
+|---|---|
+| 不正色 | 従来NG、選択器非呼出、盤面・乱数不変 |
+| root候補0件 | 内部None→従来NG、選択器非呼出、乱数不変。パス／終局はresultで区別 |
+| engineへ空候補を直接渡す | None、shuffleなし。通常Board経路では呼ばない |
+| 非空候補で不正結果 | `_play`前に`RuntimeError('selector_result_invalid')`。正常NGや代替手へ変換しない |
+| engine自体の例外 | 元例外を伝播し原因を保持。消費済み乱数を巻き戻さない |
+| _playがTrue以外 | `RuntimeError('selector_apply_failed')`。成功座標を出さない。現在の_playがFalseなら盤面不変 |
+
+標準RuntimeErrorを使い、例外クラスやプロトコル応答を増やさない。通常CLIはstderr・非0終了となりharnessが異常を記録する。GUIの例外／500経路を正常対局と偽装しない。不正結果での盤面不変は「本体が適用前に拒否し、選択器が外部参照から実Boardを変更しない」前提。外部closure・他thread・悪意あるcallable、途中変更後に失敗する差替え_playまで巻き戻す設計ではない。
+
+### 13.5 importと起動の方針
+
+互換性の実行確認対象は既存品質ゲートに対応するWindows／直接CPython 3.13.5。web.pyのpythonコマンド解決は従来どおりで、GUI回帰時にPATHを確認する。他Python版での動作を今回のプローブから保証しない。
+
+既存future annotationsを維持し、TYPE_CHECKINGブロックと実行時分岐を次のように接続する概念設計とする。
+
+```python
+import random as random
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any, Literal
+    from reversi_player import ai_engine
+elif __package__:
+    from . import ai_engine
+else:
+    import ai_engine
+```
+
+`random as random`は既存reversi.randomを明示的に再exportし、分離後も未使用importのLint診断としないため。Anyは既存Posの境界だけであり、選択器へ追加しない。
+
+| 起動 | 実行時解決・確認 |
+|---|---|
+| `python reversi_player/reversi.py` | script親の隣接ai_engine、既存7コマンドと終了 |
+| package import | 相対.ai_engine、Board()・Pos・乱数状態 |
+| `python -m reversi_player.reversi` | 相対.ai_engine、直接起動と同じ応答 |
+| seeded_player／runpy | adapter既存のscript親設定→隣接ai_engine、seed再適用なし、別cwdも確認 |
+| 既存GUI Process | SCRIPT直接起動、web.py無改造でProcess／HTTP接続回帰 |
+| 別cwdから絶対script指定 | script親で解決、cwd依存設定や本体側sys.path補修なし |
+
+広いImportError fallback、新しい__init__.py・mypy_path・検査除外は設けない。importlibで任意名のファイル読込だけを行い隣接ディレクトリも検索パスへ置かない経路、同名moduleの意図的な差替えまでは自動対応しない。型検査と実行時が同じ隣接実体を選ぶことを回帰で確認する。
+
+一時領域の2-moduleプローブでは素朴な両分岐importにimport-not-found／no-redef、str→Literalにarg-typeを確認した。採用分岐とstr境界は既存設定のmypy strictで0診断。直接・package import・-m・seeded別cwd・直接別cwdの5経路で隣接__file__、import前後のrandom state、終了0・stderr空を確認した。これは型とimportの小型プローブで、本番選択器・GUI・対局の合格ではない。
+
+### 13.6 ランダム互換性の不変条件
+
+- 候補集合・順序を既存y/x列挙のまま維持し、sort・set・choiceへ置換しない。
+- engineは`list(legal_moves)`を作り、非空ならstdlib random.shuffleをちょうど1回呼ぶ。候補1件でも呼出を減らさず、0件では呼ばない。
+- Pos listから座標listへ表現が変わっても、標準shuffleへ渡す長さ・初期順・共有RNG stateを一致させる。座標だけでなく終了後のRNG stateも旧baselineへ照合する。
+- import、型定義、Board構築、snapshot、ask／play／showboard／result、不正色、空候補で乱数を新たに消費しない。seedは既存adapter／呼出元に残す。
+- 入力tupleと選択前の実cellを変更しない。独立Random、時刻seed、thread、cache、学習を増やさない。
+- 同runtime・初期状態・seed・履歴の座標／全盤面／パス／勝敗／次の乱数stateを一致させる。計測秒や無seedの別起動、異Python版の内部shuffle実装まで同一とはしない。
+
+### 13.7 品質scopeへの登録（実装時に行う）
+
+| 項目 | 最小変更・確認 |
+|---|---|
+| strict mypy | pyproject.tomlのtool.mypy.filesへreversi_player/ai_engine.pyを追加。既存13件を維持して14件。通常qualityのtyping argvで全件を検査 |
+| Lint | 既存reversi_player/**/*.pyに自動包含。例外追加なし |
+| format | 現reversi_player/*.py除外は新engineも除外するため、既存reversi.py／web.pyを名指しする2除外へ置換。既存2件のscopeを維持し新engineはformat対象 |
+| scope漏れ回帰 | tests/test_quality.pyのtest_promoted_modules_are_checked_by_configured_strict_gateへengineを列挙。shadow-fileの未注釈関数が通常gateでno-untyped-defとなることを確認 |
+| 選択器回帰 | 新設するならtests/test_ai_engine.pyの1ファイル。外部回帰が重複する場合は既存result／stdin／invariantsを拡張 |
+| 依存検査 | engineの逆import禁止と本体からの接続をASTで、実際の解決・応答を起動回帰で確認 |
+
+今回は設定・テストを変更しない。Phase 10の全本番module自動scope検査は未実装。web.pyのstrict例外を維持し、他の除外、Any／cast／ignoreでの一括抑制を増やさない。
+
+### 13.8 実装前に定義する回帰と完了ゲート
+
+| ID | 必須確認 | 期待値の根拠 |
+|---|---|---|
+| A1 | rows／完全な候補／y/x順、空候補で非呼出 | 手計算の初期B候補(3,2),(2,3),(5,4),(4,5)、既知パス・終局、独立referee |
+| A2 | 非空で選択器1回、候補1件でもshuffle1回、空0回、入力不変 | 旧baselineと既知の1候補局面 |
+| A3 | seed 0,7,31,73,20261016で座標・盤面・RNG state一致 | 固定random_v0を互換オラクルとし、ルール自体は手計算／refereeで別照合 |
+| A4 | import／構築／非genmove／不正色／パスで追加乱数なし | 各操作前後のgetstate。テスト終了時にRNG stateを復元して相互汚染を防ぐ |
+| A5 | None、bool、float、list、tuple派生、範囲外、非候補を適用前に拒否 | 新内部契約。盤面不変、stdout成功応答なし、RuntimeError |
+| A6 | 元例外伝播、_play Falseの成功偽装禁止、正常時に元Posを1回適用 | 呼出スパイと外部参照で盤面を壊さない故障注入 |
+| A7 | 直接／package／-m／seeded／別cwd、既存GUI接続、余計なstdoutなし | 固定baselineの応答と隣接module実体。既存Process／handler直接呼出の回帰に加え、HTTP POSTの/genmoveを追加検証。ブラウザ目視とは区別 |
+| A8 | default／明示注入／偽と評価されるcallable、Pos既存回帰 | Board()互換と新構築契約。Posの動的比較を保持 |
+| A9 | strict14件・Lint・format・モデル・全pytest・独立smoke・証拠 | 実品質ゲート、scope陰性回帰。件数は実装後の実測を保存 |
+| A10 | 分離前後の先後2局smoke、棋譜／盤面／結果一致を別名保存 | A=変更前／後、B=独立random_v0、同master seed・case・期限。新Aのengineを明示asset登録 |
+
+baselineは再生成しない。A10は参考互換性であり正式な決定性probeや全局面の強さ保証ではない。Phase 1全体の100局程度の位置評価比較はPhase 1Bの工程とし、純粋分離に勝率改善を要求しない。
+
+順序は「図・契約の照合→A1〜A8とscope回帰の定義→最小分離→strict登録とA9→A10→G0〜G5と制約の報告」。本設計時点のA1〜A10は予定であり、作成済み・成功済みとはしない。
+
+### 13.9 既存案からの決定と将来拡張
+
+Phase 1Bの位置評価契約・実験条件は[Phase 1B事前登録](phase1_handoff.md)で具体化した。ここで触れる将来の位置得点拡張はその重複定義ではなく、位置表を変更・学習する場合は新しい版と別実験条件を設ける。
+
+| 旧案の未確定点 | 確定した方法・理由 |
+|---|---|
+| contextと返却None | 初版は3引数。未使用contextを実装せず、非空Noneは故障 |
+| 注入位置 | keyword-only selectorと私有_selectorで既存Board()を保ち、別戦略・故障を局所テスト可能にする |
+| 型と色 | strを保持し、値域は既存公開判定。型のための実行時変更・castを避ける |
+| import | TYPE_CHECKINGでcanonical名、実行時はpackage判定。strictと5起動経路を小型プローブで照合 |
+| Posと適用 | 座標を元Posへ対応させ1回適用。既存Posの動的比較は改造せず、_play失敗を成功として出力しない |
+| format | 広い除外を既存2件へ絞り、新moduleの対象漏れを防ぐ |
+
+Phase 1Bでは同じ3引数callableに`select_positional_move`を実装し、`Board()`の既定selectorへ接続した。固定重み・同点規則・比較条件は[事前登録](phase1_handoff.md)、検証結果は[実装報告](phase1_handoff.md)を正本とする。Phase 2以降は必要時だけ本体内にsnapshot遷移関数を追加し、statelessなコピー用ルール接続を構築時にengineへ注入する。Board／Posへの逆importや実Boardへのbound method参照を作らず、Minimax／Alpha-Betaはコピー遷移を使う。実盤面の確定は本体に残す。
+
+予算／clock／metrics／model／cacheは将来の別設計であり、Phase 1Aの着手を妨げる未決事項ではない。署名拡張が必要なら第7.4節と全呼出側・図・契約を改訂する。名称だけでtrace4適合と認定しない。必須設計判断は確定したが、実装・全対局互換・実ブラウザ操作の成功はまだ保証しない。

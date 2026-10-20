@@ -1,0 +1,55 @@
+{
+  "manifest_version": 1,
+  "baseline_id": "positional_v1",
+  "entrypoint": "reversi.py",
+  "frozen_at": "2026-10-20",
+  "source": {
+    "script": {
+      "path": "reversi_player/reversi.py",
+      "sha256": "a012c2b30c304b4716e5f3df2d0ffac4f689a5b35cb38fefe6c16f7b27428efe"
+    },
+    "engine": {
+      "path": "reversi_player/ai_engine.py",
+      "sha256": "3a6d69c35bf79d2a184cabde023b5274a4a1e34eb318aa4c4be42569e6401c5f"
+    }
+  },
+  "frozen_copy": {
+    "script": {
+      "path": "baselines/positional_v1/reversi.py",
+      "sha256": "a012c2b30c304b4716e5f3df2d0ffac4f689a5b35cb38fefe6c16f7b27428efe",
+      "byte_identical_to_source_at_freeze": true
+    },
+    "engine": {
+      "path": "baselines/positional_v1/ai_engine.py",
+      "sha256": "3a6d69c35bf79d2a184cabde023b5274a4a1e34eb318aa4c4be42569e6401c5f",
+      "byte_identical_to_source_at_freeze": true
+    }
+  },
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "platform": "Windows",
+    "architecture": "64-bit"
+  },
+  "runtime_dependencies": [
+    "Python standard library only"
+  ],
+  "selection": "Choose the legal move maximizing POSITION_WEIGHTS[y][x]; break ties by ascending y then x.",
+  "parameters": {
+    "position_weights": "Defined in ai_engine.py; human-set provisional values, not trained."
+  },
+  "reproducibility_scope": "Frozen script and engine bytes; evaluation reproduction also requires the recorded harness, opening population, seeds, and runtime. No cross-version guarantee.",
+  "reference_evaluations": [
+    "evaluation_results/phase1b/position-vs-random-v0-smoke-20261020.json",
+    "evaluation_results/phase1b/position-vs-random-v0-100-20261020.json"
+  ],
+  "limitations": [
+    "No Minimax, mobility search, Alpha-Beta, or learned parameters.",
+    "The AI does not consume or enforce internal search-budget configuration.",
+    "The AI does not emit trace4 evidence; these results are descriptive and not formal strength evidence."
+  ],
+  "git": {
+    "source_commit": "eb2e860f06ac731c13c7a0169e4de93f3b8e1108",
+    "source_worktree_was_dirty": true
+  }
+}

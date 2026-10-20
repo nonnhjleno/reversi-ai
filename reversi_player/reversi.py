@@ -1,10 +1,24 @@
 from __future__ import annotations
 
-import random
+import random as random
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Any, Literal
+    from typing import Any, Literal, TypeGuard
+    from reversi_player import ai_engine
+elif __package__:
+    from . import ai_engine
+else:
+    import ai_engine
+
+
+def _is_move(value: object) -> TypeGuard[ai_engine.Move]:
+    """selectorの戻り値が通常tupleと厳密なint座標かを判定する。"""
+    if type(value) is not tuple or len(value) != 2:
+        return False
+
+    x, y = value
+    return type(x) is int and type(y) is int
 
 
 class Pos(object):
@@ -51,13 +65,18 @@ class Board(object):
     result() は現在の盤面だけから対局状態と勝敗を返す。
     """
 
-    def __init__(self) -> None:
-        """空きマスで盤面を作り、リバーシの初期配置を置く。"""
+    def __init__(self, *, selector: ai_engine.MoveSelector | None = None) -> None:
+        """初期盤面を作り、任意の着手選択器を保持する。
+
+        selector省略時は位置評価選択を使う。盤面規則と実盤面更新は
+        常にBoardが担当する。
+        """
         self.cell: list[list[str]] = [['E' for _ in range(8)] for _ in range(8)]
         self.cell[3][4] = 'B'
         self.cell[4][3] = 'B'
         self.cell[3][3] = 'W'
         self.cell[4][4] = 'W'
+        self._selector = ai_engine.select_positional_move if selector is None else selector
 
     def ask(self, color: str, pos: Pos) -> None:
         """着手可能かを検査し、GUI向けに OK または NG を出力する。
@@ -237,10 +256,10 @@ class Board(object):
                 current += direction
 
     def _genmove(self, color: str) -> Pos | None:
-        """合法手をすべて列挙してランダムに1手を着手し、その座標を返す。
+        """合法手を選択器へ渡し、検証後に実盤面へ一度だけ適用する。
 
-        合法手がない場合は None を返す。着手が成功した場合は盤面も
-        更新される。候補選択は一様なランダム順序に依存する。
+        合法手がない場合は選択器を呼ばずNoneを返す。不正な選択結果や
+        適用失敗はRuntimeErrorとし、成功座標を応答しない。
         """
         candidates: list[Pos] = []
 
@@ -254,11 +273,22 @@ class Board(object):
         if len(candidates) == 0:
             return None
 
-        random.shuffle(candidates)
+        rows = tuple(''.join(row) for row in self.cell)
+        legal_moves = tuple((pos.x, pos.y) for pos in candidates)
+        selection: object = self._selector(rows, color, legal_moves)
+        if (
+            not _is_move(selection)
+            or not 0 <= selection[0] < 8
+            or not 0 <= selection[1] < 8
+            or selection not in legal_moves
+        ):
+            raise RuntimeError('selector_result_invalid')
 
-        self._play(color, candidates[0])
+        pos = candidates[legal_moves.index(selection)]
+        if self._play(color, pos) is not True:
+            raise RuntimeError('selector_apply_failed')
 
-        return candidates[0]
+        return pos
 
     def __str__(self) -> str:
         """盤面を1行8マス、改行区切りの文字列にして返す。"""

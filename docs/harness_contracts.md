@@ -346,3 +346,25 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 | 判定伝播 | collect_step→collect→run_gateの既存経路でevidence検査を失敗にする。記録されたpytest outcome/exitと証拠完全性を別に保ち、元assertや正式資格を変更しない |
 
 正常なテスト失敗、skip、collection失敗は記録が整合すればcompleteにできる。crash/timeoutの部分記録は診断用として保持しcompleteにしない。verify_publicationの空エラー配列はbytes対応であり、JL検査の合格や元記録の真正性を表さない。並列worker/rerunは既存どおり非対応。保存構造v1は維持し、従来正常なv1を受理して不正な状態遷移だけを排除する。
+
+<a id="phase1a-boundary"></a>
+
+## 14. Phase 1AのAI内部境界（実装済み・2026-10-19確認）
+
+> Phase 1Bのselector契約・固定重み・比較実験条件は[事前登録設計](phase1_handoff.md)に定義し、位置評価selectorは実装済みである。これは本書の正式評価schema、budget/trace資格、統計・採用判定契約を変更しない。`descriptive`評価の完走成績は参考値に限定する。実装検証は[Phase 1B実装報告](phase1_handoff.md)を参照する。
+
+> 実装確認: 下記の選択器境界は`reversi_player/ai_engine.py`と`reversi_player/reversi.py`に反映済み。実行証拠と失敗条件の回帰結果は[Phase 1A実装報告](phase1_handoff.md)を参照。ハーネス正式評価契約、trace schema、探索予算の保証を追加したものではない。
+
+設計日: 2026-10-19。[AI分離設計第13節](リバーシAI分離設計.md#phase1a-design)を選択器の型・意味・失敗条件の正本とする。これは今後のAI内部呼出契約であり、ハーネスschema5／trace4／validation3、正式資格、stdoutの契約を変更しない。
+
+| 境界 | Phase 1Aで保証・検証する条件 | 現行評価との関係 |
+|---|---|---|
+| 入力の生成 | Boardが現在の実盤面・指定色の合法手を既存y/x順で生成し、不変のrowsと座標tupleへ変換 | refereeをAIへ共用しない。root候補生成を探索実装と呼ばない |
+| 選択の呼出 | 非空候補で3位置引数を1回渡す。空候補・不正色では非呼出。未使用context／予算引数は設けない | passと終局は既存resultで区別。外部NGの形式は維持 |
+| 選択の結果 | engineはmoveまたは空候補時のNoneのみ。本体は厳密なtuple／int、範囲、候補所属を確認して既存_playを1回だけ呼ぶ | 不正な非空候補の結果をpass・正常NG・勝敗へ置換しない |
+| 乱数 | Python module randomを共有し、非空候補のshuffleは従来と同じ順序・回数。stateをseed／復元／別Generatorへ置換しない | 同じruntime・seed・盤面・履歴なら棋譜と次の乱数状態を照合。無seedの別起動の同一棋譜や時間一致は保証しない |
+| 故障 | engine例外は伝播。不正戻り値・_play失敗はRuntimeError。通常CLIはstderrと非0終了で既存harnessへ通知 | 新しい正式公開入口や資格状態を作らない。任意の不正callableの外部副作用を巻き戻す保証ではない |
+| 明示資産 | 実装後の候補Aには`reversi_player/ai_engine.py`を`--a-asset`で登録。変更前Bは独立したrandom_v0の実体を使用 | 全importの自動登録は保証外。固定Bを候補側engineへ依存させない |
+| 評価と証拠 | 分離前後の棋譜・盤面・RNG stateの互換回帰と2局smokeを保存。実装後に全品質ゲートを実行 | 参考互換性の確認であり正式CI・内部予算・探索時間の認証ではない。100局の位置評価比較はPhase 1Bの別工程 |
+
+将来の探索callbackは実Boardに束縛しないコピー用ルール接続とし、AIから本体への逆importを増やさない。予算・clock・metrics・model loadはPhase 1Aの3引数境界に自己申告値を追加して認証せず、該当Phaseで実producerと既存の正式ANDを照合する。型成功はrowsの合法性、intからのbool除外、原証拠の意味的正しさの代用ではない。

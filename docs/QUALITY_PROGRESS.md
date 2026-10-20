@@ -1253,3 +1253,37 @@ git diff --check
 - 最終確認時に`AGENTS.md`へGit/branch運用ルールの差分があることを検出した。今回の変更として編集せず、内容も上書きしていない。最終quality evidenceの`AGENTS.md` source hashはその時点の現在bytesと一致する。
 
 共通ゲートはG0 PASS、G1 PASS（自動仕様/GUI接続テスト。実ブラウザ操作は未確認）、G2 PASS、G3 PASS、G4 PASS（Phase 0の固定条件同一性のみ。候補変更前後の比較や内部予算のverifiedは未実施）、G5 PASS。評価profileはsmokeであり、AI内部budgetはunknown、statisticsはdescriptive_only。正式な強さ・優越性・内部探索量は主張しない。Phase 0固有条件と全品質ゲートが成立したためPhase 0はPASS。Phase 1へ研究・実装を進める条件は満たすが、この記録はPhase 1の開始承認や実装を意味しない。
+
+## AI開発 Phase 1A：選択器分離の設計（2026-10-19）
+
+> 2026-10-20最終総括: Phase 1A・1B完了。直接CPython 3.13.5の全品質ゲートPASS（pytest 787成功・独立smoke 1成功・strict 14 source）。固定random_v0との2局smoke・100局descriptiveは失敗0、勝ち点率0.86（黒0.84・白0.88）で参考暫定採用基準を達成。Phase 2の設計へ進行可能。内部予算・trace4・時系列と正式資格は未達。比較版positional_v1はbaselines/positional_v1/へ固定済み。詳細と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照。
+
+対象はHEAD `eb2e860`／`feat/ai-phase1`。本体・GUI・seed adapter・課題仕様・分離案・ハーネス図／契約・既存テスト・pyproject.toml・品質ゲートを照合し、[分離設計第13節](リバーシAI分離設計.md#phase1a-design)を初版契約の正本として確定した。予定の依存・sequenceはarchitecture第13節、外部評価の境界はcontracts第14節。段階設計・開発計画も更新し、Phase 0のmain未収録という古い記述を統合済みへ訂正した。
+
+決定は、Boardが実盤面／Pos／合法手／適用を保持し、engineは不変rows・str色・候補tupleから座標を選ぶ3引数callableとすること。keyword-only selectorで既存Board()を保ち、共有module randomのshuffle回数・順序・RNG stateを維持する。不正な結果は適用前にRuntimeError、非空Noneをpassへ置換せず、任意の外部副作用を巻き戻す保証とは区別する。未使用contextは初版へ実装せず、位置評価・探索・計測は後続工程とした。
+
+設計前の実行: 直接CPython 3.13.5で`python -B -m pytest -q tests/test_result.py tests/test_stdin_commands.py -p no:cacheprovider --tb=short`は74成功・0失敗（6.53秒）。これは現行コードの基準であり、分離後の回帰結果ではない。
+
+型・importの一時プローブ: 素朴なpackage／隣接の両分岐importはimport-not-found／no-redefを診断した。現行色判定だけでstrをLiteralへ絞る案と、プローブ側の非公開random属性参照も型診断となった。色は既存str境界を維持し、TYPE_CHECKINGでcanonical import、実行時はpackage分岐とした。公開契約外の内部属性へ依存せず隣接__file__とimport前後getstateで照合した最終プローブは、既存mypy設定で2 source files・0診断、直接／package import／-m／seeded別cwd／直接別cwdの5経路が終了0・stderr空。一時領域のstubであって、本番engineの実装・動作・GUIを検証したものではない。
+
+実装時の設定差分も確定した。既存13 strict対象を維持してengineを14件目に追加し、既存Lint includeを利用する。formatの広いreversi_player/*.py除外は既存reversi.py／web.pyだけの除外へ置換し、新engineを検査対象にする。scope陰性回帰の列挙へengineを追加する。今回はPython・設定・テストを変更せず、strict対象は13件のまま。
+
+予定回帰A1〜A10、同seedの旧baseline／新選択器の座標・盤面・乱数state比較、先後2局smokeと明示asset登録を定義した。位置評価100局はPhase 1Bの工程であり、分離に勝率改善を要求しない。Phase 1Aの実行結果は[実装報告](phase1_handoff.md)に記録済み。将来の予算・モデル・callback型は後続の先行設計事項で、Phase 1Aの重大な未決定事項はない。Mermaidの描画結果と新AIの依存は既存model検査だけでは保証できない。
+
+設計文書変更後の実行: 直接CPython 3.13.5で`python -B tools/quality.py`はPASS。証拠は`evaluation_results/quality-11c9b26c7f434f4ca03c7b26b8717913/quality.json`と同ディレクトリのevidence.json。全pytestは750成功・0失敗（639.17秒）、独立smokeは1成功・749 deselected（2.63秒）。quality.jsonのSHA-256は`66b2e0b2a1d0aa97070d93602dddd023c6ebf94138c293983f8305520eff9ebe`。31検査対象source hashが現在と一致し、`verify_publication=[]`。結果追記だけの本ファイルは検査対象sourceに含まれず、照合対象を変更していない。
+
+インストール済みCPythonのRandom.shuffleがリスト長から交換indexを生成し要素を交換する実装であることも読み取り確認した。候補順・長さ・RNG stateを保つ設計の根拠とするが、未実装の分離後RNG回帰の成功とはしない。変更禁止範囲のgit diffは空、既存strictは13件、engineファイルは未作成、baseline本体／manifestと序盤2集合の4記録hashも一致した。文書のfenceと確定節の一意性を確認し、git diff --checkは成功。Mermaidの実描画、未作成の選択器回帰、分離後の実HTTP／ブラウザ／対局は未検証。
+
+判定は**設計Goal完了・実装準備可**であり、Phase 1Aの実装PASSではない。責務・依存方向、型・値域、故障条件、起動・乱数互換、品質登録と将来拡張は確定し、図・契約・計画と照合した。実装時はA1〜A10を再検証する。Goalはここで停止し、commit・push・mergeは行わない。
+
+## AI開発 Phase 1 総括（2026-10-20・最終）
+
+Phase 1Aの固定5 seedのランダム互換、Phase 1Bの位置重み・(y,x)同点・盤面非変更と着手一回を現行コード・回帰・事前登録と照合した。現在sourceに対応する `evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/` は全10段階PASS、全pytest 787成功・0失敗（493.90秒）、独立smoke 1成功（4.78秒）、strict mypy 14 source。今回もpublication検証=[]、開始/終了hash一致、現在検査対象hash不一致0。venvの726成功・61失敗とenvironment FAILは非対応PID環境の履歴であり、直接Pythonの最終結果で訂正する。
+
+位置AI対固定random_v0の2局smokeは2/2完了、100局descriptiveは100/100完了・失敗0。50 case/先後交換pair、母集団・抽出・gameplay・source consistencyを保存reportから再検証してverified、integrity errors=[]、request_success=true。100局は86勝14敗0分、勝ち点率0.86、黒0.84、白0.88。事前登録の参考閾値を達成し、次工程の候補として暫定採用を推奨する。A〜Fの独立判定、hash、原証拠、実行条件は[Phase 1完了報告](phase1_handoff.md)に集約した。
+
+正式評価資格は未取得。budget/timing/metricsはunknown、全pairの統計資格はbudget_not_verified、正式CIは未計算。原証拠は各runのrun-state.jsonとopening-population.jsonであり、実AI未対応のtrace4 JSONLは生成されていない。GUI自動回帰は成功、実ブラウザ操作は未確認。14対象のstrict維持と新規任意moduleの登録漏れ自動防止（未実装Phase 10）を混同しない。
+
+次はPhase 2の設計と、AI変更前のpositional_v1比較版固定。現branch feat/ai-phase1 / HEAD eb2e860の未コミットworking treeのhashで対象を識別する。Phase 2実装・Git操作は行わず、今回の変更は総括・計画・進捗の文書だけ。意味・依存・通信・正式評価契約は変えていないためモデル図の変更は不要。
+
+総括文書更新後の再実行: `evaluation_results/quality-c1e5e48e0616406fb55c8274a9654107/` で全10必須段階PASS。全pytest 787成功・0失敗（492.24秒）、独立smoke 1成功・786 deselected（3.11秒）、publication検証=[]、開始/終了および現在検査対象hash一致。quality.json SHA-256は `8400df5320196eac74d58dde96f073c650c19e4430c3da172ce7898bf3e350aa`。既存評価JSONは再取得・上書きせず保存証拠から再解析し、事前登録の本文条件は変更していない。

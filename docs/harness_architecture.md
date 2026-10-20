@@ -6,6 +6,8 @@
 
 ## 1. 責務と境界
 
+2026-10-20更新: Phase 1Aの選択器分離とPhase 1Bの位置評価selectorは実装済み。現行import図・正式評価図はハーネス側の責務を表し、AI内部の呼出は第13節を参照する。位置評価の実装・検証結果は[Phase 1B実装報告](phase1_handoff.md)を参照する。
+
 | モジュール | 現行責務・主な呼出 |
 |---|---|
 | evaluate | preflight、独立A/B取得、序盤再生/双方盤面同期、probe、checkpoint、報告保存。compare_reportsはanalysisへ委譲 |
@@ -440,3 +442,74 @@ flowchart LR
 ```
 
 baselineの複製・序盤母集団のhashは資産同一性を照合するための値であり、署名や秘密保持を意味しない。母集団の`purpose`と除外hashは用途の記録であり、最終評価用データが人から秘匿されている、または未閲覧であることの保証ではない。図は品質ゲート・対局の正式資格を変更せず、random AIのtrace4/探索予算対応を示さない。
+
+## 13. Phase 1Aの選択器分離（実装済み・2026-10-19確認）
+
+> Phase 1B位置評価は[事前登録設計](phase1_handoff.md)に従って実装済み。`Board()`は`ai_engine.select_positional_move`を既定selectorとして使い、`reversi.py → ai_engine.py`の依存方向を維持する。評価表はengine内にあり、新規本番moduleやハーネスschema変更はない。実装・検証証拠は[Phase 1B実装報告](phase1_handoff.md)を参照する。
+
+> 実装確認: `reversi_player/reversi.py`から`reversi_player/ai_engine.py`へ設計済みの依存方向で接続済み。実装・回帰・品質ゲートの実行証拠は[Phase 1A実装報告](phase1_handoff.md)を参照。以下の図は設計時の予定図を実装後に照合したもので、ハーネスの正式評価schemaやtrace契約を変更するものではない。
+
+設計日: 2026-10-19。対象HEADは`eb2e860`、作業ブランチは`feat/ai-phase1`。詳細な型・失敗・回帰の正本は[AI分離設計第13節](リバーシAI分離設計.md#phase1a-design)、ハーネスとの境界は[契約第14節](harness_contracts.md#phase1a-boundary)。この追補ではPython・設定・テストを変更しない。
+
+### 13.1 実装した依存と責務
+
+```mermaid
+flowchart LR
+    WEB["web.Process<br/>既存GUI経路"] -.->|"直接起動・既存stdin/stdout"| REV["reversi.py<br/>Pos・Board・ルール・応答"]
+    PLAYER["harness.protocol.Player"] -.->|"直接またはseeded_player経由"| REV
+    REV -->|"import・3引数で1回委譲"| ENGINE["ai_engine.py<br/>予定: 座標の選択だけ"]
+    REV -->|"従来の公開属性を保持"| RNG["stdlib random<br/>同一プロセスの共有状態"]
+    ENGINE -->|"非空候補だけshuffleを1回"| RNG
+    REV -->|"候補生成・検査・1回の確定着手"| CELL["Board.cell<br/>実盤面の唯一の所有者"]
+    REF["harness.referee<br/>独立ルール"] -.->|"外部応答と盤面の検証"| PLAYER
+```
+
+この図の`REV→ENGINE`は実装予定の依存。engineからreversi／Board／Pos／web／harnessへのimportは設けない。root合法手はBoardが従来どおりy外側・x内側で生成し、engineに渡す前にtuple座標へ変換する。engineは新しいローカルlistだけをshuffleし、実盤面の適用・出力を行わない。seeded_playerのseedとsys.path設定は変更しない。
+
+### 13.2 実装したデータと呼出順
+
+```mermaid
+sequenceDiagram
+    participant C as 既存コマンド入口
+    participant B as Board
+    participant E as ai_engine.select_move
+    participant R as module random
+    participant O as stdout
+    C->>B: genmove(color)
+    alt 不正色
+        B->>O: NG（従来どおり）
+    else B/W
+        B->>B: _genmove: 既存順でPos候補を列挙
+        alt 候補0件
+            B->>B: _genmoveはNoneへ戻る
+            B->>O: NG（選択器非呼出・乱数不変）
+        else 候補1件以上
+            B->>B: rows=8行tuple・legal_moves=座標tuple
+            B->>E: rows, color, legal_moves
+            E->>E: legal_movesをローカルlistへコピー
+            E->>R: shuffleを1回（候補1件でも呼ぶ）
+            E-->>B: 座標tuple
+            B->>B: 厳密な型・範囲・候補所属を検査
+            alt 不正な戻り値
+                B-->>C: RuntimeError（適用前・NGへ変換しない）
+            else 有効な候補
+                B->>B: 対応する元のPosで_playを1回
+                alt _playがTrue
+                    B->>O: x y
+                else _playがTrue以外
+                    B-->>C: RuntimeError（成功座標を出さない）
+                end
+            end
+        end
+    end
+```
+
+入力rows・legal_movesは不変値、戻り値は座標だけ。engineの例外はそのまま伝播し、Board側の不正戻り値／適用失敗は標準RuntimeErrorとする。通常のCLIでは未捕捉例外がstderr・非0終了となり、harnessの既存異常終了検出へ到達する。新しい応答形式・trace・検証状態は追加しない。不正callableが外部参照から盤面を書き換えることを防ぐsandboxではない。
+
+### 13.3 検査の境界と実装確認
+
+実装後の照合: `tests/test_ai_engine.py`には逆import禁止、selector境界、不正戻り値の非適用、CLI起動の回帰があり、`tests/test_ai_compatibility.py`には固定`random_v0`との棋譜/RNG比較がある。上記の「実装時に更新する」という設計時の指示は完了済み。詳細は[実装報告](phase1_handoff.md)。品質モデル検査はハーネス側の図と公開入口を対象とし、AI内部依存はこの回帰テストで確認する。
+
+`tools/quality.py:validate_model`はharness import図と共通正式入口を検査し、reversi／engine内部のAI依存は対象外である。したがって、AI内部の依存は`tests/test_ai_engine.py`の構造・起動回帰で別途確認する。これらのテストは実装済みだが、Mermaid図だけで依存の正しさを保証するものではない。
+
+状態の遷移は「不正色→既存NG」「空候補→既存NG」「正常選択→1回適用→座標」「新しい内部境界の故障→例外」である。予算／時計／統計のunknown・failed・verifiedをこの内部状態へ流用しない。将来のルールcallback・探索・計測は別の先行設計で追加する。
