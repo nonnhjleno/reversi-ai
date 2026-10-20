@@ -1,5 +1,13 @@
 # 品質基盤導入の進捗と検証証拠
 
+## 品質監査C（2026-10-20、全体検証・GitHub適用待ち）
+
+利用者はcommit/push/PR・CI確認・mainのPR/quality必須設定まで承認した。mainへのmergeは行わない。作業開始HEAD95ae51f、refactor/quality-gate-optimization。既存AGENTS.mdのステージ済み追記はそのまま保護する。モデル図11.C・契約13.4を先行更新し、CIイベント頻度と保守的auto routingのみを変更する。Full11工程・strict17・直列journal・AI/GUI/時計/予算/正式資格は不変。
+
+実装前の回帰は36失敗・4成功・41除外（10.10秒）。修正後の関連回帰は99成功（20.21秒）。新規58件はCI契約15、実Git層別差分・競合・不正形式・CLI・保存routing照合43。通常mypy17対象、Ruff lint、変更3ファイルformatも成功。全pytest/独立smoke/補助実行/実CI/保護設定は以下の最終記録まで未確認。[C実施記録](reports/20261020_quality_ci_implementation.md)へ原証拠・外部状態を残す。次段階の並列化・AI変更は行わない。
+
+ローカル最終: auto CLIの共有変更→Full fallbackを実行し全11工程PASS、pytest906成功・0失敗/skip（外部394.484秒）、独立smoke1成功。旧848 node保全＋58追加。Quick274成功（runner31.357秒）・Standard296成功（59.846秒）はFullと別kind。3実行の39sourceと現在hash一致、publication・fresh再収集・補助verifyエラー0。原証拠は上記C記録の保存先。外部CI/保護設定の適用だけは引き続き未確認であり、C全体PASSとはまだしない。
+
 ## 品質監査B1/B2（2026-10-20、PASS）
 
 以下の「最終Full検証中」「未確認」は途中記録であり、末尾の最終結果まで検証済み。

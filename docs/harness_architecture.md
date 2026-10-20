@@ -417,6 +417,23 @@ feedback→quality/evidence、pytest→feedback/evidence_pluginの依存のみ�
 
 状態は planned → collected → executed → evidence_verified → feedback_passed。空選択・誤選択・欠損・skip・実行失敗・snapshot不一致はfeedback_failed、原参照の後日消失は再検証不能として扱う。Full未実行は常に別軸であり成功へ昇格しない。新規テストファイル・共有fixture/品質設定の変更はFullへ戻す。既知AIテストファイルの新caseは全件選択、契約テストは明示基底名で選択する。
 
+### 11.C CI頻度と自動選択（2026-10-20先行設計）
+
+```mermaid
+flowchart TD
+    EVENTS["main push / PR合成merge / merge_group / manual"] --> CI["Quality / quality<br/>無条件のFull・同じWindows/CPython"]
+    CI --> FULLC["tools.quality.run_gate<br/>11必須工程・全pytest・独立smoke"]
+    FULLC --> CHECK["GitHub Actionsのquality check<br/>失敗・未実行を成功へ置換しない"]
+    CHECK --> RULE["外部main保護: PR必須・strict required quality<br/>設定と最新SHA成功を別途照合"]
+    FEATURE["feature push単独"] --> LOCAL["ローカルauto / 必要時manual Full<br/>CI成功を発行しない"]
+    LOCAL --> DIFF["base/HEAD/index/worktree/untrackedを和集合化"]
+    DIFF -->|"未知・追加/削除・rename・共有・Git不明"| FULLC
+    DIFF -->|"selector既存Mのみ"| QUICKC["Quick / 別kind補助証拠"]
+    DIFF -->|"他の既知AI境界の既存M"| STANDARDC["Standard_AI / 別kind補助証拠"]
+```
+
+11.Aのroutingをautoへ拡張し、相殺したindex/worktree変更を消さない。明示的quick/standardでも未知変更はFullへ戻す。YAMLのpaths/job条件でrequired checkをskipしない。PRのcheckout refをheadへ上書きせず、mainや別イベントの実行をconcurrencyで消さない。workerは追加せず既存直列journalの状態機械を維持する。新しいproduction module/正式資格入口は追加しない。GitHubの外部保護はworkflowと別の責務であり、ローカルFullだけで適用済みとしない。設計・適用証拠は[C記録](reports/20261020_quality_ci_implementation.md)。
+
 ### 11.1 検証証拠拡張（先行設計後に実装、2026-10-14）
 
 B1/B2の変更前設計（2026-10-20）: 上図のB9/BD/BRは品質自己テスト内部だけの起動共有を表す。通常のtyping工程は従来のfresh argvを維持し、正式評価のinspection・時計・予算・統計は変更しない。共有fixtureは本番moduleをimportして判定するのではなく、既存typing argvへ9個のshadowを渡す。各testは全9診断集合と自分のパス/行/codeを確認する。共有setup失敗はsetup errorであり、他の診断のnonzeroで成功へ置き換えない。新しい本番module・依存辺・正式入口は増やさない。

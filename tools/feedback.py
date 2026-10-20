@@ -109,16 +109,97 @@ def select_tests(nodeids: list[str], profile: str) -> list[str]:
 def full_reasons(changes: list[tuple[str, str]]) -> list[str]:
     """AI専用境界外・追加/削除/renameをFullへ戻す。名前の部分一致で選ばない。"""
     allowed = AI_TEST_FILES | {'reversi_player/ai_engine.py', 'reversi_player/reversi.py'}
-    return [
-        status + ':' + path
-        for status, path in changes
-        if status != 'M'
-        or not (path in allowed or (path.endswith('.md') and path.startswith('docs/')))
-    ]
+    return [status + ':' + path for status, path in changes if status != 'M' or path not in allowed]
+
+
+def recommended_profile(changes: list[tuple[str, str]]) -> str:
+    """selector専用だけをQuickへ絞り、他の既知AI境界はStandard、不明はFullにする。"""
+    if full_reasons(changes):
+        return 'full'
+    quick_paths = {'reversi_player/ai_engine.py', 'tests/test_ai_engine.py'}
+    return 'standard-ai' if any(path not in quick_paths for _, path in changes) else 'quick'
+
+
+def _git_changes(raw: bytes) -> list[tuple[str, str]]:
+    """no-renamesのNUL区切りを厳密に読む。不明な形やstatusを変更なしへ補修しない。"""
+    if not raw:
+        return []
+    fields = raw.decode('utf-8').split('\0')
+    if fields[-1] or len(fields[:-1]) % 2:
+        raise ValueError('git_diff_fields_invalid')
+    pairs = list(zip(fields[:-1:2], fields[1::2], strict=True))
+    if any(len(status) != 1 or status not in 'ACDMRTUXB' or not path for status, path in pairs):
+        raise ValueError('git_diff_status_or_path_invalid')
+    return pairs
+
+
+def _change_list(value: object) -> list[tuple[str, str]]:
+    """保存routingの変更対を読む。異型値を捨てて安全な集合へ見せない。"""
+    if not isinstance(value, list):
+        raise ValueError('routing_changes_invalid')
+    changes = []
+    for pair in value:
+        if (
+            not isinstance(pair, (list, tuple))
+            or len(pair) != 2
+            or not isinstance(pair[0], str)
+            or not isinstance(pair[1], str)
+            or len(pair[0]) != 1
+            or pair[0] not in 'ACDMRTUXB?'
+            or not pair[1]
+            or '\0' in pair[1]
+        ):
+            raise ValueError('routing_change_pair_invalid')
+        changes.append((pair[0], pair[1]))
+    return changes
+
+
+def _git_untracked(raw: bytes) -> list[tuple[str, str]]:
+    """未追跡のNUL区切りも終端まで検証する。不完全な一覧はGit不明として扱う。"""
+    if not raw:
+        return []
+    fields = raw.decode('utf-8').split('\0')
+    if fields[-1] or any(not path for path in fields[:-1]):
+        raise ValueError('git_untracked_fields_invalid')
+    return [('?', path) for path in fields[:-1]]
+
+
+def _validate_routing(routing: dict[str, object], profile: str, measure: bool) -> None:
+    """Cの保存判定を層別変更から再計算する。旧APIの明示profileを自動判定と混同しない。"""
+    if 'routing_policy_version' not in routing:
+        return
+    if type(routing['routing_policy_version']) is not int or routing['routing_policy_version'] != 2:
+        raise ValueError('routing_policy_unsupported')
+    components = evidence.mapping(routing.get('components'))
+    if set(components) != {'committed', 'staged', 'unstaged', 'untracked'}:
+        raise ValueError('routing_components_invalid')
+    combined = list(
+        dict.fromkeys(
+            pair
+            for key in ('committed', 'staged', 'unstaged', 'untracked')
+            for pair in _change_list(components[key])
+        )
+    )
+    changes = _change_list(routing.get('changes'))
+    if combined != changes or strings(routing['full_reasons']) != full_reasons(changes):
+        raise ValueError('routing_change_summary_mismatch')
+    recommended = recommended_profile(changes)
+    requested = routing.get('requested_profile')
+    if requested not in ('auto', 'quick', 'standard-ai') or (measure and requested == 'auto'):
+        raise ValueError('routing_request_invalid')
+    resolved = recommended if requested == 'auto' else requested
+    if recommended == 'full' and not measure:
+        resolved = 'full'
+    if (
+        routing.get('recommended_profile') != recommended
+        or routing.get('resolved_profile') != resolved
+        or resolved != profile
+    ):
+        raise ValueError('routing_profile_mismatch')
 
 
 def changed_paths(root: Path, base: str) -> dict[str, object]:
-    """baseから作業ツリーまでの差分と未追跡を取得する。Git不明はFullへ戻す。"""
+    """base/HEAD/index/worktree/未追跡を層別に記録する。相殺やGit不明を安全と扱わない。"""
 
     def git(*arguments: str) -> bytes:
         """認証や更新をせず、読み取り専用のGit結果だけを取得する。"""
@@ -133,22 +214,23 @@ def changed_paths(root: Path, base: str) -> dict[str, object]:
 
     try:
         commit = git('rev-parse', '--verify', base + '^{commit}').decode().strip()
-        fields = (
-            git('diff', '--name-status', '--no-renames', '-z', commit, '--')
-            .decode('utf-8')
-            .split('\0')
+        head = git('rev-parse', '--verify', 'HEAD^{commit}').decode().strip()
+        options = ('--name-status', '--no-renames', '--no-ext-diff', '-z')
+        components = {
+            'committed': _git_changes(git('diff', *options, commit, head, '--')),
+            'staged': _git_changes(git('diff', '--cached', *options, head, '--')),
+            'unstaged': _git_changes(git('diff', *options, '--')),
+        }
+        components['untracked'] = _git_untracked(
+            git('ls-files', '--others', '--exclude-standard', '-z')
         )
-        changes = list(zip(fields[:-1:2], fields[1::2], strict=True))
-        changes.extend(
-            ('?', path)
-            for path in git('ls-files', '--others', '--exclude-standard', '-z')
-            .decode('utf-8')
-            .split('\0')
-            if path
-        )
+        changes = list(dict.fromkeys(pair for pairs in components.values() for pair in pairs))
         return {
+            'routing_policy_version': 2,
             'base': base,
             'base_commit': commit,
+            'head_commit': head,
+            'components': components,
             'changes': changes,
             'full_reasons': full_reasons(changes),
         }
@@ -234,6 +316,11 @@ def feedback_errors(output: Path, report: dict[str, object]) -> list[str]:
             raise ValueError('feedback_manifest_mismatch')
         if report.get('execution_error') is not None:
             errors.append('execution_failed')
+        _validate_routing(
+            evidence.mapping(report['routing']),
+            str(report['profile']),
+            bool(report['measurement_only']),
+        )
         all_ids = strings(plan['all_nodeids'])
         selected = select_tests(all_ids, str(report['profile']))
         if (
@@ -364,13 +451,14 @@ def run_feedback(
             )
         )
     manifest = evidence.manifest(root, output, before, [])
+    requested_profile = routing.get('requested_profile', profile)
     manifest['reproduce_gate'] = [
         sys.executable,
         '-B',
         '-m',
         'tools.feedback',
         '--profile',
-        profile,
+        requested_profile if isinstance(requested_profile, str) else profile,
         '--base',
         str(routing.get('base', 'origin/main')),
         *(['--measure-profile'] if measure else []),
@@ -500,7 +588,7 @@ def run_feedback(
 def main() -> int:
     """補助CLI。未知変更は別Fullへ戻し、計測指定だけは未合格を明示して単独実行する。"""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', choices=('quick', 'standard-ai'), default='quick')
+    parser.add_argument('--profile', choices=('auto', 'quick', 'standard-ai'), default='auto')
     parser.add_argument('--base', default='origin/main')
     parser.add_argument('--measure-profile', action='store_true')
     parser.add_argument('--verify', type=Path)
@@ -509,19 +597,32 @@ def main() -> int:
         errors = verify_feedback(arguments.verify.resolve())
         print(evidence.encoded_json({'errors': errors}))
         return 1 if errors else 0
+    if arguments.measure_profile and arguments.profile == 'auto':
+        parser.error('--measure-profile requires an explicit --profile quick or standard-ai')
     output = quality.ROOT / 'evaluation_results' / ('feedback-' + uuid.uuid4().hex)
     routing = changed_paths(quality.ROOT, arguments.base)
+    recommended = (
+        'full'
+        if routing['full_reasons']
+        else recommended_profile(_change_list(routing.get('changes', [])))
+    )
+    profile = recommended if arguments.profile == 'auto' else arguments.profile
+    if recommended == 'full' and not arguments.measure_profile:
+        profile = 'full'
+    routing.update(
+        requested_profile=arguments.profile,
+        recommended_profile=recommended,
+        resolved_profile=profile,
+    )
     try:
-        if routing['full_reasons'] and not arguments.measure_profile:
+        if profile == 'full':
             output.mkdir(parents=True, exist_ok=False)
             evidence.save_new(output / 'routing.json', evidence.encoded_json(routing))
             full_output = output / ('quality-' + output.name.removeprefix('feedback-'))
             full = quality.run_gate(quality.ROOT, full_output)
             print(f'FULL fallback: {full_output / "quality.json"}')
             return 0 if full['passed'] else 1
-        report = run_feedback(
-            quality.ROOT, output, arguments.profile, routing, arguments.measure_profile
-        )
+        report = run_feedback(quality.ROOT, output, profile, routing, arguments.measure_profile)
         print(
             f'FEEDBACK {"PASS" if report["passed"] else "FAIL"} (Full未合格): {output / "feedback.json"}'
         )

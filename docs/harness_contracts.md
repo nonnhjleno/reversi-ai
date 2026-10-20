@@ -367,6 +367,13 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 
 実装・計測状況は[Bの実装記録](reports/20261020_quality_probe_optimization.md)を参照する。
 
+### 13.4 CIと自動routing契約（C、2026-10-20先行設計）
+
+- CIはmain push、PR合成merge、merge_group、手動実行をFullで検証し、quality job名を保持する。feature push単独を止めるが、PRの未知パス・docs・draftを理由にrequired checkをskipしない。外部main保護のstrict required quality/PR必須は実APIで別途確認する。
+- auto選択はbase→HEAD/HEAD→index/index→worktree/untrackedの和集合。selector既存MだけはQuick、他の既知AI境界MはStandard_AI、それ以外・Git不明はFull。docsの仕様上の意味を名前だけで認定せずFullとする。renameはD/Aとして検出し、相殺や未知statusで検査を省略しない。
+- 既存の明示profileと測定用例外を維持する。autoの要求/解決profile・判定材料・理由はroutingへ保存して照合する。測定指定には明示profileが必要で、Full未実行を隠さない。補助成功・CI Full・AIの正式資格は別物である。
+- 並列worker・共有cache・イベント間取消・新しい正式入口を導入しない。Full11工程、strict17、元の生trace意味検証・時計・予算・統計条件は不変。実装・検証・外部設定の進捗は[C記録](reports/20261020_quality_ci_implementation.md)を参照する。
+
 <a id="phase1a-boundary"></a>
 
 ## 14. Phase 1AのAI内部境界（実装済み・2026-10-19確認）

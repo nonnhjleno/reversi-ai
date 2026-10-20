@@ -1,6 +1,13 @@
 name: Quality
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -29,5 +36,15 @@ jobs:
           path: |
             evaluation_results/quality-*/pytest.txt
             evaluation_results/quality-*/pytest/pytest.xml
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Upload quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            evaluation_results/quality-*/**
+            !evaluation_results/quality-*/**/mypy-cache/**
           if-no-files-found: warn
           retention-days: 7

@@ -4,6 +4,7 @@ import importlib
 import hashlib
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,269 @@ import pytest
 from tools import quality
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _local_git(root, *arguments, check=True):
+    """合成repoだけを操作する。署名・外部hook・リモートへは接続しない。"""
+    result = subprocess.run(
+        ['git', '-c', 'core.hooksPath=.git/no-hooks', '-c', 'commit.gpgsign=false', *arguments],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        timeout=30,
+    )
+    if check:
+        assert result.returncode == 0, result.stdout + result.stderr
+    return result.stdout.strip()
+
+
+@pytest.fixture
+def routing_repo(tmp_path):
+    """実Gitの層別差分を確認する最小repo。授業repoのindexやbranchは変更しない。"""
+    _local_git(tmp_path, 'init', '-b', 'main')
+    _local_git(tmp_path, 'config', 'user.name', '品質テスト')
+    _local_git(tmp_path, 'config', 'user.email', 'quality-test@example.invalid')
+    for name in (
+        'reversi_player/ai_engine.py',
+        'reversi_player/reversi.py',
+        'tests/test_ai_engine.py',
+        'tests/test_stdin_commands.py',
+        'docs/harness_contracts.md',
+        'shared.py',
+    ):
+        path = tmp_path / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('original\n', encoding='utf-8')
+    _local_git(tmp_path, 'add', '.')
+    _local_git(tmp_path, 'commit', '-m', '基準')
+    return tmp_path, _local_git(tmp_path, 'rev-parse', 'HEAD')
+
+
+@pytest.mark.parametrize(
+    'mutation,expected',
+    [
+        ('clean', 'quick'),
+        ('selector', 'quick'),
+        ('staged_selector', 'quick'),
+        ('committed_selector', 'quick'),
+        ('board', 'standard-ai'),
+        ('unit', 'quick'),
+        ('stdin', 'standard-ai'),
+        ('shared', 'full'),
+        ('docs', 'full'),
+        ('untracked', 'full'),
+        ('addition', 'full'),
+        ('rename', 'full'),
+        ('delete', 'full'),
+        ('staged_add_remove', 'full'),
+        ('staged_shared_restore', 'full'),
+        ('staged_docs_restore', 'full'),
+        ('invalid_base', 'full'),
+        ('unicode', 'full'),
+    ],
+)
+def test_real_git_auto_routing_keeps_all_change_layers(routing_repo, mutation, expected):
+    """net差分が空でもindex/worktreeの相殺を残し、未知変更をQuickにしない。"""
+    feedback = importlib.import_module('tools.feedback')
+    root, base = routing_repo
+    names = {
+        'selector': 'reversi_player/ai_engine.py',
+        'staged_selector': 'reversi_player/ai_engine.py',
+        'committed_selector': 'reversi_player/ai_engine.py',
+        'board': 'reversi_player/reversi.py',
+        'unit': 'tests/test_ai_engine.py',
+        'stdin': 'tests/test_stdin_commands.py',
+        'shared': 'shared.py',
+        'docs': 'docs/harness_contracts.md',
+    }
+    if mutation in names:
+        path = root / names[mutation]
+        path.write_text('changed\n', encoding='utf-8')
+        if mutation in ('staged_selector', 'committed_selector'):
+            _local_git(root, 'add', names[mutation])
+        if mutation == 'committed_selector':
+            _local_git(root, 'commit', '-m', '選択器変更')
+    elif mutation in ('untracked', 'addition', 'staged_add_remove', 'unicode'):
+        path = root / ('未知 局面.py' if mutation == 'unicode' else 'unknown.py')
+        path.write_text('new\n', encoding='utf-8')
+        if mutation in ('addition', 'staged_add_remove'):
+            _local_git(root, 'add', path.name)
+        if mutation == 'staged_add_remove':
+            path.unlink()
+    elif mutation in ('rename', 'delete'):
+        if mutation == 'rename':
+            _local_git(root, 'mv', 'reversi_player/ai_engine.py', 'reversi_player/renamed.py')
+        else:
+            _local_git(root, 'rm', 'reversi_player/ai_engine.py')
+    elif mutation in ('staged_shared_restore', 'staged_docs_restore'):
+        name = 'shared.py' if mutation == 'staged_shared_restore' else 'docs/harness_contracts.md'
+        path = root / name
+        path.write_text('changed\n', encoding='utf-8')
+        _local_git(root, 'add', name)
+        path.write_text('original\n', encoding='utf-8')
+    elif mutation == 'invalid_base':
+        base = 'unknown-ref'
+    routing = feedback.changed_paths(root, base)
+    actual = 'full' if routing['full_reasons'] else feedback.recommended_profile(routing['changes'])
+    assert actual == expected, routing
+    if mutation != 'invalid_base':
+        assert routing['head_commit'] == _local_git(root, 'rev-parse', 'HEAD')
+        assert set(routing['components']) == {'committed', 'staged', 'unstaged', 'untracked'}
+    if mutation in ('staged_add_remove', 'staged_shared_restore', 'staged_docs_restore'):
+        assert routing['components']['staged'] and routing['components']['unstaged']
+
+
+@pytest.mark.parametrize(
+    'profile,path,expected',
+    [
+        ('auto', 'reversi_player/ai_engine.py', 'quick'),
+        ('auto', 'reversi_player/reversi.py', 'standard-ai'),
+        ('auto', 'docs/harness_contracts.md', 'full'),
+        ('quick', 'unknown.py', 'full'),
+        ('quick', 'reversi_player/reversi.py', 'quick'),
+        ('standard-ai', 'reversi_player/ai_engine.py', 'standard-ai'),
+    ],
+)
+def test_feedback_cli_automates_profiles_without_weakening_full(
+    tmp_path, monkeypatch, profile, path, expected
+):
+    """autoと明示profileを区別し、未知変更のFullと別kindの境界をCLIで検証する。"""
+    feedback = importlib.import_module('tools.feedback')
+    changes = [('M', path)]
+    calls = []
+    routing = {
+        'base': 'base',
+        'base_commit': 'a' * 40,
+        'head_commit': 'b' * 40,
+        'changes': changes,
+        'full_reasons': feedback.full_reasons(changes),
+    }
+    monkeypatch.setattr(quality, 'ROOT', tmp_path)
+    monkeypatch.setattr(feedback, 'changed_paths', lambda root, base: routing)
+
+    def full(root, output):
+        """委譲を観測する。実Fullの合格は統合ゲートとGitHubで別途確認する。"""
+        calls.append('full')
+        return {'passed': False}
+
+    def partial(root, output, selected, facts, measure=False):
+        """解決されたprofileと要求profileがともに保存されることを確認する。"""
+        calls.append(selected)
+        assert facts['requested_profile'] == profile
+        assert facts['resolved_profile'] == selected
+        return {'passed': False}
+
+    monkeypatch.setattr(quality, 'run_gate', full)
+    monkeypatch.setattr(feedback, 'run_feedback', partial)
+    monkeypatch.setattr('sys.argv', ['feedback', '--profile', profile])
+    assert feedback.main() == 1
+    assert calls == [expected]
+
+
+def test_feedback_auto_measurement_requires_explicit_profile(monkeypatch):
+    """未知変更でautoを測定例外へ黙って落とすことを禁止する。"""
+    feedback = importlib.import_module('tools.feedback')
+    monkeypatch.setattr('sys.argv', ['feedback', '--profile', 'auto', '--measure-profile'])
+    with pytest.raises(SystemExit) as failure:
+        feedback.main()
+    assert failure.value.code == 2
+
+
+@pytest.mark.parametrize('raw', [b'M\0a', b'R100\0old\0new\0', b'M\0\0', b'Z\0a\0', b'\xff\0a\0'])
+def test_git_change_parser_rejects_incomplete_or_unknown_records(raw):
+    """Git出力の切断・未知status・decode不能を変更なしへ補修しない。"""
+    feedback = importlib.import_module('tools.feedback')
+    with pytest.raises(ValueError):
+        feedback._git_changes(raw)
+
+
+@pytest.mark.parametrize('raw', [b'unknown.py', b'unknown.py\0\0', b'\xff\0'])
+def test_untracked_parser_rejects_incomplete_records(raw):
+    """未追跡一覧の最後のpathが欠損した可能性を黙って無視しない。"""
+    feedback = importlib.import_module('tools.feedback')
+    with pytest.raises(ValueError):
+        feedback._git_untracked(raw)
+
+
+def test_git_failure_requires_full_without_claiming_no_changes(tmp_path, monkeypatch):
+    """Git自体が起動できない状況を、空の差分としてQuickへ送らない。"""
+    feedback = importlib.import_module('tools.feedback')
+
+    def unavailable(*args, **kwargs):
+        """外部実行だけを失敗させて、fallback判定を検証する。"""
+        raise FileNotFoundError('git')
+
+    monkeypatch.setattr(subprocess, 'run', unavailable)
+    routing = feedback.changed_paths(tmp_path, 'HEAD')
+    assert routing['full_reasons'] == ['git_unavailable:FileNotFoundError']
+    assert 'changes' not in routing
+
+
+def test_real_git_conflict_requires_full_even_on_selector(routing_repo):
+    """普段はQuick対象のselectorでも、unmergedを通常Mとして扱わない。"""
+    feedback = importlib.import_module('tools.feedback')
+    root, base = routing_repo
+    source = root / 'reversi_player/ai_engine.py'
+    _local_git(root, 'switch', '-c', 'conflicting')
+    source.write_text('left\n', encoding='utf-8')
+    _local_git(root, 'add', '.')
+    _local_git(root, 'commit', '-m', '左側')
+    _local_git(root, 'switch', 'main')
+    source.write_text('right\n', encoding='utf-8')
+    _local_git(root, 'add', '.')
+    _local_git(root, 'commit', '-m', '右側')
+    _local_git(root, 'merge', 'conflicting', check=False)
+    routing = feedback.changed_paths(root, base)
+    assert routing['full_reasons']
+    assert ('U', 'reversi_player/ai_engine.py') in routing['components']['unstaged']
+
+
+@pytest.mark.parametrize(
+    'mutation',
+    [
+        'none',
+        'components',
+        'changes',
+        'reasons',
+        'recommendation',
+        'resolved',
+        'request',
+        'version',
+    ],
+)
+def test_saved_auto_routing_is_recomputed_from_components(mutation):
+    """routing summaryの書換えだけで別profileへ見せることを防ぐ。"""
+    feedback = importlib.import_module('tools.feedback')
+    changes = [('M', 'reversi_player/ai_engine.py')]
+    routing = {
+        'routing_policy_version': 2,
+        'changes': changes,
+        'components': {'committed': changes, 'staged': [], 'unstaged': [], 'untracked': []},
+        'full_reasons': [],
+        'requested_profile': 'auto',
+        'recommended_profile': 'quick',
+        'resolved_profile': 'quick',
+    }
+    if mutation == 'components':
+        routing['components']['untracked'] = [('?', 'unknown.py')]
+    elif mutation == 'changes':
+        routing['changes'] = []
+    elif mutation == 'reasons':
+        routing['full_reasons'] = ['unknown']
+    elif mutation == 'recommendation':
+        routing['recommended_profile'] = 'standard-ai'
+    elif mutation == 'resolved':
+        routing['resolved_profile'] = 'standard-ai'
+    elif mutation == 'request':
+        routing['requested_profile'] = 'unknown'
+    elif mutation == 'version':
+        routing['routing_policy_version'] = True
+    if mutation == 'none':
+        feedback._validate_routing(routing, 'quick', False)
+    else:
+        with pytest.raises(ValueError):
+            feedback._validate_routing(routing, 'quick', False)
 
 
 def _scope_copy(root):
