@@ -52,3 +52,29 @@ GitHub認証のrepo管理権限を確認した（秘密情報は保存・出力�
 - AI/GUI/harness・tools/quality.py・pyproject.tomlはHEADから無変更。型対象の追加/除外・判定緩和・worker導入はない。新規CI15回帰はFullのみ、routing43回帰は既存feedbackファイル全選択のため補助にも含まれる。
 
 GitHubの実PR/CI・保護設定の検証は次の外部適用記録まで未完了。main mergeは行わない。
+
+## 6. 外部適用の最終記録（C PASS）
+
+上記の「未確認」は途中記録。以下を実取得した。実装commitは`b370c79`。remote featureにmainの既存AGENTS方針commitだけを反映した`66dfb31`を使い、[PR #3](https://github.com/nonnhjleno/reversi-ai/pull/3)を作成した。feature push単独のworkflow runは発生せず、PRイベントのFullが1件起動した。
+
+| 検証 | 実結果と証拠 |
+|---|---|
+| 実GitHub Full | [run39418825153](https://github.com/nonnhjleno/reversi-ai/actions/runs/39418825153)、quality job118614397230、全11工程成功、pytest906・smoke1成功。外部pytest440.638秒、smoke4.437秒 |
+| 実checkout | artifact evidence.manifest.git.commit=`b418195abd8d728422846bd711e22357c351c955`、PR合成merge SHAと一致。check-run自体のhead SHAは`66dfb31d0d4cfebaff44de7360540a47eb4f6fb5`であり、merge SHAのcheck一覧が空でも省略と判断しない |
+| CI保存証拠 | quality-evidence-39418825153-1 ZIP312068 bytes、SHA256 `415dcebff95f87fd35700b0110fbc390515c23518247d9fe502f0cd89109f7d6`。新規保存・展開しquality完成hash、11工程、906/1件、開始終了source一致を照合 |
+| main保護 | PR経由必須、strict=true、required check quality/app15368、enforce_admins=true、承認人数0、force push/delete=false。PUT後にGET/branchを読み戻してprotected=trueを確認 |
+| 非変更・保全 | main HEADは`b57485d8a0ace1532cae5c2d87937230a6aec791`のまま。PR open/未merge、保護適用後mergeable_state=clean。元AGENTSの作業bytes/indexは保存前と一致 |
+
+原証拠のrootは元worktreeの`evaluation_results/quality-c-1792490955/`。remote-ci-final.json、remote-head-checks.json、remote-merge-checks.json（空のチェック一覧も保持）、remote-artifacts.json、github-quality-evidence.zip、同名展開dir、remote-ci-evidence-summary.json、remote-protection-request-v2.json、remote-protection-applied.json、remote-protection-readback.jsonを保管する。認証情報は保存していない。downloadのredirectへ認証を転送しない。ローカルとCIの改行・checkoutの違いがあるため、異なる環境間のraw source bytes完全一致は主張せず、各実行内snapshotと実Git commitを照合した。
+
+保護APIの初回は旧contextsと新checksの同時指定で422（oneOf重複）になり、設定未適用を確認した。同じエラーの本文を診断保存し、公式RESTのchecks形式だけへ修正すると適用成功した。保護条件を緩めた対処ではない。設定前後と拒否応答も残した。[公式REST契約](https://docs.github.com/en/rest/branches/branch-protection)を参照する。
+
+最終報告2文書は元AGENTS/indexを動かさない隔離worktreeでcommit/pushする。文書のみの追記で、検査対象source・モデル図・契約・テスト・Fullの合格条件は変更しない。最新の文書commitについてもPR CIを待ち、結果をPRコメントへ記録する。元作業ブランチは保全のため自動同期せず、remoteとの差を最終報告する。
+
+### 未実施・残る制約
+
+- PR自体のmain mergeは未承認につき実施しない。main保護は既に有効だが、main上のworkflowはPR mergeまでは旧版。CのPR/full自体は今回の更新workflowで動作済み。
+- merge_group/manual/main pushの各イベントを実発火させる試験、別OS、ブラウザGUI、worker、性能反復比較は未実施。これらのイベント構造はCI契約回帰で検査したが、全イベントの実稼働を証明したとはしない。
+- artifact7日保持は恒久保存でなく、CIのrun外一時原参照の全保存は未対応。取得artifactだけで全raw参照のfresh再収集が可能とは主張しない。ローカルFullのfresh再収集は今回成功した。
+- 外部保護設定の定期的drift自動検出は未実装。今回のAPI再確認はその時点の状態を示す。設定の将来変更・許可されたworkflow改変を技術的に永久防止する仕組みではない。
+- A/B/Cで停止。AI本体・探索・正式評価契約の追加実装を行わない。

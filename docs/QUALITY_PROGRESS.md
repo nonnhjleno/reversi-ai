@@ -1,12 +1,16 @@
 # 品質基盤導入の進捗と検証証拠
 
-## 品質監査C（2026-10-20、全体検証・GitHub適用待ち）
+## 品質監査C（2026-10-20、PASS）
 
 利用者はcommit/push/PR・CI確認・mainのPR/quality必須設定まで承認した。mainへのmergeは行わない。作業開始HEAD95ae51f、refactor/quality-gate-optimization。既存AGENTS.mdのステージ済み追記はそのまま保護する。モデル図11.C・契約13.4を先行更新し、CIイベント頻度と保守的auto routingのみを変更する。Full11工程・strict17・直列journal・AI/GUI/時計/予算/正式資格は不変。
 
 実装前の回帰は36失敗・4成功・41除外（10.10秒）。修正後の関連回帰は99成功（20.21秒）。新規58件はCI契約15、実Git層別差分・競合・不正形式・CLI・保存routing照合43。通常mypy17対象、Ruff lint、変更3ファイルformatも成功。全pytest/独立smoke/補助実行/実CI/保護設定は以下の最終記録まで未確認。[C実施記録](reports/20261020_quality_ci_implementation.md)へ原証拠・外部状態を残す。次段階の並列化・AI変更は行わない。
 
 ローカル最終: auto CLIの共有変更→Full fallbackを実行し全11工程PASS、pytest906成功・0失敗/skip（外部394.484秒）、独立smoke1成功。旧848 node保全＋58追加。Quick274成功（runner31.357秒）・Standard296成功（59.846秒）はFullと別kind。3実行の39sourceと現在hash一致、publication・fresh再収集・補助verifyエラー0。原証拠は上記C記録の保存先。外部CI/保護設定の適用だけは引き続き未確認であり、C全体PASSとはまだしない。
+
+外部最終: 上記の未確認は実施途中の記録。実装b370c79をpushし、mainの既存方針commitをremote featureへ統合した66dfb31で[PR #3](https://github.com/nonnhjleno/reversi-ai/pull/3)を作成。[実CI 39418825153](https://github.com/nonnhjleno/reversi-ai/actions/runs/39418825153)は全11工程、pytest906・独立smoke1成功。artifactのmanifestはPR合成merge b418195、check-runの対象はhead66dfb31であり、両者を区別して照合した。mainのPR必須・strict quality（GitHub Actions app15368）・管理者にも適用・force/delete禁止を設定しAPIで再確認。main HEAD b57485dは変更せずPRはopenのまま。コード/試験/図契約と外部設定を含めCをPASSとする。最終文書追記のCIはPRの最新checkを参照する。
+
+元worktreeのAGENTS bytes/indexを維持するため、remote側のmain方針反映と最終文書commit後の自動fast-forwardは行わない。最終報告は隔離publication worktreeからcommitし、原証拠は元worktreeのevaluation_results/quality-c-1792490955に保管する。PR merge前のmainでは旧workflowが現行であり、Cのイベント整理がmainへ反映されるのはこのPRのmerge後。main merge、worker、別OS、実AIの正式資格は今回の完了範囲外。
 
 ## 品質監査B1/B2（2026-10-20、PASS）
 
