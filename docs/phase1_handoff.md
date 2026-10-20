@@ -40,11 +40,11 @@ engineは合法手の移譲選択だけを担当する。Boardが盤面、合法
 | 100局 | 86勝、14敗、0分。勝ち点率0.86 |
 | 黒番 / 白番 | 42勝8敗0分（0.84） / 44勝6敗0分（0.88） |
 
-100局の評価JSONは[`position-vs-random-v0-100-20261020.json`](../evaluation_results/phase1b/position-vs-random-v0-100-20261020.json)、run IDは`a8f6ce3b11794102a0310784143e90e0`。2局smokeは[`position-vs-random-v0-smoke-20261020.json`](../evaluation_results/phase1b/position-vs-random-v0-smoke-20261020.json)、run IDは`a75265450ccd465fa5858c219f0cddbc`。原証拠は`evaluation_results/phase1b/runs/<run_id>/`。
+100局の評価JSONはローカル保存・Git管理外（`../evaluation_results/phase1b/position-vs-random-v0-100-20261020.json`）、run IDは`a8f6ce3b11794102a0310784143e90e0`。2局smokeはローカル保存・Git管理外（`../evaluation_results/phase1b/position-vs-random-v0-smoke-20261020.json`）、run IDは`a75265450ccd465fa5858c219f0cddbc`。原証拠は`evaluation_results/phase1b/runs/<run_id>/`。
 
 ## 4. 品質・回帰の証拠
 
-最新の直接CPython品質ゲートは**全10段階PASS**。全pytest 787成功・0失敗、独立smoke 1成功、strict mypy 14 source files、公開証拠検証エラー0件。証拠一式は[`quality-c1e5e48e0616406fb55c8274a9654107`](../evaluation_results/quality-c1e5e48e0616406fb55c8274a9654107/)。
+最新の直接CPython品質ゲートは**全10段階PASS**。全pytest 787成功・0失敗、独立smoke 1成功、strict mypy 14 source files、公開証拠検証エラー0件。証拠一式はローカル保存・Git管理外（`../evaluation_results/quality-c1e5e48e0616406fb55c8274a9654107/`）。
 
 分離回帰は固定seed `0, 7, 31, 73, 20261016`で旧`random_v0`との棋譜・盤面・応答・RNG状態を比較した。Phase 1Bの位置selectorは合法手選択、最高重み、同点順、入力非変更、1回の着手適用を検証した。実行記録は[`20261019_phase1a_compatibility_baseline.md`](archive/phase1/20261019_phase1a_compatibility_baseline.md)、[`20261019_phase1a_implementation.md`](archive/phase1/20261019_phase1a_implementation.md)、[`20261020_phase1b_implementation.md`](archive/phase1/20261020_phase1b_implementation.md)に残す。
 

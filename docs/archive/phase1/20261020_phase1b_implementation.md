@@ -22,7 +22,7 @@
 
 venv上の全pytestは **726 passed, 61 failed**（373.96秒）。失敗は主に正式評価fixtureのtemporal/baseline適格性と品質ゲート自己テストに集中した。プロジェクトの正式環境契約ではWindows venvランチャーはPID照合に未対応であり、この実行結果は正式PASSではない。位置評価・random_v0互換の専用36件は別途成功しているが、全体失敗を今回の変更によるものではないと断定もしない。
 
-必須の`python -B tools/quality.py`も実行したが、最初のenvironment検査が「venvランチャーPID契約未対応、対応CPythonで実行」としてFAILし、後続のdependency・lint・format・typing・pytest・smoke段階はスキップされた。最終snapshotのレポートは[quality-d0df7e163a9a44e0b61597027e36e68d](../../../evaluation_results/quality-d0df7e163a9a44e0b61597027e36e68d/quality.json)。直接CPython 3.13.5実行ファイルはこの環境で見つからず、必須統合品質ゲートをPASSにできていない。
+必須の`python -B tools/quality.py`も実行したが、最初のenvironment検査が「venvランチャーPID契約未対応、対応CPythonで実行」としてFAILし、後続のdependency・lint・format・typing・pytest・smoke段階はスキップされた。最終snapshotのレポートはローカル保存・Git管理外（`../../../evaluation_results/quality-d0df7e163a9a44e0b61597027e36e68d/quality.json`）。直接CPython 3.13.5実行ファイルはこの環境で見つからず、必須統合品質ゲートをPASSにできていない。
 
 ## 固定比較実験
 

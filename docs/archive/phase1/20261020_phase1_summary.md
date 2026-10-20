@@ -38,10 +38,10 @@ HEAD: `eb2e860f06ac731c13c7a0169e4de93f3b8e1108`<br>
 
 | 検証 | 結果 | 保存先 |
 |---|---|---|
-| 全pytest | 787成功・0失敗、493.90秒 | [pytestログ](../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/pytest.txt) |
-| 独立smoke marker | 1成功・786 deselected、4.78秒 | [smokeログ](../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/smoke.txt) |
-| strict mypy | 14 source files、診断0 | [typingログ](../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/typing.txt) |
-| Lint・限定format・model・dependencies | 全必須検査成功 | [品質JSON](../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/quality.json) |
+| 全pytest | 787成功・0失敗、493.90秒 | ローカル保存・Git管理外：`../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/pytest.txt` |
+| 独立smoke marker | 1成功・786 deselected、4.78秒 | ローカル保存・Git管理外：`../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/smoke.txt` |
+| strict mypy | 14 source files、診断0 | ローカル保存・Git管理外：`../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/typing.txt` |
+| Lint・限定format・model・dependencies | 全必須検査成功 | ローカル保存・Git管理外：`../../../evaluation_results/quality-31d29272b409461294ffb0c45a9474bb/quality.json` |
 | 保存証拠 | 公開検証`verify_publication=[]`、開始/終了hash一致 | 同directoryの`evidence.json`、`evidence.md`、pytest/smokeのJUnit・journal |
 
 environment / model / dependencies / lint / format / typing / pytest / smoke / snapshot / evidenceの全10段階がPASS。今回の総括でもpublication検証結果が空であり、現在ファイルと品質JSONの検査対象hashに不一致がないことを再確認した。履歴のPhase 1A 779成功は当時のsnapshotの結果であり、現在の全件数は787。
@@ -81,8 +81,8 @@ environment / model / dependencies / lint / format / typing / pytest / smoke / s
 
 | run | JSON | run ID |
 |---|---|---|
-| 2局smoke | [評価JSON](../../../evaluation_results/phase1b/position-vs-random-v0-smoke-20261020.json) | `a75265450ccd465fa5858c219f0cddbc` |
-| 100局descriptive | [評価JSON](../../../evaluation_results/phase1b/position-vs-random-v0-100-20261020.json) | `a8f6ce3b11794102a0310784143e90e0` |
+| 2局smoke | ローカル保存・Git管理外：`../../../evaluation_results/phase1b/position-vs-random-v0-smoke-20261020.json` | `a75265450ccd465fa5858c219f0cddbc` |
+| 100局descriptive | ローカル保存・Git管理外：`../../../evaluation_results/phase1b/position-vs-random-v0-100-20261020.json` | `a8f6ce3b11794102a0310784143e90e0` |
 
 原証拠は`evaluation_results/phase1b/runs/<run_id>/`に保存され、各runの`run-state.json`は全game・command応答・親側lifecycle・途中経過を含む。母集団原本は`opening-population.json`。実AIがtrace4 producerを実装していないため、legごとのA/B.jsonlは**生成されていない**。原証拠directoryの保存を、内部traceの存在と取り違えない。
 
@@ -130,7 +130,7 @@ HEADはPhase 0統合時点であり、評価対象は`feat/ai-phase1`の**未コ
 
 ## 9. 文書更新後の最終品質確認と実行コマンド
 
-総括文書の更新後にもWindows直接CPython 3.13.5で `python -B tools/quality.py` を実行した。[最終品質JSON](../../../evaluation_results/quality-c1e5e48e0616406fb55c8274a9654107/quality.json)は全10必須段階PASS。全pytestは **787成功・0失敗（492.24秒）**、独立smokeは **1成功・786 deselected（3.11秒）**。publication再検証=[]、開始/終了hash一致、現在検査対象hashの不一致0。第3節の先行成功runも削除せず保持する。
+総括文書の更新後にもWindows直接CPython 3.13.5で `python -B tools/quality.py` を実行した。最終品質JSON（ローカル保存・Git管理外：`../../../evaluation_results/quality-c1e5e48e0616406fb55c8274a9654107/quality.json`）は全10必須段階PASS。全pytestは **787成功・0失敗（492.24秒）**、独立smokeは **1成功・786 deselected（3.11秒）**。publication再検証=[]、開始/終了hash一致、現在検査対象hashの不一致0。第3節の先行成功runも削除せず保持する。
 
 最終quality.json SHA-256: `8400df5320196eac74d58dde96f073c650c19e4430c3da172ce7898bf3e350aa`。
 
