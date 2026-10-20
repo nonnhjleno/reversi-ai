@@ -30,6 +30,11 @@ def _model_copy(root: Path) -> None:
     shutil.copy2(ROOT / 'docs/harness_contracts.md', root / 'docs/harness_contracts.md')
     (root / 'tests/fixtures').mkdir(parents=True)
     shutil.copy2(ROOT / 'tests/fixtures/budget_player.py', root / 'tests/fixtures/budget_player.py')
+    for directory in ('tools', 'reversi_player'):
+        shutil.copytree(
+            ROOT / directory, root / directory, ignore=shutil.ignore_patterns('__pycache__')
+        )
+    shutil.copy2(ROOT / 'pyproject.toml', root / 'pyproject.toml')
 
 
 def _fake_result(step: quality.Step, log: Path, code: int) -> quality.StepResult:
@@ -237,6 +242,24 @@ def test_gate_environment_unavailable_is_not_executed_or_successful(tmp_path, mo
     )
 
 
+def test_scope_failure_cannot_be_covered_by_successful_commands(tmp_path, monkeypatch):
+    """全外部検査と証拠収集が成功でも、必須scope失敗をFull成功へ昇格しない。"""
+    monkeypatch.setattr(quality, 'validate_scope', lambda root: ['未登録の本番module'])
+
+    def runner(step, root, log):
+        """整合する成功journal/JUnitを返し、scope以外の失敗で隠さない。"""
+        return _fake_result(step, log, 0)
+
+    output = tmp_path / 'run'
+    report = quality.run_gate(ROOT, output, runner)
+    assert not report['passed']
+    assert {step['name'] for step in report['steps'] if not step['passed']} == {
+        'typing_scope',
+        'snapshot',
+    }
+    assert evidence.verify_publication(output) == []
+
+
 def test_gate_missing_model_cannot_be_covered_by_successful_commands(tmp_path, monkeypatch):
     def missing_model(root):
         """モデル読込不能は既知の過不足とは別の理由でgateを失敗にする。"""
@@ -401,7 +424,7 @@ def test_gate_main_propagates_output_failure(monkeypatch, tmp_path):
 def test_real_quality_cli_rejects_intentional_lint_type_and_test_failures(tmp_path):
     """一時repoの壊れたコードで実CLIを呼び、個々のnonzeroと総合終了1を確認する。"""
     _model_copy(tmp_path)
-    (tmp_path / 'tools').mkdir()
+    (tmp_path / 'tools').mkdir(exist_ok=True)
     shutil.copy2(ROOT / 'tools/quality.py', tmp_path / 'tools/quality.py')
     shutil.copy2(ROOT / 'tools/__init__.py', tmp_path / 'tools/__init__.py')
     shutil.copy2(ROOT / 'tools/evidence.py', tmp_path / 'tools/evidence.py')
@@ -646,8 +669,8 @@ def test_evidence_publication_hashes_and_json_markdown_agree(tmp_path):
     assert bundle['manifest']['run_id'] == 'run'
     assert 'test_command' in markdown
     assert bundle['validation_passed']
-    assert len(bundle['manifest']['steps']) == 10
-    assert len(bundle['manifest']['checks']) == 9
+    assert len(bundle['manifest']['steps']) == 11
+    assert len(bundle['manifest']['checks']) == 10
     before = (output / 'evidence.json').read_bytes()
     with pytest.raises(FileExistsError):
         evidence.save_new(output / 'evidence.json', 'changed')

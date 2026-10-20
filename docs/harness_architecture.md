@@ -331,6 +331,8 @@ flowchart TD
     Q --> M["validate_model<br/>AST import辺・主要fresh呼出辺を照合"]
     DOC["docs/harness_architecture.md / docs/harness_contracts.md"] --> M
     CODE["harness / fixture / 公開wrapperコード"] --> M
+    Q --> SC["typing_scope 必須検査<br/>本番inventory・明示strict・唯一のGUI例外"]
+    SC --> OUT
     Q --> L["Ruff lint / 限定format / strict mypy / pip check"]
     Q --> T["全pytest / tools.evidence_plugin<br/>既存回帰・明示観測・段階別journal"]
     T --> S["独立smoke<br/>既存の軽量参考対局"]
@@ -387,6 +389,30 @@ stateDiagram-v2
 `validate_model`は第2節の全harness importとfixture3辺の過不足・循環、新moduleの図漏れを検査する。第5節の単独wrapper→fresh inspection、比較wrapper→_inspect_pair→fresh inspection、facade委譲をASTで検査する。図のレンダリングや全関数の制御フロー/意味の証明ではない。T-ID〜T-GATEや品質/統計の状態は全pytestと[品質導入対応表](QUALITY_PROGRESS.md)で照合する。
 
 Windows venvのredirectorではPopen PIDとproducer PIDが異なる事象を確認した。正式identity照合を緩めず、このゲートはvenvランチャーではない直接CPythonを使う。別起動機構の正式対応は未実装であり、この制約を時刻の猶予やhash更新で回避しない。
+
+### 11.A 補助フィードバックとscope検査（2026-10-20先行設計）
+
+監査第12節A1〜A3の実装契約。Fullの既定CLI・従来10工程は保持し、過去のPhase 10案どおり独立した必須typing_scopeを追加して11工程とする。新規本番モジュールとinitializerは明示strictへ登録する。本番ルートはharness/reversi_player/tools、例外は配布GUIのweb.pyだけ。利用者の確認によりreversi_01.pyと102400-games/data.pyは保管用・参考資料として分類し、将来実利用時に再分類する。固定baseline・tests/fixture・生成物・依存環境は本番例外ではなく別用途。未知のPython配置、stub、別名パス、抑制設定はscope失敗へ進む。開始/終了のinventoryと設定も照合する。
+
+```mermaid
+flowchart TD
+    USER["開発者"] --> F["tools.feedback CLI / pytest selection hook"]
+    F --> ROUTE["Git base・差分・未追跡の保守的分類"]
+    ROUTE -->|"共有契約・設定・未知・削除等"| FULL["tools.quality.run_gate<br/>独立quality.json / Full 11工程"]
+    ROUTE -->|"限定AI・既知テスト・資料"| STATIC["対応環境・モデル・scope・pip・Ruff・strict"]
+    ROUTE -->|"明示measure-profile / Full未実行を固定"| STATIC
+    STATIC --> PLAN["collect-only / 選択計画<br/>全nodeid・選択・未選択・policy hash"]
+    PLAN --> EXEC["同一collectionの選択pytest<br/>Quick / Standard_AI"]
+    EXEC --> RAW["JUnit・直列journal / collect_step<br/>原参照はrun内へ同一bytesを保管"]
+    RAW --> VERIFY["選択一致・skip・source一致・原参照照合"]
+    VERIFY --> FE["feedback.json / 別kind quality_feedback<br/>全工程成功でもFull成功ではない"]
+    FE --> RECHECK["verify_feedback<br/>保存summaryを信頼せず再収集・再選択"]
+    FULL --> FULLLOG["独立Fullのquality.json<br/>補助報告として再公開しない"]
+```
+
+feedback→quality/evidence、pytest→feedback/evidence_pluginの依存のみ追加する。qualityからfeedbackへの逆依存やharness→toolsは作らない。Fullのevidence collector/publication規則をfeedbackへ偽装流用しない。補助経路のpassedはscope内の完走・選択/証拠整合のみで、正式AI資格にもFull成功にも接続しない。未知変更のfallbackは別のFull証拠を発行する。測定専用指定はそのfallbackを抑止できるが、Full未実行と理由を必ず保持する。
+
+状態は planned → collected → executed → evidence_verified → feedback_passed。空選択・誤選択・欠損・skip・実行失敗・snapshot不一致はfeedback_failed、原参照の後日消失は再検証不能として扱う。Full未実行は常に別軸であり成功へ昇格しない。新規テストファイル・共有fixture/品質設定の変更はFullへ戻す。既知AIテストファイルの新caseは全件選択、契約テストは明示基底名で選択する。
 
 ### 11.1 検証証拠拡張（先行設計後に実装、2026-10-14）
 

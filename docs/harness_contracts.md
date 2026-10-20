@@ -302,6 +302,16 @@ strict型範囲はpyproject.tomlの明示files、format未導入範囲と意図�
 
 source_hashesは開始時、source_hashes_endは終了時の対象コード・設定・モデル文書。変化はsnapshot検査の失敗として保持し、終了時の新しいhashだけで成功へ置き換えない。全時間・状態・呼出順の証明や、2観測間の改ざん認証ではない。実行中の編集を避ける。
 
+### 13.A scopeと補助報告（2026-10-20先行契約）
+
+- Fullはquality_gate v1のまま、既存10必須にtyping_scopeを加える。S=本番3ルートの全.py−{reversi_player/web.py}、既存14パスの保持、initializer登録、strict=true、正規filesの一意性、実在、stub/別名/未知配置/抑制設定なしを要求する。Lintの本番includeも維持する。scope成功は実mypy成功の代替ではない。
+- 利用者確認済みのreversi_01.py・102400-games/data.pyは保管/参考用途。固定baselines、tests、依存環境、生成物は用途で区別する。他の本番例外を追加する手段は設けない。新用途・新ルートは契約レビューを要する。
+- 補助報告はquality_feedback v1、feedback.jsonを最後に排他保存する。profile、routing理由、測定専用か、Git base/差分/未追跡、policy hash、全collection/選択/未選択nodeid、実argv/終了値、source開始終了hash、JUnit/journal再収集結果、skip、原参照と保管先hashを保存する。full_quality_passedはfalse固定。fallback時はrouting.jsonと別Full quality.jsonを保存し、feedback.jsonへ再公開しない。
+- Quickは監査の190候補、Standard_AIは212候補を出発点とする。固定5 AI/盤面/入出力ファイル全件、明示契約基底名、新しいfeedback/scope回帰を選ぶ。基底名の欠損、重複、空、collect-onlyと実行collectionの差、journal/JUnit/予定の差、skipは補助成功にしない。件数は将来増加し得る。Standardはschema5 CLI/正式入口の正常系、独立対局smoke相当、失敗回収・期限も含むが、Full全異常変異を代替しない。
+- 差分はGit baseと現在の追跡差分および未追跡を照合し、AI本体/選択器・既知の専用テスト・資料以外、rename/delete、新規Python、共有fixture、設定、品質基盤、ハーネス変更やGit情報不明ならFullへfallbackする。measure-profileは開発者による独立計測専用で、未知変更を安全と認定するものではない。
+- collect_stepを補助testの再収集に再利用するが、quality専用collect/verify_publicationの完成markerは使わない。verify_feedbackは保存計画とpolicyから再選択し、原journal/JUnitを再収集、保存summary・実行終了値・選択集合・原参照bytesを照合する。hash再計算だけで不正summaryを通さない。公開済み証拠を修復しない。
+- feedbackが参照した原証拠は取得後に同一bytesをrun配下へ排他コピーし、元path/hashと保管path/hashを双方保持する。journalの原pathを書き換えず、再検証時の読取先だけ同じhashの保管先に解決する。保存先はevaluation_resultsのUUID領域、明示削除するまで保持するが、バックアップ/永続保存は保証しない。欠損・不一致は再検証失敗であり、保存当時の成功を後から修復しない。CIのupload対象/保持7日は今回変更しない。
+
 ### 13.1 自動検証証拠（先行契約後に実装、2026-10-14）
 
 実装前に品質図と同時に確定する追加契約。旧9品質検査と判定は維持し、必須evidence検査を追加する。QualityReport v1のfield構造は変更しない。評価schema5、raw trace4、validation3、正式資格と無関係な開発証拠である。

@@ -1,0 +1,669 @@
+{
+  "report_kind": "quality_feedback_validation",
+  "format_version": 1,
+  "date": "2026-10-20",
+  "phase": "audit_section_12_A1_A2_A3",
+  "branch": "refactor/quality-gate-optimization",
+  "head": "0a7ab1a1bc121a0f16dcd279051de1c48590c559",
+  "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "executable": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+  "strict_files": 17,
+  "production_files": 18,
+  "strict_exception": [
+    "reversi_player/web.py"
+  ],
+  "approved_reference_scripts": [
+    "102400-games/data.py",
+    "reversi_01.py"
+  ],
+  "source_hashes": {
+    ".github/workflows/quality.yml": "75e4edf99f2857f09fee513f9e237643267ec445a328ec2bf5e1a9bf1e814519",
+    "102400-games/data.py": "1fcf04406dbfc321112fd907cf0760657c37d1b15d3750d13cf8d3e59af29731",
+    "AGENTS.md": "828ffa167e401688d40a388d083d3c4fbf4451c6d6cb0a12c7ea029a11458a3a",
+    "docs/harness_architecture.md": "ff19f133cd8e669ff629e5ee2eceab63614d1d68b2d04fc53cee02df8f16f6f2",
+    "docs/harness_contracts.md": "18ebc31d19aa38f8a0b2a01574b1622e141794b9de6bcddb10857d98a9a98acf",
+    "docs/プログラム開発方法.md": "b0115f187e49039ff42aded6ee5249f7b58ac1294a70a20e3102a05032101cbd",
+    "harness/__init__.py": "fc1c6fe693d322e53503f124dc30270ab86735ea4c4f327a89dc993ea0e4598d",
+    "harness/analysis.py": "7653721629a8d6e31729254dd2e0ed7d84d202c64e7c252a7ba788298487b9c4",
+    "harness/contracts.py": "556b05f2c62364554da5eb6925fbc150612e6e0b100cc6369847369bb69fe3d3",
+    "harness/evaluate.py": "2ea2cc5c2a01227c51576be79e66300696d8e12ee13e19297cbf7fc57ad8adec",
+    "harness/openings.py": "11d14dc64f4ba2f66475d5f664770ef81ebe6501c339f9c6fafe469b5e88f26f",
+    "harness/protocol.py": "92d44e40e10d647ca6f907ffb2273334559f84e27db92fee207b26c62d8a5685",
+    "harness/referee.py": "350b858891c490a48290ef7c7d8f62f77b3b0836d3582051637b14514a125a5c",
+    "harness/search_budget.py": "5378748a7ccf197ddde165a59b99bed2039a94bb51dcf8566b5617554a26cb3e",
+    "harness/seeded_player.py": "28aff247d165b703e1fbdc2a025121160c141edc1918f6ac85e1ab330e656084",
+    "harness/statistics.py": "faf98ec9d7740518997ac37a35f7f1e09a306607aefc97d7a5ef0ef855d2cf65",
+    "pyproject.toml": "43939df4e4e022a10389789a61bfc044097473d735bd77a6968144abe5633ec3",
+    "pytest.ini": "1a30d28286a4c6bfd5f314452195418c2de1ca748d76a18abcbe371b0b4d4472",
+    "requirements-dev.txt": "4e7234b0d9dc1df1be118370507fe68d09b961d71c67872cc1bc9288989c5a84",
+    "reversi_01.py": "b06f882e41871da42d89fc5abe43b41a7466efc3866db82a28145eba3ad014b5",
+    "reversi_player/ai_engine.py": "3a6d69c35bf79d2a184cabde023b5274a4a1e34eb318aa4c4be42569e6401c5f",
+    "reversi_player/reversi.py": "a012c2b30c304b4716e5f3df2d0ffac4f689a5b35cb38fefe6c16f7b27428efe",
+    "reversi_player/web.py": "f563bfd39bdf612e0081d20b79c2d41f9aa8fccd99a360d0085f1d220df3f6e5",
+    "tests/fixtures/budget_player.py": "a284ac4f94df94e012ee05487a45114acd75f32c87776eb4ff9a1963ac84814c",
+    "tests/fixtures/fault_player.py": "d4b88dd295bc01e1d21bbcc0b249385a118dbe7d08affb0d73553fd377afcc89",
+    "tests/test_ai_compatibility.py": "0bfd0dbf34af7bfe531003495b24c18832bf0b0458c3f734b14034d0b11ddcc1",
+    "tests/test_ai_engine.py": "3755aa3280797ed32ce125d44e2c1430ec05c30f245c243923fc9b302a1b588a",
+    "tests/test_feedback.py": "6e629e816486271ef196c123ebcbea8229422db3b1d0f6b8635fc65e743d4c65",
+    "tests/test_harness.py": "3ace66bb64959bebc5154317e6ff3d810f7d0eb48a6a37e9eca747bf9e20eea3",
+    "tests/test_invariants.py": "b1895532363133d9d8b14e7df397295f0d7f83bea8cfa120db1e3357e73d70bb",
+    "tests/test_quality.py": "c8dbbc0c05a134df242fc16e0cbcf0490d42de85db4547415733ffaebaa8d630",
+    "tests/test_result.py": "0a9d8e28071a6f1d40ad268b4d5f39a42fb5c1b3cdddbb7ae3fcab3038c44b6f",
+    "tests/test_stdin_commands.py": "2e0b80d77526107a99fb4a25a8dde6c87ab273ab074962be2fdadec54468b59d",
+    "tools/__init__.py": "02a3c2071adedd371b1d2c6cf32eeb7c619082ba1e8b3895639c0a4094e3559d",
+    "tools/evidence.py": "62cc63ebeecdf9b9c8aa164e29ad11171233e65ac1acecdbc77ce874a1c92a91",
+    "tools/evidence_plugin.py": "8e7d0039835ba4c518601a8cbdadf707153561e5a8ba7ebfb7bbe2ab93b7761a",
+    "tools/feedback.py": "83eccec01f86a53a168c674dcf85683141f94f20d050700ba6abab108611e6a2",
+    "tools/quality.py": "5449ba4513e72d5496a32a39eb15b349620780f6c8529e3d35ba354b311bf693"
+  },
+  "all_profiles_and_full_same_source": true,
+  "full": {
+    "directory": "evaluation_results/quality-9285910144e444a4bff556b67e5571d1",
+    "passed": true,
+    "steps": [
+      {
+        "name": "environment",
+        "command": [
+          "internal:environment"
+        ],
+        "exit_code": 0,
+        "seconds": 0.026986799959558994,
+        "log": "environment.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "model",
+        "command": [
+          "internal:model"
+        ],
+        "exit_code": 0,
+        "seconds": 0.10697780002374202,
+        "log": "model.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "typing_scope",
+        "command": [
+          "internal:typing_scope"
+        ],
+        "exit_code": 0,
+        "seconds": 0.003216199984308332,
+        "log": "typing_scope.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "dependencies",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "pip",
+          "check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.6060162999783643,
+        "log": "dependencies.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "lint",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "ruff",
+          "check",
+          ".",
+          "--no-cache",
+          "--config",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+        ],
+        "exit_code": 0,
+        "seconds": 0.12746409996179864,
+        "log": "lint.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "format",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          ".",
+          "--no-cache",
+          "--config",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+        ],
+        "exit_code": 0,
+        "seconds": 0.1147863999940455,
+        "log": "format.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "typing",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "mypy",
+          "--no-incremental",
+          "--config-file",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+        ],
+        "exit_code": 0,
+        "seconds": 6.96618510002736,
+        "log": "typing.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "pytest",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--tb=short",
+          "--strict-config",
+          "--strict-markers",
+          "-p",
+          "tools.evidence_plugin",
+          "--junitxml=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-9285910144e444a4bff556b67e5571d1\\pytest\\pytest.xml",
+          "--verification-evidence-dir=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-9285910144e444a4bff556b67e5571d1\\pytest",
+          "--verification-run-id=quality-9285910144e444a4bff556b67e5571d1",
+          "--verification-step=pytest"
+        ],
+        "exit_code": 0,
+        "seconds": 740.4780142999953,
+        "log": "pytest.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "smoke",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--tb=short",
+          "--strict-config",
+          "--strict-markers",
+          "-m",
+          "smoke",
+          "-p",
+          "tools.evidence_plugin",
+          "--junitxml=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-9285910144e444a4bff556b67e5571d1\\smoke\\smoke.xml",
+          "--verification-evidence-dir=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-9285910144e444a4bff556b67e5571d1\\smoke",
+          "--verification-run-id=quality-9285910144e444a4bff556b67e5571d1",
+          "--verification-step=smoke"
+        ],
+        "exit_code": 0,
+        "seconds": 5.085574299970176,
+        "log": "smoke.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "snapshot",
+        "command": [
+          "internal:snapshot"
+        ],
+        "exit_code": 0,
+        "seconds": 0.03188540000701323,
+        "log": "snapshot.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "evidence",
+        "command": [
+          "internal:evidence"
+        ],
+        "exit_code": 0,
+        "seconds": 0.33398470003157854,
+        "log": "evidence.txt",
+        "error": null,
+        "passed": true
+      }
+    ],
+    "step_seconds_sum": 753.8810913999332,
+    "pytest": {
+      "tests": 829,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": 737.438
+    },
+    "smoke": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": 4.033
+    },
+    "publication_errors": [],
+    "fresh_collection_errors": [],
+    "quality_sha256": "d506759cc5709677a1eecdf153b9280a77dce89671cc1329514014734faa8315"
+  },
+  "profiles": [
+    {
+      "profile": "quick",
+      "directory": "evaluation_results/feedback-9f6311cccf7a4607a19b0b4babe66ab5",
+      "passed": true,
+      "full_quality_passed": false,
+      "measurement_only": true,
+      "runner_wall_seconds": 36.79326479998417,
+      "junit": {
+        "tests": 231,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": 23.311
+      },
+      "selected": 231,
+      "deselected": 598,
+      "selected_nodeids_sha256": "a72155179381dc7671c5635df5799b18dfd0df6f19d560624a58a0cd0128abb2",
+      "common_with_full": 231,
+      "outcome_mismatches": [],
+      "verification_errors": [],
+      "retained_references": 0,
+      "unique_retained_files": 0,
+      "steps": [
+        {
+          "name": "environment",
+          "command": [
+            "internal:environment"
+          ],
+          "exit_code": 0,
+          "seconds": 0.027823900047224015,
+          "log": "environment.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "model",
+          "command": [
+            "internal:model"
+          ],
+          "exit_code": 0,
+          "seconds": 0.15764900000067428,
+          "log": "model.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "typing_scope",
+          "command": [
+            "internal:typing_scope"
+          ],
+          "exit_code": 0,
+          "seconds": 0.003202199994120747,
+          "log": "typing_scope.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "dependencies",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "pip",
+            "check"
+          ],
+          "exit_code": 0,
+          "seconds": 0.9716291999793611,
+          "log": "dependencies.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "lint",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "ruff",
+            "check",
+            ".",
+            "--no-cache",
+            "--config",
+            "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+          ],
+          "exit_code": 0,
+          "seconds": 0.12373910000314936,
+          "log": "lint.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "format",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "ruff",
+            "format",
+            "--check",
+            ".",
+            "--no-cache",
+            "--config",
+            "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+          ],
+          "exit_code": 0,
+          "seconds": 0.11348479997832328,
+          "log": "format.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "typing",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "mypy",
+            "--no-incremental",
+            "--config-file",
+            "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+          ],
+          "exit_code": 0,
+          "seconds": 7.221854400006123,
+          "log": "typing.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "collection",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--strict-config",
+            "--strict-markers",
+            "--collect-only",
+            "-p",
+            "tools.feedback",
+            "--feedback-collect=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-9f6311cccf7a4607a19b0b4babe66ab5\\collection.json"
+          ],
+          "exit_code": 0,
+          "seconds": 2.9508289000368677,
+          "log": "collection.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "pytest",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--tb=short",
+            "--strict-config",
+            "--strict-markers",
+            "-p",
+            "tools.evidence_plugin",
+            "--junitxml=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-9f6311cccf7a4607a19b0b4babe66ab5\\pytest\\pytest.xml",
+            "--verification-evidence-dir=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-9f6311cccf7a4607a19b0b4babe66ab5\\pytest",
+            "--verification-run-id=feedback-9f6311cccf7a4607a19b0b4babe66ab5",
+            "--verification-step=pytest",
+            "-p",
+            "tools.feedback",
+            "--feedback-selection=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-9f6311cccf7a4607a19b0b4babe66ab5\\selection.json"
+          ],
+          "exit_code": 0,
+          "seconds": 24.843202799966093,
+          "log": "pytest.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "snapshot",
+          "command": [
+            "internal:snapshot"
+          ],
+          "exit_code": 0,
+          "seconds": 0.02869549999013543,
+          "log": "snapshot.txt",
+          "error": null,
+          "passed": true
+        }
+      ],
+      "feedback_sha256": "8bdecde20135a251545d4d09db6e0c9df52ed817147ef993d8315590d53f46af"
+    },
+    {
+      "profile": "standard-ai",
+      "directory": "evaluation_results/feedback-8bf64766bef94d94ac97a583f95245cc",
+      "passed": true,
+      "full_quality_passed": false,
+      "measurement_only": true,
+      "runner_wall_seconds": 82.98082689999137,
+      "junit": {
+        "tests": 253,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": 69.979
+      },
+      "selected": 253,
+      "deselected": 576,
+      "selected_nodeids_sha256": "54a6cb2eea6639f7f323d66351c609e18368de23bea4b9697cd80d25ffddebc8",
+      "common_with_full": 253,
+      "outcome_mismatches": [],
+      "verification_errors": [],
+      "retained_references": 12,
+      "unique_retained_files": 12,
+      "steps": [
+        {
+          "name": "environment",
+          "command": [
+            "internal:environment"
+          ],
+          "exit_code": 0,
+          "seconds": 0.03000680002151057,
+          "log": "environment.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "model",
+          "command": [
+            "internal:model"
+          ],
+          "exit_code": 0,
+          "seconds": 0.11193040001671761,
+          "log": "model.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "typing_scope",
+          "command": [
+            "internal:typing_scope"
+          ],
+          "exit_code": 0,
+          "seconds": 0.0030326999840326607,
+          "log": "typing_scope.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "dependencies",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "pip",
+            "check"
+          ],
+          "exit_code": 0,
+          "seconds": 0.7289791000075638,
+          "log": "dependencies.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "lint",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "ruff",
+            "check",
+            ".",
+            "--no-cache",
+            "--config",
+            "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+          ],
+          "exit_code": 0,
+          "seconds": 0.15620889997808263,
+          "log": "lint.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "format",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "ruff",
+            "format",
+            "--check",
+            ".",
+            "--no-cache",
+            "--config",
+            "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+          ],
+          "exit_code": 0,
+          "seconds": 0.15383369999472052,
+          "log": "format.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "typing",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "mypy",
+            "--no-incremental",
+            "--config-file",
+            "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+          ],
+          "exit_code": 0,
+          "seconds": 7.468289399985224,
+          "log": "typing.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "collection",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--strict-config",
+            "--strict-markers",
+            "--collect-only",
+            "-p",
+            "tools.feedback",
+            "--feedback-collect=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-8bf64766bef94d94ac97a583f95245cc\\collection.json"
+          ],
+          "exit_code": 0,
+          "seconds": 2.148228600039147,
+          "log": "collection.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "pytest",
+          "command": [
+            "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+            "-B",
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--tb=short",
+            "--strict-config",
+            "--strict-markers",
+            "-p",
+            "tools.evidence_plugin",
+            "--junitxml=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-8bf64766bef94d94ac97a583f95245cc\\pytest\\pytest.xml",
+            "--verification-evidence-dir=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-8bf64766bef94d94ac97a583f95245cc\\pytest",
+            "--verification-run-id=feedback-8bf64766bef94d94ac97a583f95245cc",
+            "--verification-step=pytest",
+            "-p",
+            "tools.feedback",
+            "--feedback-selection=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\feedback-8bf64766bef94d94ac97a583f95245cc\\selection.json"
+          ],
+          "exit_code": 0,
+          "seconds": 71.23401229997398,
+          "log": "pytest.txt",
+          "error": null,
+          "passed": true
+        },
+        {
+          "name": "snapshot",
+          "command": [
+            "internal:snapshot"
+          ],
+          "exit_code": 0,
+          "seconds": 0.03053310001268983,
+          "log": "snapshot.txt",
+          "error": null,
+          "passed": true
+        }
+      ],
+      "feedback_sha256": "336484fba6b87ff0240048c9d2f39cce1992bc157de24d8c266bda8d8395560c"
+    }
+  ],
+  "baseline_cases": 787,
+  "preserved_baseline_cases": 787,
+  "added_cases": 42,
+  "scope_errors": [],
+  "model_errors": [],
+  "protected_code_or_ci_diff": [],
+  "assessment": {
+    "A1": "PASS",
+    "A2": "PASS",
+    "A3": "PASS"
+  },
+  "limitations": [
+    "single isolated final measurement; no paired runtime speedup inference",
+    "feedback is not Full or formal AI eligibility",
+    "parallel/CI/optimization B-C not implemented",
+    "real browser, other OS and CI execution not performed"
+  ]
+}

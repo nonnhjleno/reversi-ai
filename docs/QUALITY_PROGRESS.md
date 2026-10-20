@@ -1,5 +1,22 @@
 # 品質基盤導入の進捗と検証証拠
 
+## 品質監査A1〜A3（2026-10-20、PASS）
+
+監査第12節Aだけを対象とする。過去のPhase 10未実装の記述は当時の履歴。今回の先行設計では既存10検査を残してtyping_scopeを必須追加（11工程）、3本番ルートの全Pythonとstrict filesを照合する。既存14対象にinitializer2件とfeedbackを加えて17対象。利用者はreversi_01.py・102400-games/data.pyを保管/参考用途として承認した。web.pyだけが本番strict例外で、AI/GUI/評価契約は変更しない。
+
+Quick/Standard_AIはFullと別kindの補助証拠とし、共有/未知変更はFullへ戻す。個別計測はmeasure-profileを明記し、Full未合格を常に保存する。設計図・契約・操作を先行更新後、実装前の新規回帰17失敗を確認。実装後は追加40回帰が成功（15.74秒）、strict17対象・Lint・format成功。途中のリスト注釈不足と整形差分取込時の末尾構文エラーは修正して再検証した。これから同一ソースでQuick/Standard_AIとFullを実行し、共通結果と原証拠を照合する。現時点でA完了/Full PASSとはしない。
+
+最終結果・保存先は[品質監査A実装記録](reports/20261020_quality_feedback.md)へ記録する。Bのmypy起動共有・fixture最適化、CのCI/並列化は実施しない。commit/pushも行わない。
+
+最終判定: **A1/A2/A3 PASS**。上記の「これから」は作業途中の記録で、以降に以下の実行・照合を完了した。既存CLI回帰でfixtureコピー後のtools再作成を検出し、期待値を変えずexist_okで修正。品質回帰149成功・16除外（149.22秒）後、全829成功のFullを確認。最終照合で品質図の静的検査→collect-only順と操作資料の古い13対象表記を修正し、資料版まで揃えて再実行した。
+
+- Quick: 231成功、598未選択、0失敗/skip、runner内wall 36.793秒。`evaluation_results/feedback-9f6311cccf7a4607a19b0b4babe66ab5/`。
+- Standard_AI: 253成功、576未選択、0失敗/skip、runner内wall 82.981秒。`evaluation_results/feedback-8bf64766bef94d94ac97a583f95245cc/`。
+- Full: 全11工程PASS、pytest 829成功・0失敗/skip（表示737.49秒）、独立smoke 1成功（JUnit 4.033秒）。工程秒の和753.881秒はCLI全体wallとは区別する。`evaluation_results/quality-9285910144e444a4bff556b67e5571d1/`。
+- 既存787 caseを全保全し42追加。strict17、scope/モデル照合エラー0、38 sourceの開始/終了/現在および3実行間hash一致。Fullのpublication/再収集エラー0、両補助報告の再検証エラー0、共通case結果不一致0。Standardの原参照12件はrun内へ保管済み。
+
+本番/GUI/ハーネス/固定baseline/CI workflowは変更なし。QuickとStandardの成功はFull成功でも正式AI資格でもない。Full自体の最適化、CI実行、実ブラウザ、別OS、統制した反復性能測定は未実施。詳細な実argv・hash・集計は[検証集計](reports/20261020_quality_feedback_metrics.json)。Aで停止しB/Cへ進まない。
+
 開始日: 2026-10-14。開始commit: `8712843ee81ac6fbf7ce2ab2d9e8da8f54b298ae`。
 開始時Gitはclean、mainとorigin/mainは一致。commit・push・branch操作は行わない。
 
