@@ -563,3 +563,28 @@ sequenceDiagram
 `tools/quality.py:validate_model`はharness import図と共通正式入口を検査し、reversi／engine内部のAI依存は対象外である。したがって、AI内部の依存は`tests/test_ai_engine.py`の構造・起動回帰で別途確認する。これらのテストは実装済みだが、Mermaid図だけで依存の正しさを保証するものではない。
 
 状態の遷移は「不正色→既存NG」「空候補→既存NG」「正常選択→1回適用→座標」「新しい内部境界の故障→例外」である。予算／時計／統計のunknown・failed・verifiedをこの内部状態へ流用しない。将来のルールcallback・探索・計測は別の先行設計で追加する。
+
+<a id="phase2-design"></a>
+
+## 14. Phase 2の予定するコピー接続と盤面評価（実装前・2026-10-21）
+
+以下は[Phase 2実装準備](phase2_design.md)に従う予定図であり、第13節の現行selectorをすでに置き換えたという意味ではない。AI内部の予定責務だけを示す。ハーネスの現行import DAG・正式入口・状態遷移・schemaは変更しない。
+
+```mermaid
+flowchart LR
+    ENTRY["GUI / harness.Player"] -.->|"既存stdin/stdout"| BOARD["reversi.py / 実Board"]
+    BOARD -->|"snapshot・色・root候補"| SELECT["ai_engine / 1手selector"]
+    BOARD -->|"構築時にstateless関数を注入"| FACTORY["ai_engine / selector factory"]
+    FACTORY --> SELECT
+    SELECT -->|"各候補の仮着手"| COPY["reversi.py / module関数のコピーcallback"]
+    COPY -->|"独立cell・selector明示"| RULES["作業用Board / 既存_ask・_play"]
+    RULES -->|"新snapshot・合法手tuple"| COPY
+    SELECT -->|"root着手色の視点で採点"| EVAL["ai_engine / 特徴・盤面評価"]
+    EVAL -->|"両色の合法手を問い合わせ"| COPY
+    SELECT -->|"座標のみ返す"| BOARD
+    BOARD -->|"検証後1回だけ確定"| REAL["実Board.cell"]
+```
+
+callbackは実Boardへのbound methodを持たず、作業用Boardを作る際は明示selectorで再帰構築を避ける。engineからreversi/Board/Pos/harnessへの逆importは追加しない。独立refereeは実AIのルールに共用せず、テストと外部対局の照合を担当する。
+
+呼出・値域・視点・終局・故障・比較条件の正本は上記準備資料。境界の一覧は[契約第15節](harness_contracts.md#phase2-boundary)。品質モデル検査はAI内部callbackの意味・cellの非共有まで証明しないため、予定するP2-01〜09の動作・構造回帰で別に確認する。

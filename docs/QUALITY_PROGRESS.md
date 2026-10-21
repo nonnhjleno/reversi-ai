@@ -1,5 +1,11 @@
 # 品質基盤導入の進捗と検証証拠
 
+## AI Phase 2の準備（2026-10-21、準備完了・実装前）
+
+`feat/ai-phase2`、開始HEAD `82f2c7b`・cleanから開始。[実装準備](phase2_design.md)とAI内部の予定図・境界を先行記録した。Python・テスト・設定・固定baselineは未変更。既存のFull 11工程、strict17、ハーネス正式契約を維持する。新規テストはPhase終了時のレビューまでFullだけに置く計画。
+
+開始時の固定資産等8ハッシュ一致、開発用1000局面検証、対応する直接CPython 3.13.5を確認した。現行ハーネスで変更前2局smokeと100局を再取得し、異常0・86勝14敗、保存原証拠のfresh再解析を確認した。今回の直接CPython Fullは全11工程PASS、pytest906成功・独立smoke1成功、失敗/skip 0。証拠は `evaluation_results/quality-9a53a591a833489f997b7c8f5c418a7b/`。39sourceの開始/終了/現在hash一致、publicationエラー0。これは実装前の現行コードの品質であり、未作成のPhase 2機能を検証したものではない。[準備記録](reports/20261021_phase2_preparation.md)を参照。
+
 ## 品質監査C（2026-10-20、PASS）
 
 利用者はcommit/push/PR・CI確認・mainのPR/quality必須設定まで承認した。mainへのmergeは行わない。作業開始HEAD95ae51f、refactor/quality-gate-optimization。既存AGENTS.mdのステージ済み追記はそのまま保護する。モデル図11.C・契約13.4を先行更新し、CIイベント頻度と保守的auto routingのみを変更する。Full11工程・strict17・直列journal・AI/GUI/時計/予算/正式資格は不変。

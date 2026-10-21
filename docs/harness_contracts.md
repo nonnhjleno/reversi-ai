@@ -395,3 +395,19 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 | 評価と証拠 | 分離前後の棋譜・盤面・RNG stateの互換回帰と2局smokeを保存。実装後に全品質ゲートを実行 | 参考互換性の確認であり正式CI・内部予算・探索時間の認証ではない。100局の位置評価比較はPhase 1Bの別工程 |
 
 将来の探索callbackは実Boardに束縛しないコピー用ルール接続とし、AIから本体への逆importを増やさない。予算・clock・metrics・model loadはPhase 1Aの3引数境界に自己申告値を追加して認証せず、該当Phaseで実producerと既存の正式ANDを照合する。型成功はrowsの合法性、intからのbool除外、原証拠の意味的正しさの代用ではない。
+
+<a id="phase2-boundary"></a>
+
+## 15. Phase 2の予定するAI内部境界（実装前・2026-10-21）
+
+具体的な型・値域・視点・失敗条件・テスト条件の正本は[Phase 2実装準備](phase2_design.md)、予定の依存・呼出図は[アーキテクチャ第14節](harness_architecture.md#phase2-design)。以下は追加予定の内部境界であり、現在のAIが実装・検証済みであるという保証ではない。
+
+| 境界 | Phase 2の予定する責務 | 現行ハーネスとの関係 |
+|---|---|---|
+| コピー用ルール | 本体のstatelessなmodule関数がsnapshotから独立した作業用Boardを作り、合法手・仮着手を返す | engineからrefereeや本体を逆importしない。実Boardへのbound methodを渡さない |
+| 評価 | engineが固定視点で特徴と終局価値を計算し、実盤面・乱数・stdoutを変更しない | 盤面評価値は勝ち点率や正式統計ではない |
+| 選択・確定 | 既存3引数selectorの戻り値を本体が検査し、実Boardへ1回だけ適用 | 第14節の空候補・不正戻り値・例外・通信の扱いを保持 |
+| 資産 | 候補はscriptに加えてengineを明示。固定positional_v1はその独立engineも登録 | 候補変更で固定相手が変化しないことをhash・起動で確認 |
+| 品質・対局 | 特徴の独立診断、コピー不変、Phase 1回帰、Full、固定相手との参考比較 | schema5/trace4/validation3と正式ANDは変更しない。内部予算unknownから正式CIへ昇格しない |
+
+Phase 2には実AIの正式producer追加を含めない。callbackの戻り値やテスト成功をbudget・clock・lifecycleのverifiedへ読み替えない。
