@@ -76,7 +76,7 @@ Quick/Standard_AIはFullと別kindの補助証拠とし、共有/未知変更は
 
 変更前に直接CPython3.13.5で `python -B tools/quality.py` を実行し、quality-4055bf7ca355410abb3d5cc3e47888e7へ新規保存して全必須成功を確認した。参照変更前の `python -B -m pytest -q tests/test_quality.py -k relocated_specification -p no:cacheprovider` は4失敗・159除外（5.22秒）。旧実装が旧ルートの仕様を採用し、新配置を記録しないことを確認した。資料移動の初回PowerShellはSplit-Pathのパラメーター不整合で最初の移動前に停止した。親パス取得をGetDirectoryNameへ修正し、全パスをworkspace内と確認してから上書きなしで10件を移動した。
 
-整理後の実行結果:
+整理後の実行結果
 
 | 実行 | 結果 |
 |---|---|
@@ -94,7 +94,7 @@ Quick/Standard_AIはFullと別kindの補助証拠とし、共有/未知変更は
 
 ## 現行strict方針（2026-10-16改定）
 
-この節が今後のstrict範囲とPhase 3/10の判断の正本である。以降の過去記録にある「Phase 3保留」「GUI未移行」「将来再開」は、その時点の履歴として残し、本方針を優先する。元の品質基盤Goal 3とstrict移行Phase 3は別の番号であり、GoalのPASSをGUI移行のPASSと読み替えない。
+今後のstrict範囲とPhase 3/10の判断は、この節を基準とする。以降の過去記録にある「Phase 3保留」「GUI未移行」「将来再開」は、その時点の履歴として残し、本方針を優先する。元の品質基盤Goal 3とstrict移行Phase 3は別の番号であり、GoalのPASSをGUI移行のPASSと読み替えない。
 
 | 項目 | 現行の扱い |
 |---|---|
@@ -106,7 +106,7 @@ Quick/Standard_AIはFullと別kindの補助証拠とし、共有/未知変更は
 | 再検討条件 | web.pyの機能追加/大規模修正が必要になったときにstrict化を改めて検討する。今回の決定で常時再開予定にはしない |
 | Phase 10 | 新しい本番Pythonのstrict対象漏れ防止を次の目的とする。**今回は設計検討のみ・未実装・非PASS** |
 
-今回はこの文書・QUALITY_BLOCKERS.md・ハーネス.mdだけを更新する。コード/テスト/モデル図/契約正本/型設定/品質ゲート実装/既存評価資産は変更しない。AGENTS.mdも変更しない。新方針は現在13ファイルの設定と矛盾せず、web.pyをfilesへ追加したりignore設定を追加したりする必要はない。
+今回はこの文書・QUALITY_BLOCKERS.md・ハーネス.mdだけを更新する。コード/テスト/モデル図/契約/型設定/品質ゲート実装/既存評価資産は変更しない。AGENTS.mdも変更しない。新方針は現在13ファイルの設定と矛盾せず、web.pyをfilesへ追加したりignore設定を追加したりする必要はない。
 
 ### Phase 10 最小変更の設計案（未実装）
 
@@ -117,7 +117,7 @@ Quick/Standard_AIはFullと別kindの補助証拠とし、共有/未知変更は
 #### A. 対象の識別と除外境界
 
 - 本番管理ルートの初期案はharness/・reversi_player/・tools/。その下の全.pyを再帰的に列挙し、未追跡ファイルとネストした新規モジュールも含める。git ls-filesやGitのignoreだけに依存しない。__init__.pyも本番候補とし、空/短いという理由で例外にしない。
-- tests/（fixture含む）はテストという用途、docs/は資料、evaluation_results/は生成物、.git/.venvと既知tool cacheは管理/依存資産として区別する。これらは「本番strict例外」ではなく、そこへ新たな本番コードを配置することを許可するルールでもない。未知の新ルート/ルート直下.pyは黙って無視せず未分類として失敗させ、本番なら管理ルートへ追加または移動してstrictへ登録する。既知の生成物/依存ルート以外の未分類Pythonを発見する補助inventoryを用意する案とする。
+- tests/（fixture含む）はテストという用途、docs/は資料、evaluation_results/は生成物、.git/.venvと既知tool cacheは管理/依存資産として区別する。これらは「本番strict例外」ではなく、そこへ新たな本番コードを配置することを許可するルールでもない。未知の新ルート/ルート直下.pyは未分類として失敗させ、本番なら管理ルートへ追加または移動してstrictへ登録する。既知の生成物/依存ルート以外の未分類Pythonを発見する補助inventoryを用意する案とする。
 - 本番の例外集合Eは正確に{reversi_player/web.py}だけ。globやディレクトリ例外にせず、Windowsの区切り・大小文字/同一実パスを正規化して重複、root外、別名経由の迂回を拒否する。未承認の追加例外・理由欠損は失敗とする。新しい.pyiや同名stubによる実装検査の差替えも未承認のまま通さない。
 - 管理ルート/非本番用途/例外理由の機械用記録が必要なら、既存pyproject.toml内の小さな品質scope節へまとめる。strictの正規リストは引き続きtool.mypy.filesだけとし、本番パスの一覧を別の設定へ重複転記しない。承認済み例外はweb.pyだけに固定する回帰を置く。設定と検査コードを同時に書き換える権限者を認証する仕組みではなく、通常の追加漏れ/無断の設定逸脱を検出する機構である。
 
@@ -129,7 +129,7 @@ scope一致だけではstrict成功を証明しない。strict=trueと正式argv
 
 逆に、web.pyがfilesにないことだけでは、将来のstrict側importによる間接検査まで除外できると断定しない。現在のGUI関連テストからのimportと本番strict入力を区別し、Phase 10の実argvで検査範囲も確認する。本番strict側が新しくweb.pyをimportする必要が生じた場合は、現在のGUI分離との依存整合と、承認済みのwebだけを対象外に保つ方法を先に検討する。広域follow_imports=skip等を自動追加したり、他の本番コードへAny/ignoreを波及させたりしない。今回は新しい例外設定を加えない。
 
-**現在のinventoryから分かった着手前の確認事項**:
+**現在のinventoryから分かった着手前の確認事項**
 
 | ファイル | 事実とPhase 10案 |
 |---|---|
@@ -182,7 +182,7 @@ Phase 10のPASSには、未分類解消、Bの全パス保持、P−Eの明示st
 - Python: CPython 3.13.5 / Windows 11。pytest 8.4.2。Ruff / mypy / Hypothesisは未導入。
 - 本体・GUI・ハーネスは標準ライブラリ。開発依存はrequirements-dev.txtのpytestのみ。
 - README、pyproject.toml、既存lint/type設定、CI、下位AGENTS.mdは存在しない。
-- 仕様正本はプログラム開発方法.md、モデル正本はdocs/harness_architecture.md、契約はdocs/harness_contracts.md。
+- 仕様はプログラム開発方法.md、モデル図はdocs/harness_architecture.md、契約はdocs/harness_contracts.mdを参照する。
 - 実AIはランダム選択で内部予算trace未対応。探索結果型や学習モデルを実装済みと仮定しない。
 - tests/test_result.pyはルール・GUIサーバー接続、test_stdin_commands.pyは独立プロセス通信、test_harness.pyは取得・時系列・原証跡・統計・保存・公開入口を検証する。
 - 変更前証拠の保存先: `C:\Users\taaai\AppData\Local\Temp\reversi-quality-baseline-hfwdhzzw`。tracked-hashes.json、pytest.txt、smoke.txt、commands.jsonを新規保存。既存評価資産は上書きしない。
@@ -629,7 +629,7 @@ statistics単独の既存strict診断は10件：4関数のno-untyped-def、group
 
 変更ファイルはharness/statistics.py、pyproject.toml、tests/test_harness.py、tests/test_quality.py、ハーネス.md、QUALITY_PROGRESS.md。モデル図・契約の変更不要の理由はPhase 0で先に記録し、実装後の依存/処理/状態を双方向照合した。品質runnerと判定条件/timeout、AI/GUI、データ資産、過去結果は編集していない。
 
-主な実行コマンド（キャッシュ/診断logは専用一時領域へ保存）:
+実行した主なコマンドは次のとおり（キャッシュ/診断logは専用一時領域へ保存）。
 
 ```powershell
 python -B -m mypy --no-incremental --config-file pyproject.toml
@@ -698,7 +698,7 @@ git diff --check
 
 変更した6ファイル：reversi_player/reversi.py（20関数・盤面/候補の注釈と比較docstring）、pyproject.toml（本体追加/名前解決）、tests/test_result.py（既存比較/座標21回帰）、tests/test_quality.py（scope拡張と動的境界/guard自身の回帰）、ハーネス.md（7対象・制約の操作説明）、QUALITY_PROGRESS.md（本記録）。ハーネス本体・statistics・web.py・学習/対局資産は編集していない。モデル/データ契約に意味変更がないため図を変更しない判断を先に記録し、実装後に依存/処理/公開境界を照合した。
 
-主要な実行コマンド：
+主要な実行コマンドを次に示す。
 
 ```powershell
 python -B -m mypy --no-incremental --config-file pyproject.toml
@@ -785,7 +785,7 @@ typing.txtは8source成功。必須10検査すべて終了0で、既存の検査
 | 現在のsource対応 | 31sourceの開始/終了/現在hash一致。code_sha256・取得fingerprintの通常の版変化を偽装せず、元資産も書き換えない |
 | 範囲・Git保全 | 変更6ファイル、その他62trackedの開始hash一致。HEAD=96a04e4、未追跡なし、ステージ/commit/push/branch操作なし |
 
-変更ファイル:
+変更したファイルは次のとおり。
 
 - `harness/openings.py`: 関数・ローカルの注釈、TYPE_CHECKING内の_OpeningMove/_OpeningEntry/_Population/_SelectionManifest。
 - `pyproject.toml`: filesへopeningsを追加。旧7対象・strict・名前解決・format scopeを維持。
@@ -794,7 +794,7 @@ typing.txtは8source成功。必須10検査すべて終了0で、既存の検査
 - `ハーネス.md`: 現行8対象、未型付け範囲、型の保証限界、Phase 3保留での先行を明記。
 - `QUALITY_PROGRESS.md`: 開始承認・調査・先行方針・修正過程・実コマンド・最終監査の本記録。
 
-実行した主要コマンド:
+実行した主なコマンドは次のとおり。
 
 ```powershell
 python -B -m mypy --no-incremental --config-file pyproject.toml
@@ -882,7 +882,7 @@ Phase 4に未解決の実装blockerはないためQUALITY_BLOCKERS.mdを新設�
 
 変更12ファイル: harness/evaluate.py・contracts.py・protocol.py・search_budget.py、pyproject.toml、tests/test_harness.py・test_quality.py、docs/harness_architecture.md・harness_contracts.md、ハーネス.md、QUALITY_PROGRESS.md・QUALITY_BLOCKERS.md。AI本体/GUI/学習資産/既存評価JSONは変更していない。
 
-実行した主要コマンド（個別の一時cache/JUnit/log保存先は上記一時領域、全ゲートの正確なargvはquality.json/evidence.json）:
+実行した主なコマンドは次のとおり。個別の一時cache/JUnit/log保存先は上記一時領域へ保存した。全ゲートの正確なargvはquality.json/evidence.jsonを参照。
 
 ```powershell
 python -B -m mypy --no-incremental --config-file pyproject.toml
@@ -1105,7 +1105,7 @@ search_budget単独strictは81診断（no-untyped-def 15、no-untyped-call 44、
 
 承認済みの変更は6つの既存述語の型ガード化、検査後の端点再束縛、正規化configの局所名とexemption reasonの局所束縛。保存データやschema・予算・時系列・正式資格の条件は変えない。JSON原値を対象とし、不正な辞書subclassのget副作用や型introspectionまで新たに保証しない。
 
-局所castは6か所だけで、原辞書や全traceへのcastはない:
+局所castは6か所だけで、原辞書やtrace全体にはcastしていない。
 
 | 場所 | 前提・限界 |
 |---|---|
@@ -1157,7 +1157,7 @@ search_budget単独strictは81診断（no-untyped-def 15、no-untyped-call 44、
 
 変更9ファイルは `harness/search_budget.py`、`pyproject.toml`、`tests/test_harness.py`、`tests/test_quality.py`、`docs/harness_architecture.md`、`docs/harness_contracts.md`、`ハーネス.md`、`QUALITY_PROGRESS.md`、`QUALITY_BLOCKERS.md`。本体/GUIや他の本番モジュールは変更していない。
 
-実行した主なコマンド（個別の一時cache/JUnit/log保存先は省略。gate内の正確なargvはquality.jsonのstepsを参照）:
+実行した主なコマンドを示す。個別の一時cache/JUnit/log保存先は省略し、gate内の正確なargvはquality.jsonのstepsを参照する。
 
 ```powershell
 python -B -m mypy --no-incremental --config-file pyproject.toml
@@ -1267,11 +1267,11 @@ protocolの既存23定義と必要な局所容器を注釈し、通常の辞書�
 | 型・承認範囲 | 23既存定義と通常形状を注釈。承認済みpipe/OS境界、既存述語の表現のみ変更。rawはobject、局所castは1か所、禁止する型逃げの回帰あり |
 | 実行互換性 | 固定I/O/時計呼出/欠損pipe/可変stdin/OS正常・失敗回帰、正規化AST20定義、3述語2492比較、旧/新Playerの通常出力一致 |
 | 正式入口・旧データ | baselineソースで生成した旧最終報告をAPI/CLIで受理し、起動前通信へ改変した報告を正式不適格と確認。hash一致を意味検証の代替にしていない |
-| 図・契約 | 現在のpipe境界と型の保証限界を正本へ反映。責務・依存方向・状態・schema5/trace4/validation3・正式ANDは不変、モデル検査成功 |
+| 図・契約 | 現在のpipe境界と型の保証限界を記載。責務・依存方向・状態・schema5/trace4/validation3・正式ANDは不変、モデル検査成功 |
 | 全体品質・証拠 | 上記の全584、独立smoke、9strict、必須10検査、保存証拠・現在source照合が成功 |
 | 保全 | 開始時68tracked中、対象の8変更以外の60は開始hash一致。新規QUALITY_BLOCKERS.mdは停止/解消記録。HEAD=5329275、ステージなし。commit/push/branch操作なし |
 
-変更ファイルは9件:
+変更したファイルは9件。
 
 - `harness/protocol.py`: 関数/容器/通常辞書の注釈、型ガード、各pipeアクセス境界、OS条件の限定変更、終了時刻転記の局所ビュー。
 - `pyproject.toml`: protocolを9件目の常設strict対象へ追加。他の厳格設定・format scopeは維持。
@@ -1281,7 +1281,7 @@ protocolの既存23定義と必要な局所容器を注釈し、通常の辞書�
 - `ハーネス.md`: 現行9strict対象と残る未型付け範囲、保証限界。
 - `QUALITY_PROGRESS.md` / 新規`QUALITY_BLOCKERS.md`: 停止・承認・再開・検証・完了の根拠。停止履歴を破棄せず現在状態と区別。
 
-実行した主なコマンド（個別検査の一時cache/JUnit/log保存先などの補助引数は省略。品質ゲートの正確なargvはquality.jsonのstepsを参照）:
+実行した主なコマンドを次に示す。個別検査の一時cache/JUnit/log保存先などの補助引数は省略し、品質ゲートの正確なargvはquality.jsonのstepsを参照する。
 
 ```powershell
 python -B -m mypy --no-incremental --config-file pyproject.toml harness/protocol.py
@@ -1319,7 +1319,7 @@ git diff --check
 
 > 2026-10-20最終総括: Phase 1A・1B完了。直接CPython 3.13.5の全品質ゲートPASS（pytest 787成功・独立smoke 1成功・strict 14 source）。固定random_v0との2局smoke・100局descriptiveは失敗0、勝ち点率0.86（黒0.84・白0.88）で参考暫定採用基準を達成。Phase 2の設計へ進行可能。内部予算・trace4・時系列と正式資格は未達。比較版positional_v1はbaselines/positional_v1/へ固定済み。詳細と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照。
 
-対象はHEAD `eb2e860`／`feat/ai-phase1`。本体・GUI・seed adapter・課題仕様・分離案・ハーネス図／契約・既存テスト・pyproject.toml・品質ゲートを照合し、[分離設計第13節](リバーシAI分離設計.md#phase1a-design)を初版契約の正本として確定した。予定の依存・sequenceはarchitecture第13節、外部評価の境界はcontracts第14節。段階設計・開発計画も更新し、Phase 0のmain未収録という古い記述を統合済みへ訂正した。
+対象はHEAD `eb2e860`／`feat/ai-phase1`。本体・GUI・seed adapter・課題仕様・分離案・ハーネス図／契約・既存テスト・pyproject.toml・品質ゲートを照合し、[分離設計第13節](リバーシAI分離設計.md#phase1a-design)を初版契約として確定した。予定の依存・sequenceはarchitecture第13節、外部評価の境界はcontracts第14節。段階設計・開発計画も更新し、Phase 0のmain未収録という古い記述を統合済みへ訂正した。
 
 決定は、Boardが実盤面／Pos／合法手／適用を保持し、engineは不変rows・str色・候補tupleから座標を選ぶ3引数callableとすること。keyword-only selectorで既存Board()を保ち、共有module randomのshuffle回数・順序・RNG stateを維持する。不正な結果は適用前にRuntimeError、非空Noneをpassへ置換せず、任意の外部副作用を巻き戻す保証とは区別する。未使用contextは初版へ実装せず、位置評価・探索・計測は後続工程とした。
 

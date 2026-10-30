@@ -2,7 +2,7 @@
 
 更新日: 2026-10-14。評価契約の基準: 8712843＋品質導入の非意味的lint整理・型注釈。現行実装はevaluation/analysis/comparison schema5、trace4、validation3。第13節は実装に先行して確定した開発用品質契約。旧schemaや品質ゲートの成功を正式AI評価資格に読み替えない。
 
-外部コマンド・盤面・時間制限の正本は[課題仕様](プログラム開発方法.md)、実行方法は[ハーネス.md](ハーネス.md)、責務と図は[harness_architecture.md](harness_architecture.md)。実行確認と残件は[正常化完了報告](reports/ハーネス正常化完了報告.md)。旧定義・監査・整理前の本文は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管する。
+外部コマンド・盤面・時間制限の仕様は[課題仕様](プログラム開発方法.md)に記載する。実行方法は[ハーネス.md](ハーネス.md)、責務と図は[harness_architecture.md](harness_architecture.md)、実行確認と残件は[正常化完了報告](reports/ハーネス正常化完了報告.md)を参照する。旧定義・監査・整理前の本文は[修正モデルの履歴](archive/ハーネス整合性修正モデル.md)に保管する。
 
 ## 1. 形式・型と外部仕様
 
@@ -25,7 +25,7 @@
 
 ## 2. 識別子とhash
 
-canonical JSONはensure_ascii=False・sort_keys=True・空白なし・allow_nan=Falseに基づく。各生成関数の実装が正本であり、意味の違うIDを代用しない。
+canonical JSONはensure_ascii=False・sort_keys=True・空白なし・allow_nan=Falseに基づく。各生成関数の実装を定義とし、意味の違うIDを代用しない。
 
 | 識別子 | 定義元・意味 | 不変条件 |
 |---|---|---|
@@ -50,7 +50,7 @@ opening_id、sample_set_id、execution_orderという専用フィールドは実
 
 hashは内容照合であって署名ではない。hashを更新した不正rawも、着手・盤面・応答・時系列の意味検証を通さない。
 
-### Phase 0で追加する開発資産の識別規則（評価schema変更なし・正本）
+### Phase 0で追加する開発資産の識別規則（評価schema変更なし）
 
 | 資産 | 固定条件・生成元 | 保証と限界 |
 |---|---|---|
@@ -138,7 +138,7 @@ clock/QPCの根拠は[Python 3.13 time](https://docs.python.org/3.13/library/tim
 | baseline-asymmetric | 理由と元入口hashが一致するBのnoneだけ内部予算exempt可。A/両probe/両host/通常Bの子lifecycleは免除しない |
 | descriptive | 参考対局。none宣言だけ、trace存在だけでverifiedにしない |
 
-外部はcommand既定1秒・genmove10秒、startup別既定5秒。初回nameのstartup期限と通常command期限は区別する。実際の条件は数値フィールドでありtimeout_policy説明文字列だけを正本にしない。
+外部はcommand既定1秒・genmove10秒、startup別既定5秒。初回nameのstartup期限と通常command期限は区別する。実際の条件は数値フィールドで表し、timeout_policy説明文字列だけでは決めない。
 
 search_onlyという名称だけで実AIの純粋な探索範囲を保証しない。現行budget_playerのSS〜SEは合法手列挙・盤面適用も含み、模擬counterである。モデル読込、JSONL書込、stdout/queue・OS待ちはfixtureの探索端点の外で、外部応答には含まれる。実AIの予定scopeと同名だけで同等扱いしない。
 
@@ -273,7 +273,7 @@ statistics単独APIはcomputed/arithmetic_only/not_assessedで、母集合やraw
 
 ## 12. 時間・公開入口契約の索引
 
-時間の正本は第5・6節、必要集合/状態/資格は第7・8節。実行経路は[現行構造](harness_architecture.md)。公開入口は原evaluation reportと原証跡を受ける。
+時間の定義は第5・6節、必要集合・状態・資格は第7・8節に記載する。実行経路は[現行構造](harness_architecture.md)。公開入口は原evaluation reportと原証跡を受ける。
 
 | 入口 | 共通核・役割 |
 |---|---|
@@ -286,7 +286,7 @@ comparison_reportのcaller resultはfresh結果との一致確認だけで、予
 
 ## 13. 開発用品質報告（実装前に確定した別契約）
 
-資料再配置の契約（2026-10-16、参照変更に先行して確定）: 課題仕様の正本はdocs/プログラム開発方法.mdへ移し、tools.quality._source_hashesはそのパスと実bytesを開始/終了ともに記録する。旧ルートパスをfallbackや別名キーとして残さず、新パスの編集・削除も既存snapshot照合で検出する。AGENTS.mdはルート、設計図・契約は既存のdocs/配下を維持する。manifest.model_contract_hashesは既存のdocs/接頭辞の抽出結果なので、仕様を含む3文書となる。QualityReport/Evidenceの形式、必須検査、snapshotの合否条件、AI正式資格は変更しない。過去のquality/evidence/trace内の記録パス/hashは当時の原証拠として保持し、今回の移動に合わせて修復しない。履歴Markdownのリンク先だけは新配置に追従させ、履歴本文や件数を現在の結果へ置き換えない。
+資料再配置の契約（2026-10-16、参照変更に先行して確定）: 課題仕様をdocs/プログラム開発方法.mdへ移し、tools.quality._source_hashesはそのパスと実bytesを開始/終了ともに記録する。旧ルートパスをfallbackや別名キーとして残さず、新パスの編集・削除も既存snapshot照合で検出する。AGENTS.mdはルート、設計図・契約は既存のdocs/配下を維持する。manifest.model_contract_hashesは既存のdocs/接頭辞の抽出結果なので、仕様を含む3文書となる。QualityReport/Evidenceの形式、必須検査、snapshotの合否条件、AI正式資格は変更しない。過去のquality/evidence/trace内の記録パス/hashは当時の原証拠として保持し、今回の移動に合わせて修復しない。履歴Markdownのリンク先だけは新配置に追従させ、履歴本文や件数を現在の結果へ置き換えない。
 
 品質runnerの結果は`report_kind=quality_gate / format_version=1`であり、evaluation/analysis/comparison schema5ではない。品質passedを正式評価のInspection/Assessmentへ渡さない。
 
@@ -382,7 +382,7 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 
 > 実装確認: 下記の選択器境界は`reversi_player/ai_engine.py`と`reversi_player/reversi.py`に反映済み。実行証拠と失敗条件の回帰結果は[Phase 1A実装報告](phase1_handoff.md)を参照。ハーネス正式評価契約、trace schema、探索予算の保証を追加したものではない。
 
-設計日: 2026-10-19。[AI分離設計第13節](リバーシAI分離設計.md#phase1a-design)を選択器の型・意味・失敗条件の正本とする。これは今後のAI内部呼出契約であり、ハーネスschema5／trace4／validation3、正式資格、stdoutの契約を変更しない。
+設計日: 2026-10-19。[AI分離設計第13節](リバーシAI分離設計.md#phase1a-design)に選択器の型・意味・失敗条件を定める。これは今後のAI内部呼出契約であり、ハーネスschema5／trace4／validation3、正式資格、stdoutの契約を変更しない。
 
 | 境界 | Phase 1Aで保証・検証する条件 | 現行評価との関係 |
 |---|---|---|
@@ -400,7 +400,7 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 
 ## 15. Phase 2のAI内部境界（実装済み・2026-10-30）
 
-具体的な型・値域・視点・失敗条件・テスト条件の正本は[Phase 2実装準備](phase2_design.md)、現行の依存・呼出図は[アーキテクチャ第14節](harness_architecture.md#phase2-design)。以下は実装した内部境界。検証結果と利用範囲は[実装記録](reports/20261030_phase2_implementation.md)を参照し、実装と棋力採用・正式資格を区別する。
+具体的な型・値域・視点・失敗条件・テスト条件は[Phase 2実装準備](phase2_design.md)に記載する。現行の依存・呼出図は[アーキテクチャ第14節](harness_architecture.md#phase2-design)を参照する。以下は実装した内部境界である。検証結果と利用範囲は[実装記録](reports/20261030_phase2_implementation.md)を参照し、実装と棋力採用・正式資格を区別する。
 
 | 境界 | Phase 2の実装した責務 | 現行ハーネスとの関係 |
 |---|---|---|
