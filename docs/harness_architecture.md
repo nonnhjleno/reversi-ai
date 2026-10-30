@@ -465,7 +465,7 @@ XMLだけでは開始したまま未完のテストや正確なnodeid/段階を�
 
 ### 11.2 journal状態遷移の修正モデル（先行確定後に実装）
 
-11節の品質2図を先に更新し、ECの前提にJLを追加した。修正前collectorがphaseだけを抽出しfinishedをboolに潰していたため、終了重複・早期終了・終了後イベント・test間の交差を見落としていた問題への修正モデルである。実装・回帰完了の状態はQUALITY_PROGRESS.mdの追記を正本とし、過去66件の成功を本検査の証拠にしない。
+11節の品質2図を先に更新し、ECの前提にJLを追加した。修正前collectorがphaseだけを抽出しfinishedをboolに潰していたため、終了重複・早期終了・終了後イベント・test間の交差を見落としていた問題への修正モデルである。実装・回帰の完了状況はQUALITY_PROGRESS.mdの追記に記録し、過去66件の成功を今回の検査の証拠には使わない。
 
 JLは同じevidenceモジュール内のprivate関数_journal_errorsとして実装し、collect_stepが集約前に呼ぶ。元journalを変更せずエラーをECへ返す。開始session→collection→selected→直列test区間→終了sessionを検査する。各testは開始→必要phase報告→終了の順序を守り、期待/観測/原参照は同じtestの開始から終了までに限る。phase報告は段階の実行後なので、fixture内metadataはsetup報告前やteardown報告前にも正常に発生する。setup失敗/skipはcallなしのsetup→teardown→終了を許可する。複数観測や失敗の整合した証拠は拒否しない。
 
@@ -499,7 +499,7 @@ baselineの複製・序盤母集団のhashは資産同一性を照合するた�
 
 > 実装確認: `reversi_player/reversi.py`から`reversi_player/ai_engine.py`へ設計済みの依存方向で接続済み。実装・回帰・品質ゲートの実行証拠は[Phase 1A実装報告](phase1_handoff.md)を参照。以下の図は設計時の予定図を実装後に照合したもので、ハーネスの正式評価schemaやtrace契約を変更するものではない。
 
-設計日: 2026-10-19。対象HEADは`eb2e860`、作業ブランチは`feat/ai-phase1`。詳細な型・失敗・回帰の正本は[AI分離設計第13節](リバーシAI分離設計.md#phase1a-design)、ハーネスとの境界は[契約第14節](harness_contracts.md#phase1a-boundary)。この追補ではPython・設定・テストを変更しない。
+設計日: 2026-10-19。対象HEADは`eb2e860`、作業ブランチは`feat/ai-phase1`。型・失敗条件・回帰の詳細は[AI分離設計第13節](リバーシAI分離設計.md#phase1a-design)に記載する。ハーネスとの境界は[契約第14節](harness_contracts.md#phase1a-boundary)に記載する。この追補ではPython・設定・テストを変更しない。
 
 ### 13.1 実装した依存と責務
 
@@ -587,7 +587,7 @@ flowchart LR
 
 callbackは実Boardへのbound methodを持たず、作業用Boardを作る際は明示selectorで再帰構築を避ける。engineからreversi/Board/Pos/harnessへの逆importは追加しない。独立refereeは実AIのルールに共用せず、テストと外部対局の照合を担当する。
 
-呼出・値域・視点・終局・故障・比較条件の正本は上記準備資料。境界の一覧は[契約第15節](harness_contracts.md#phase2-boundary)。品質モデル検査はAI内部callbackの意味・cellの非共有まで証明しないため、P2-01〜09に対応する専用テストの動作・構造回帰で別に確認する。
+呼出・値域・視点・終局・故障・比較条件は上記準備資料に記載する。境界は[契約第15節](harness_contracts.md#phase2-boundary)に記載する。品質モデル検査はAI内部callbackの意味・cellの非共有まで証明しないため、P2-01〜09に対応する専用テストの動作・構造回帰で別に確認する。
 
 2026-10-30実装着手時の追補: 第14節の図を実装前に照合した。入力検証の集約、module関数名、凍結特徴、整数分子での計算、空候補と同点規則、独立診断の具体化は[実装準備第8節](phase2_design.md#8-実装着手時の具体化2026-10-30)に確定した。実装・検証の完了は別途記録する。
 
