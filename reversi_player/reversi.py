@@ -68,7 +68,7 @@ class Board(object):
     def __init__(self, *, selector: ai_engine.MoveSelector | None = None) -> None:
         """初期盤面を作り、任意の着手選択器を保持する。
 
-        selector省略時は位置評価選択を使う。盤面規則と実盤面更新は
+        selector省略時は着手後の盤面を評価する1手選択を使う。盤面規則と実盤面更新は
         常にBoardが担当する。
         """
         self.cell: list[list[str]] = [['E' for _ in range(8)] for _ in range(8)]
@@ -76,7 +76,10 @@ class Board(object):
         self.cell[4][3] = 'B'
         self.cell[3][3] = 'W'
         self.cell[4][4] = 'W'
-        self._selector = ai_engine.select_positional_move if selector is None else selector
+        self._selector = (
+            ai_engine.make_one_ply_selector(legal_moves_for, apply_move)
+            if selector is None else selector
+        )
 
     def ask(self, color: str, pos: Pos) -> None:
         """着手可能かを検査し、GUI向けに OK または NG を出力する。
@@ -293,6 +296,39 @@ class Board(object):
     def __str__(self) -> str:
         """盤面を1行8マス、改行区切りの文字列にして返す。"""
         return '\n'.join(''.join(r) for r in self.cell)
+
+
+def _board_from_rows(rows: ai_engine.BoardRows, color: str) -> Board:
+    """検証したsnapshotから、実盤面と行を共有しない作業用Boardを作る。"""
+    ai_engine.validate_position(rows, color)
+    # 既定factoryを呼ばず、コピー構築が再帰しないようselectorを明示する。
+    board = Board(selector=ai_engine.select_positional_move)
+    board.cell = [list(row) for row in rows]
+    return board
+
+
+def legal_moves_for(rows: ai_engine.BoardRows, color: str) -> ai_engine.LegalMoves:
+    """独立コピーで合法手を(y,x)順に列挙する。入力違反はValueError。"""
+    board = _board_from_rows(rows, color)
+    return tuple(
+        (x, y) for y in range(8) for x in range(8) if board._ask(color, Pos(x, y))
+    )
+
+
+def apply_move(
+    rows: ai_engine.BoardRows, color: str, move: ai_engine.Move
+) -> ai_engine.BoardRows:
+    """合法な1着手をコピーへ反転込みで適用し、新snapshotを返す。
+
+    座標は通常tupleの厳密なint2個で0〜7。bool・非合法手・入力違反は
+    ValueErrorとし、実Board・元snapshot・乱数・stdoutは変更しない。
+    """
+    board = _board_from_rows(rows, color)
+    if not _is_move(move) or not 0 <= move[0] < 8 or not 0 <= move[1] < 8:
+        raise ValueError('invalid_move')
+    if not board._play(color, Pos(*move)):
+        raise ValueError('illegal_move')
+    return tuple(''.join(row) for row in board.cell)
 
 
 def main() -> None:

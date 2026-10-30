@@ -117,8 +117,8 @@ def test_positional_selector_handles_empty_and_singleton_candidates() -> None:
     assert ai_engine.select_positional_move(INITIAL_ROWS, 'W', ((1, 1),)) == (1, 1)
 
 
-def test_default_board_uses_positional_selector_and_applies_one_move() -> None:
-    """Board既定の初手は固定表と同点規則で決まり、実着手は一度だけ行う。"""
+def test_default_board_uses_one_ply_selector_and_applies_one_move() -> None:
+    """Board既定の初手は1手評価の対称な同点から決まり、実着手は一度だけ行う。"""
     board = Board()
     apply_move = Mock(wraps=board._play)
     board._play = apply_move

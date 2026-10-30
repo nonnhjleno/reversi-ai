@@ -9,6 +9,7 @@
 | エージェントの作業手順 | [AGENTS.md](AGENTS.md) |
 | 授業のコマンド・盤面・時間制限 | [課題仕様](docs/プログラム開発方法.md) |
 | 開発の順序・完了条件 | [開発計画](docs/開発計画.md) |
+| Phase 2の設計・実装契約 | [盤面評価・契約・テスト・比較条件](docs/phase2_design.md) |
 | テスト・品質ゲート・対戦評価・GUIの操作 | [ハーネス](docs/ハーネス.md) |
 | 現行の責務・依存・データフロー・状態 | [アーキテクチャ](docs/harness_architecture.md) |
 | 現行の識別子・予算・時計・正式評価資格 | [データ契約](docs/harness_contracts.md) |
@@ -26,7 +27,7 @@ python -m pip install -r requirements-dev.txt
 python -B tools/quality.py
 ```
 
-品質ゲートは既存のstrict対象13ファイル、全pytest、独立smokeなどの必須検査を実行し、新しい`evaluation_results/quality-UUID/`へ検証証拠を保存します。品質ゲートの成功は、AIの正式評価資格や棋力向上の証明ではありません。配布GUIの`web.py`は意図的なstrict対象外ですが、既存Lint・GUI関連テストは維持します。Phase 10の新規本番モジュール対象漏れ防止は設計段階です。
+品質ゲートはstrict対象17ファイル、全pytest、独立smoke、対象moduleの登録漏れ検査などのFull必須11工程を実行し、新しい`evaluation_results/quality-UUID/`へ検証証拠を保存します。正規のstrict一覧は`pyproject.toml`を参照してください。品質ゲートの成功は、AIの正式評価資格や棋力向上の証明ではありません。配布GUIの`web.py`は意図的なstrict対象外ですが、既存Lint・GUI関連テストは維持します。
 
 GUIだけを起動する場合:
 
