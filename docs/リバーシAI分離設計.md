@@ -1,5 +1,7 @@
 # リバーシAI分離設計
 
+2026-10-30追記: Phase 2でsnapshot用のmodule関数callback、特徴・盤面評価、1手selectorの既定接続を実装した。現行AI内部は[Phase 2設計・実装契約](phase2_design.md)と[アーキテクチャ第14節](harness_architecture.md#phase2-design)、検証・採否は[実装記録](reports/20261030_phase2_implementation.md)を参照する。以下のPhase 1時点の既定selectorや将来表現は履歴として区別する。
+
 2026-10-20更新: Phase 1A・1Bの実装、品質検証、固定random_v0との参考比較は完了。現行状態・比較版・制約の正本は[Phase 1引き継ぎ資料](phase1_handoff.md)。以下の設計時点における「未実装」表現は、その時点の記録であり、現状を示すものではない。
 
 Phase 1A設計確定日: 2026-10-19、実装・互換回帰完了: 2026-10-19。Phase 1Bの位置評価契約・比較条件は2026-10-20に確定し、selector実装・回帰・参考比較も完了。[第13節](#phase1a-design)はPhase 1Aの確定契約、現行状態と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照する。第2〜4節は現行実装、第6〜8節の探索・計測部分は将来案であり、実装済み経路と混同しない。

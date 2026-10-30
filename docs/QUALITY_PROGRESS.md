@@ -1,5 +1,15 @@
 # 品質基盤導入の進捗と検証証拠
 
+## AI開発Phase 2（2026-10-30、実装PASS・参考評価完了）
+
+開始HEAD ed7b4af、feat/ai-phase2・clean。先行設計の後、本番2ファイルへコピーcallback・固定視点の特徴評価・決定的1手selectorを実装した。新規135ケースと既存回帰を含むFull1041成功・独立smoke1成功・必須11工程PASS、strict17維持。40sourceの開始/終了/現在hash一致、publication=[]。原証拠は `evaluation_results/quality-bc0fb825dd474969a5c2804d69f6b54a/`。
+
+固定random/positionalへ各2+100局、計204局が異常0で完了し、全保存rawをfresh再解析できた。randomは97勝3敗、共通50ケース100局のbeforeからの参考対応差+0.11。positionalは39勝61敗で、棋力版昇格は保留。正式CI・内部予算・trace4の資格は未達のまま。固定AI・序盤集合・beforeは保全し、held-outはhashのみ。
+
+新規テストのJUnit合計0.231秒・最大0.054秒をレビューした。Full135件包含、Quick/Standardへの新規混入0、登録変更なし。Phase 3でコピー・評価境界のStandard登録を再検討する。現行図・契約は実装へ照合済みで、ハーネスのDAG・状態・正式入口は不変。GUI接続回帰は成功、実ブラウザとMermaid実描画は未確認。未解消blockerなし。Phase 3実装とcommit/push/merge/tagは行っていない。
+
+実装・比較条件・全ゲート・補助解析の初回失敗と修正・残る限界は[実装記録](reports/20261030_phase2_implementation.md)、機械可読の原証拠は `evaluation_results/phase2/candidate-29fb8abc734d43398785f5fc562d8441/` を参照する。以下は各実施時点の履歴。
+
 ## AI Phase 2の準備（2026-10-21、準備完了・実装前）
 
 `feat/ai-phase2`、開始HEAD `82f2c7b`・cleanから開始。[実装準備](phase2_design.md)とAI内部の予定図・境界を先行記録した。Python・テスト・設定・固定baselineは未変更。既存のFull 11工程、strict17、ハーネス正式契約を維持する。新規テストはPhase終了時のレビューまでFullだけに置く計画。

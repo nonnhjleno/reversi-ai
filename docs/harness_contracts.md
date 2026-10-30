@@ -398,11 +398,11 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 
 <a id="phase2-boundary"></a>
 
-## 15. Phase 2の予定するAI内部境界（実装前・2026-10-21）
+## 15. Phase 2のAI内部境界（実装済み・2026-10-30）
 
-具体的な型・値域・視点・失敗条件・テスト条件の正本は[Phase 2実装準備](phase2_design.md)、予定の依存・呼出図は[アーキテクチャ第14節](harness_architecture.md#phase2-design)。以下は追加予定の内部境界であり、現在のAIが実装・検証済みであるという保証ではない。
+具体的な型・値域・視点・失敗条件・テスト条件の正本は[Phase 2実装準備](phase2_design.md)、現行の依存・呼出図は[アーキテクチャ第14節](harness_architecture.md#phase2-design)。以下は実装した内部境界。検証結果と利用範囲は[実装記録](reports/20261030_phase2_implementation.md)を参照し、実装と棋力採用・正式資格を区別する。
 
-| 境界 | Phase 2の予定する責務 | 現行ハーネスとの関係 |
+| 境界 | Phase 2の実装した責務 | 現行ハーネスとの関係 |
 |---|---|---|
 | コピー用ルール | 本体のstatelessなmodule関数がsnapshotから独立した作業用Boardを作り、合法手・仮着手を返す | engineからrefereeや本体を逆importしない。実Boardへのbound methodを渡さない |
 | 評価 | engineが固定視点で特徴と終局価値を計算し、実盤面・乱数・stdoutを変更しない | 盤面評価値は勝ち点率や正式統計ではない |
@@ -411,3 +411,7 @@ format_versionは厳密な整数1、kindはsession_start/session_finish/collecti
 | 品質・対局 | 特徴の独立診断、コピー不変、Phase 1回帰、Full、固定相手との参考比較 | schema5/trace4/validation3と正式ANDは変更しない。内部予算unknownから正式CIへ昇格しない |
 
 Phase 2には実AIの正式producer追加を含めない。callbackの戻り値やテスト成功をbudget・clock・lifecycleのverifiedへ読み替えない。
+
+2026-10-30実装着手時の追補: 第15節の境界を実装前に照合した。入力検証の集約、module関数名、凍結特徴、整数分子での計算、空候補と同点規則、独立診断の具体化は[実装準備第8節](phase2_design.md#8-実装着手時の具体化2026-10-30)に確定した。実装・検証の完了は別途記録する。
+
+現行callbackは`reversi.legal_moves_for`と`reversi.apply_move`。通常tupleの8行、通常strの各8文字B/W/E、通常strのB/W色を共有検査する。moveは通常tupleの厳密なint2個（bool不可）で0〜7、非合法手も含む違反はValueError。到達可能性はこのsnapshot境界の保証外で、診断側の棋譜再生で照合する。非空root候補の完全性はBoard、仮着手の合法性と新snapshotはcallback、評価は固定root視点、同点は正確な得点一致と(y,x)順、空候補はcallbackなしNoneという責務を分ける。

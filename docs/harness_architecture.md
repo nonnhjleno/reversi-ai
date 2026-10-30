@@ -6,7 +6,7 @@
 
 ## 1. 責務と境界
 
-2026-10-20更新: Phase 1Aの選択器分離とPhase 1Bの位置評価selectorは実装済み。現行import図・正式評価図はハーネス側の責務を表し、AI内部の呼出は第13節を参照する。位置評価の実装・検証結果は[Phase 1B実装報告](phase1_handoff.md)を参照する。
+2026-10-20更新: Phase 1Aの選択器分離とPhase 1Bの位置評価selectorは実装済み。現行import図・正式評価図はハーネス側の責務を表し、AI内部の現行呼出は第14節、Phase 1時点の履歴は第13節を参照する。位置評価の実装・検証結果は[Phase 1B実装報告](phase1_handoff.md)を参照する。
 
 | モジュール | 現行責務・主な呼出 |
 |---|---|
@@ -493,9 +493,9 @@ flowchart LR
 
 baselineの複製・序盤母集団のhashは資産同一性を照合するための値であり、署名や秘密保持を意味しない。母集団の`purpose`と除外hashは用途の記録であり、最終評価用データが人から秘匿されている、または未閲覧であることの保証ではない。図は品質ゲート・対局の正式資格を変更せず、random AIのtrace4/探索予算対応を示さない。
 
-## 13. Phase 1Aの選択器分離（実装済み・2026-10-19確認）
+## 13. Phase 1Aの選択器分離（Phase 1時点の実装記録・2026-10-19確認）
 
-> Phase 1B位置評価は[事前登録設計](phase1_handoff.md)に従って実装済み。`Board()`は`ai_engine.select_positional_move`を既定selectorとして使い、`reversi.py → ai_engine.py`の依存方向を維持する。評価表はengine内にあり、新規本番moduleやハーネスschema変更はない。実装・検証証拠は[Phase 1B実装報告](phase1_handoff.md)を参照する。
+> 以下の第13節はPhase 1時点の記録。現在の既定は第14節の1手selectorであり、ランダムと位置selectorは明示注入で利用できる。Phase 1B位置評価は[事前登録設計](phase1_handoff.md)に従って実装済み。当時の`Board()`は`ai_engine.select_positional_move`を既定selectorとして使い、`reversi.py → ai_engine.py`の依存方向を維持する。評価表はengine内にあり、新規本番moduleやハーネスschema変更はない。実装・検証証拠は[Phase 1B実装報告](phase1_handoff.md)を参照する。
 
 > 実装確認: `reversi_player/reversi.py`から`reversi_player/ai_engine.py`へ設計済みの依存方向で接続済み。実装・回帰・品質ゲートの実行証拠は[Phase 1A実装報告](phase1_handoff.md)を参照。以下の図は設計時の予定図を実装後に照合したもので、ハーネスの正式評価schemaやtrace契約を変更するものではない。
 
@@ -566,9 +566,9 @@ sequenceDiagram
 
 <a id="phase2-design"></a>
 
-## 14. Phase 2の予定するコピー接続と盤面評価（実装前・2026-10-21）
+## 14. Phase 2のコピー接続と盤面評価（実装済み・2026-10-30）
 
-以下は[Phase 2実装準備](phase2_design.md)に従う予定図であり、第13節の現行selectorをすでに置き換えたという意味ではない。AI内部の予定責務だけを示す。ハーネスの現行import DAG・正式入口・状態遷移・schemaは変更しない。
+以下は[Phase 2設計・実装契約](phase2_design.md)に従って実装した現行AI内部の呼出図。`Board()`は`make_one_ply_selector(legal_moves_for, apply_move)`を既定とし、第13節の選択器を明示注入する機能も保持する。検証・候補採否の結果は[実装記録](reports/20261030_phase2_implementation.md)を参照する。ハーネスの現行import DAG・正式入口・状態遷移・schemaは変更しない。
 
 ```mermaid
 flowchart LR
@@ -587,4 +587,8 @@ flowchart LR
 
 callbackは実Boardへのbound methodを持たず、作業用Boardを作る際は明示selectorで再帰構築を避ける。engineからreversi/Board/Pos/harnessへの逆importは追加しない。独立refereeは実AIのルールに共用せず、テストと外部対局の照合を担当する。
 
-呼出・値域・視点・終局・故障・比較条件の正本は上記準備資料。境界の一覧は[契約第15節](harness_contracts.md#phase2-boundary)。品質モデル検査はAI内部callbackの意味・cellの非共有まで証明しないため、予定するP2-01〜09の動作・構造回帰で別に確認する。
+呼出・値域・視点・終局・故障・比較条件の正本は上記準備資料。境界の一覧は[契約第15節](harness_contracts.md#phase2-boundary)。品質モデル検査はAI内部callbackの意味・cellの非共有まで証明しないため、P2-01〜09に対応する専用テストの動作・構造回帰で別に確認する。
+
+2026-10-30実装着手時の追補: 第14節の図を実装前に照合した。入力検証の集約、module関数名、凍結特徴、整数分子での計算、空候補と同点規則、独立診断の具体化は[実装準備第8節](phase2_design.md#8-実装着手時の具体化2026-10-30)に確定した。実装・検証の完了は別途記録する。
+
+現行AIの内部詳細: `validate_position` が通常tuple/strの値域を共有検査し、`_board_from_rows` が明示位置selectorで独立コピーを作る。`_extract_features` は凍結された整数特徴を返し、`_score_features` は終局優先または共通整数分子で採点する。factoryはmodule関数2個だけを保持する。新規本番moduleはなく、ハーネスの責務・import DAG・状態・正式入口は変わらない。

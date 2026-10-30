@@ -1,8 +1,8 @@
 # Phase 2 盤面評価・1手選択の実装準備
 
 作成日: 2026-10-21  
-状態: 実装準備完了。以下は実装前の設計・比較条件。Python・テスト・設定は未変更。  
-対象: `feat/ai-phase2`、開始HEAD `82f2c7b46d4150144fc58d1525fbfdd69277584f`
+状態（2026-10-30）: 実装PASS・参考評価完了。棋力版としての採用は保留。結果と進行判定は[実装記録](reports/20261030_phase2_implementation.md)を参照する。
+準備時の対象: `feat/ai-phase2`、開始HEAD `82f2c7b46d4150144fc58d1525fbfdd69277584f`
 
 工程と移行条件の正本は[段階設計書のPhase 2](リバーシAI段階開発・評価設計書.md#phase-2盤面評価関数と戦略の分離)。本書でこのPhaseの具体的なAI内部契約・初期実験条件・テスト計画を定義する。正式評価schemaや探索予算の契約は[ハーネス契約](harness_contracts.md)を参照する。
 
@@ -22,15 +22,15 @@ MinimaxはPhase 3、Alpha-Beta・実AIのtrace4はPhase 4の工程。frontierの
 - 開発用1000局面は既存の `harness.openings.load_population` で検証済み。held-outはファイルhashだけを確認し、内容の解析・選択・対局には使っていない。
 - 直接インストールしたWindows / CPython 3.13.5を使用する。通常sandboxにはPythonが公開されていないため、今回の実行では確認済み実体を絶対パスで指定する。
 
-開始時の原証拠は[preflight.json](../evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/preflight.json)、準備作業の結果は[実施記録](reports/20261021_phase2_preparation.md)を参照する。過去のPhase 1品質PASSを現在の品質確認へ読み替えない。
+開始時の原証拠はpreflight.json（ローカル保存・Git管理外: `evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/preflight.json`）、準備作業の結果は[実施記録](reports/20261021_phase2_preparation.md)を参照する。過去のPhase 1品質PASSを現在の品質確認へ読み替えない。
 
 ## 3. ルール接続と副作用
 
 `BoardRows = tuple[str, ...]` は8行、各行8文字の `B/W/E`。座標は `(x, y)`、盤面アクセスは `rows[y][x]`。色は `B/W`。型定義は既存engineのものを再利用する。
 
-予定する接続は次のとおり。以下は実装済みAPIではない。
+実装した接続は次のとおり。入力検証など着手時の具体化は第8節を参照する。
 
-| 接続 | 予定する役割・入出力 |
+| 接続 | 実装した役割・入出力 |
 |---|---|
 | `LegalMovesFor = Callable[[BoardRows, str], LegalMoves]` | snapshotと色から完全な合法手集合をy/x順で返す |
 | `ApplyMove = Callable[[BoardRows, str, Move], BoardRows]` | snapshotへの合法な1着手を反転込みで適用し、新しいsnapshotを返す |
@@ -131,3 +131,21 @@ python -B -m harness.evaluate --a reversi_player/reversi.py --a-asset reversi_pl
 6. 実装・テスト・図・契約・進捗を照合し、G0〜G5とPhase固有条件を個別に報告する。
 
 準備完了とPhase 2実装完了は別の状態とする。Phase 2の完了後に新規テストの目的・所要時間・Quick/Standardへの登録要否をレビューする。次のPhaseへの進行は[段階設計書](リバーシAI段階開発・評価設計書.md)の条件で判断する。
+
+## 8. 実装着手時の具体化（2026-10-30）
+
+実装開始HEADは `ed7b4af3d4806261b1fa5ec0e7aa8268f4bfcf6c`、ブランチは `feat/ai-phase2`、開始時clean。開始時の保全・before fresh再解析は 実装前確認（ローカル保存・Git管理外: `evaluation_results/phase2/candidate-29fb8abc734d43398785f5fc562d8441/preflight.json`） に置く。準備時の8照合は一致し、beforeの2/100局は再利用可能。直前のFullの39sourceも現在と一致した。以下を実装より先に確定する。
+
+- snapshot境界は通常のtuple、8個の通常str、各行8文字のB/W/Eだけを受理する。色は通常strのB/W。値違反はValueError。`ai_engine.validate_position` に集約し、callbackと評価が共用する。
+- `reversi.legal_moves_for` と `reversi.apply_move` はmodule関数。`_board_from_rows` は位置selectorを明示したBoardのcellを新しい行listへ置換する。座標は通常tupleの厳密なint（bool不可）2個で0〜7。非合法手はValueError。到達可能性・手番履歴はsnapshot境界では検査せず、診断の合法棋譜再生で別に確認する。
+- engine内部の凍結された `_PositionFeatures` に角差・mobility差・有効位置差・石差・終局フラグを保持する。`_extract_features` と `_score_features` を分け、盤面評価と診断に同じ抽出結果を渡せる構成とする。
+- 非終局の計算は整数差c/m/pから `(6960*c + 435*m + 20*p)/696` とする。第4節の式と有理数として同値であり、最後の1回だけfloatへ変換する。同点は計算結果の一致で判定し、近似比較の許容誤差はテストにだけ使う。
+- factoryはcallback2個だけを閉じ込める。空候補は入力callbackを呼ばずNone。非空rootの完全な合法手集合はBoardが保証し、各仮着手の入力検証・合法性はcallbackが担当する。callbackの例外は伝播する。結果を黙って補修する処理は置かない。
+- 評価値の回転・鏡映不変性と、同点時の座標順を区別する。同点時の選択座標の回転同変性は要求しない。
+- 新規テストは `tests/test_ai_phase2.py`、独立refereeで生成して棋譜も保持する固定データは `tests/fixtures/phase2_positions.json`。既存のQuick/Standard登録を変えない。独立期待値と本番出力の診断は `candidate-*/feature-diagnostics.json` へ保存する。
+- 既存のPOSITION_WEIGHTS・ランダム/位置selectorと固定baselineは維持する。Board既定だけを1手selectorへ接続する。手動の実ブラウザ操作と接続テストは分け、未実施は残す。
+- ハーネス本体・正式入口・schema・時計・予算・統計は変更しないため、ハーネスのimport DAG・状態図に新しい辺は不要。AI内部図と境界だけを実装状態に追従させる。
+
+## 9. 実装後の判定（2026-10-30）
+
+コピーcallback・凍結特徴・盤面評価・1手selectorを実装し、専用135/関連245/全1041回帰とFull11工程・独立smokeが成功した。固定random/positional各2+100局は異常0、全rawをfresh再解析できた。random戦は変更前0.86→0.97、参考の対応差+0.11。positional直接戦は0.39で劣勢のため棋力版の昇格は保留し、固定positional_v1を維持する。構造的にはPhase 3へ進めるが本Goalでは未着手。初期重み・比較条件・過去の準備証拠は変えていない。詳細・実argv・hash・G0〜G5・未確認事項は[実装記録](reports/20261030_phase2_implementation.md)を参照する。

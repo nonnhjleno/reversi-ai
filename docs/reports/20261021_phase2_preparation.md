@@ -11,7 +11,7 @@ Python・テスト・設定・固定AIの変更は行っていない。予定す
 
 ## 開始時の確認
 
-原証拠: [preflight.json](../../evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/preflight.json)。
+原証拠: preflight.json（ローカル保存・Git管理外: `evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/preflight.json`）。
 
 - 直接CPython 3.13.5 / Windows AMD64、venvではないことを確認。
 - random_v0の本体、positional_v1の本体・engine、現行本体・engine、Phase 0のbaseline manifest、開発用／held-out序盤bytesの8照合は一致。
@@ -31,7 +31,7 @@ Phase 2の新しいbeforeとして、現行A対固定random_v0を新規取得す
 
 100局の黒番は42勝8敗、白番は44勝6敗。Aの全genmove外部応答は2733件、平均0.176260ms・最大1.8381ms。pass/終局問い合わせも含む値で、内部探索時間ではない。2局smokeの勝敗は棋力判定に使わない。
 
-[smoke評価JSON](../../evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/before-vs-random-smoke.json)、[100局評価JSON](../../evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/before-vs-random-100.json)、[再解析・hash確認記録](../../evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/before-verification.json)を保存した。隣接するruns配下も保持する。run IDはsmokeが `5aa059aae1944adc92b8c6fd045fa1ba`、100局が `e0d8e4be616843aca0787e07c81e9647`。
+smoke評価JSON（ローカル保存・Git管理外: `evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/before-vs-random-smoke.json`）、100局評価JSON（ローカル保存・Git管理外: `evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/before-vs-random-100.json`）、再解析・hash確認記録（ローカル保存・Git管理外: `evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/before-verification.json`）を保存した。隣接するruns配下も保持する。run IDはsmokeが `5aa059aae1944adc92b8c6fd045fa1ba`、100局が `e0d8e4be616843aca0787e07c81e9647`。
 
 両runを `harness.analysis.reanalysis_report` からfreshに再解析し、`reference_available=true`、`request_success=true`、`statistics=descriptive_only`を確認した。原報告・cache・rawの検証を省略していない。内部予算・実AI trace4の未対応は残り、正式CI・正式な棋力改善は主張しない。
 
@@ -50,9 +50,9 @@ Phase 2の新しいbeforeとして、現行A対固定random_v0を新規取得す
 | source照合 | 39項目の開始・終了・現在hash一致 |
 | 保存証拠 | `verify_publication=[]` |
 
-[quality.json](../../evaluation_results/quality-9a53a591a833489f997b7c8f5c418a7b/quality.json)、[evidence.json](../../evaluation_results/quality-9a53a591a833489f997b7c8f5c418a7b/evidence.json)、[evidence.md](../../evaluation_results/quality-9a53a591a833489f997b7c8f5c418a7b/evidence.md)に保存した。quality.jsonのSHA-256は `ffd6063f617e232c8d4059a7c6e878c75bf40d6a192dada2cce634d0500dd388`。検査後に更新する本報告・準備資料の進捗表示・開発計画・QUALITY_PROGRESSは品質ゲートのsource hash対象外であり、モデル・契約・コード・設定は再変更していない。
+quality.json（ローカル保存・Git管理外: `evaluation_results/quality-9a53a591a833489f997b7c8f5c418a7b/quality.json`）、evidence.json（ローカル保存・Git管理外: `evaluation_results/quality-9a53a591a833489f997b7c8f5c418a7b/evidence.json`）、evidence.md（ローカル保存・Git管理外: `evaluation_results/quality-9a53a591a833489f997b7c8f5c418a7b/evidence.md`）に保存した。quality.jsonのSHA-256は `ffd6063f617e232c8d4059a7c6e878c75bf40d6a192dada2cce634d0500dd388`。検査後に更新する本報告・準備資料の進捗表示・開発計画・QUALITY_PROGRESSは品質ゲートのsource hash対象外であり、モデル・契約・コード・設定は再変更していない。
 
-資料8ファイルの相対リンク実在・コードfence対応・UTF-8と、コード/設定/固定資産の差分なしを確認した。黒(3,2)後の両者合法手数3・位置差9・評価値15/58は独立refereeで照合した。[資料確認記録](../../evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/document-checks.json)と[最終照合](../../evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/quality-verification.json)に保存する。
+資料8ファイルの相対リンク実在・コードfence対応・UTF-8と、コード/設定/固定資産の差分なしを確認した。黒(3,2)後の両者合法手数3・位置差9・評価値15/58は独立refereeで照合した。資料確認記録（ローカル保存・Git管理外: `evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/document-checks.json`）と最終照合（ローカル保存・Git管理外: `evaluation_results/phase2/preparation-5dda5d5f47a143958d8a344ebadbdd55/quality-verification.json`）に保存する。
 
 ## 完了判定と残る作業
 

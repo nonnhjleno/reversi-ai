@@ -9,7 +9,7 @@
 | エージェントの作業手順 | [AGENTS.md](AGENTS.md) |
 | 授業のコマンド・盤面・時間制限 | [課題仕様](docs/プログラム開発方法.md) |
 | 開発の順序・完了条件 | [開発計画](docs/開発計画.md) |
-| Phase 2の実装準備 | [盤面評価・契約・テスト・比較条件](docs/phase2_design.md) |
+| Phase 2の設計・実装契約 | [盤面評価・契約・テスト・比較条件](docs/phase2_design.md) |
 | テスト・品質ゲート・対戦評価・GUIの操作 | [ハーネス](docs/ハーネス.md) |
 | 現行の責務・依存・データフロー・状態 | [アーキテクチャ](docs/harness_architecture.md) |
 | 現行の識別子・予算・時計・正式評価資格 | [データ契約](docs/harness_contracts.md) |
