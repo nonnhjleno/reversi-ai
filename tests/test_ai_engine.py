@@ -360,5 +360,5 @@ def test_module_execution_keeps_the_existing_command_protocol() -> None:
     )
 
     assert process.returncode == 0, process.stderr
-    assert process.stdout == 'sample\n'
+    assert process.stdout == 'ranger\n'
     assert process.stderr == ''

@@ -342,7 +342,7 @@ def _dispatch(board: Board, cmd: list[str]) -> bool:
     if cmd[0] == 'quit':
         return False
     if cmd[0] == 'name':
-        print('sample', flush=True)
+        print('ranger', flush=True)
     elif len(cmd) == 4 and cmd[0] == 'ask':
         board.ask(cmd[1], Pos(int(cmd[2]), int(cmd[3])))
     elif len(cmd) == 4 and cmd[0] == 'play':
