@@ -68,7 +68,7 @@ class Board(object):
     def __init__(self, *, selector: ai_engine.MoveSelector | None = None) -> None:
         """初期盤面を作り、任意の着手選択器を保持する。
 
-        selector省略時は着手後の盤面を評価する1手選択を使う。盤面規則と実盤面更新は
+        selector省略時は固定深度2の剪定なしMinimaxを使う。盤面規則と実盤面更新は
         常にBoardが担当する。
         """
         self.cell: list[list[str]] = [['E' for _ in range(8)] for _ in range(8)]
@@ -77,7 +77,7 @@ class Board(object):
         self.cell[3][3] = 'W'
         self.cell[4][4] = 'W'
         self._selector = (
-            ai_engine.make_one_ply_selector(legal_moves_for, apply_move)
+            ai_engine.make_minimax_selector(legal_moves_for, apply_move)
             if selector is None else selector
         )
 
@@ -122,7 +122,7 @@ class Board(object):
             print('NG', flush=True)
 
     def genmove(self, color: str) -> None:
-        """指定色の合法手からランダムに1手を選び、着手結果を出力する。
+        """指定色の合法手から選択器で1手を選び、着手結果を出力する。
 
         合法手がある場合は盤面を更新して座標を出力する。
         合法手がない場合は NG を出力し、盤面は変更しない。

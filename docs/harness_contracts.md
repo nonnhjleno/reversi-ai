@@ -415,3 +415,17 @@ Phase 2には実AIの正式producer追加を含めない。callbackの戻り値�
 2026-10-30実装着手時の追補: 第15節の境界を実装前に照合した。入力検証の集約、module関数名、凍結特徴、整数分子での計算、空候補と同点規則、独立診断の具体化は[実装準備第8節](phase2_design.md#8-実装着手時の具体化2026-10-30)に確定した。実装・検証の完了は別途記録する。
 
 現行callbackは`reversi.legal_moves_for`と`reversi.apply_move`。通常tupleの8行、通常strの各8文字B/W/E、通常strのB/W色を共有検査する。moveは通常tupleの厳密なint2個（bool不可）で0〜7、非合法手も含む違反はValueError。到達可能性はこのsnapshot境界の保証外で、診断側の棋譜再生で照合する。非空root候補の完全性はBoard、仮着手の合法性と新snapshotはcallback、評価は固定root視点、同点は正確な得点一致と(y,x)順、空候補はcallbackなしNoneという責務を分ける。
+
+<a id="phase3-boundary"></a>
+
+## 16. Phase 3の探索境界
+
+[Phase 3設計・実装契約](phase3_design.md)と[呼出図](harness_architecture.md#phase3-design)を実装前に確定した。第15節のsnapshot、callback、実着手、故障の責務を維持し、Board既定だけを固定深度2のMinimaxへ切り替える。1手・位置・ランダムselectorの明示注入は維持する。
+
+`search_minimax(rows, color, depth, legal_moves_for, apply_move)` はroot色の固定視点で、深度0〜4の剪定なし探索を返す。depthは通常intとしboolは許容しない。factoryは深度1〜4だけを受理する。範囲違反はValueError。rootパスでも診断APIは相手へ同じ深度で進み、rootの返却moveはNoneとする。selectorは空候補でcallbackを呼ばずNoneを返す。
+
+残深度は石を置いたときだけ1減らす。両色に合法手がなければ終局、深度0はパスを展開せず評価する。root側が最大化し、相手側は最小化する。評価式・勝敗優先・石差はPhase 2と同じで、同点は正確な得点一致と(y,x)順。callback故障は伝播し、部分探索値やfallbackを返さない。
+
+`SearchResult` はmove/value/depth/nodes/leaves/passesを保持する不変値。計数 `minimax-call-v1` のnodesはrootとパス後を含む再帰呼出し数、leavesは深度0または終局の評価返却数、passesは深度が残る非終局でパス辺をたどった数。同盤面の別経路を重複して数え、評価内のcallbackは数えない。深度0や双方合法手なしはpassesを増やさない。
+
+計数は診断用で正式予算値ではない。schema5/trace4/validation3、正式AND、ハーネスの取得・保存・再解析は変更しない。固定深度の参考評価から同一workや正式優越性を主張しない。
