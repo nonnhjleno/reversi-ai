@@ -568,7 +568,7 @@ sequenceDiagram
 
 ## 14. Phase 2のコピー接続と盤面評価（実装済み・2026-10-30）
 
-以下は[Phase 2設計・実装契約](phase2_design.md)に従って実装した現行AI内部の呼出図。`Board()`は`make_one_ply_selector(legal_moves_for, apply_move)`を既定とし、第13節の選択器を明示注入する機能も保持する。検証・候補採否の結果は[実装記録](reports/20261030_phase2_implementation.md)を参照する。ハーネスの現行import DAG・正式入口・状態遷移・schemaは変更しない。
+以下は[Phase 2設計・実装契約](phase2_design.md)に従って実装した、Phase 2時点のAI内部の呼出図。現在のMinimaxへの接続は[第15節](#phase3-design)を参照する。`Board()`は`make_one_ply_selector(legal_moves_for, apply_move)`を既定とし、第13節の選択器を明示注入する機能も保持する。検証・候補採否の結果は[実装記録](reports/20261030_phase2_implementation.md)を参照する。ハーネスの現行import DAG・正式入口・状態遷移・schemaは変更しない。
 
 ```mermaid
 flowchart LR
@@ -591,4 +591,28 @@ callbackは実Boardへのbound methodを持たず、作業用Boardを作る際�
 
 2026-10-30実装着手時の追補: 第14節の図を実装前に照合した。入力検証の集約、module関数名、凍結特徴、整数分子での計算、空候補と同点規則、独立診断の具体化は[実装準備第8節](phase2_design.md#8-実装着手時の具体化2026-10-30)に確定した。実装・検証の完了は別途記録する。
 
-現行AIの内部詳細: `validate_position` が通常tuple/strの値域を共有検査し、`_board_from_rows` が明示位置selectorで独立コピーを作る。`_extract_features` は凍結された整数特徴を返し、`_score_features` は終局優先または共通整数分子で採点する。factoryはmodule関数2個だけを保持する。新規本番moduleはなく、ハーネスの責務・import DAG・状態・正式入口は変わらない。
+Phase 2時点のAI内部詳細: `validate_position` が通常tuple/strの値域を共有検査し、`_board_from_rows` が明示位置selectorで独立コピーを作る。`_extract_features` は凍結された整数特徴を返し、`_score_features` は終局優先または共通整数分子で採点する。factoryはmodule関数2個だけを保持する。新規本番moduleはなく、ハーネスの責務・import DAG・状態・正式入口は変わらない。
+
+<a id="phase3-design"></a>
+
+## 15. Phase 3のMinimax構造
+
+[Phase 3設計・実装契約](phase3_design.md)の図とAPIを実装前に確定した。第14節はPhase 2時点の構造を示す。Phase 3ではBoard既定を固定深度2の `make_minimax_selector` へ切り替え、既存の1手selectorは明示注入と比較のために保持する。
+
+```mermaid
+flowchart LR
+    B["実Board / root snapshot・色・完全合法手"] --> S["Minimax selector / depth2"]
+    S --> M["root固定視点の再帰 / 最大化・最小化"]
+    M -->|"仮着手・合法手"| C["statelessなコピーcallback"]
+    C --> W["独立Board / 既存ルール"]
+    M -->|"深度0または終局"| E["Phase 2評価"]
+    E --> C
+    S -->|"座標だけ"| B
+    B --> U["戻り値検証 / 実着手1回"]
+    D["独立テスト・診断"] --> A["search_minimax / 不変SearchResult"]
+    A --> M
+```
+
+パスは残深度を減らさず手番だけを交代し、双方合法手なしで終了する。root色の手番は最大化、相手は最小化する。探索は仮snapshotだけを変更し、実盤面・乱数・stdout/stderrを変更しない。root空候補のselectorはcallbackなしNoneであり、診断APIのrootパス探索とは区別する。
+
+`minimax-call-v1` のnodes/leaves/passesは探索呼出し内の参考値として返す。正式trace4・内部予算・時計のverifiedを追加しない。engineから本体やharnessへの逆import、新規本番module、ハーネスDAG・状態・正式入口・schemaの変更はない。意味と計数は[契約第16節](harness_contracts.md#phase3-boundary)を参照する。

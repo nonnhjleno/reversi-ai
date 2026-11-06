@@ -198,3 +198,120 @@ def make_one_ply_selector(legal_moves_for: LegalMovesFor, apply_move: ApplyMove)
         )
 
     return _select_one_ply
+
+
+DEFAULT_SEARCH_DEPTH = 2
+MAX_SEARCH_DEPTH = 4
+SEARCH_COUNTING_DEFINITION = 'minimax-call-v1'
+
+
+@dataclass(frozen=True)
+class SearchResult:
+    """root視点の最善値・着手と、1探索だけの参考計数を保持する。
+
+    depthはplacement ply。moveは深度0またはroot合法手なしならNone。
+    nodesはroot/leaf/pass後も含む再帰呼出し数、leavesは評価返却数、
+    passesは深度が残る非終局でパス辺を実際にたどった回数。
+    正式trace4の予算・計数証拠ではない。
+    """
+
+    move: Move | None
+    value: float
+    depth: int
+    nodes: int
+    leaves: int
+    passes: int
+
+
+def _validate_search_depth(depth: int, minimum: int) -> None:
+    """浅い参照探索の通常int深度を検査し、boolや範囲外はValueErrorにする。"""
+    if type(depth) is not int or not minimum <= depth <= MAX_SEARCH_DEPTH:
+        raise ValueError('invalid_search_depth')
+
+
+def _run_minimax(
+    rows: BoardRows,
+    color: str,
+    depth: int,
+    legal_moves_for: LegalMovesFor,
+    apply_move: ApplyMove,
+    root_moves: LegalMoves,
+) -> SearchResult:
+    """完全なroot候補から全木を探索する。入力検査は公開入口が担当する。"""
+    nodes = leaves = passes = 0
+
+    def _visit(
+        snapshot: BoardRows,
+        turn: str,
+        remaining: int,
+        known_moves: LegalMoves | None = None,
+    ) -> tuple[float, Move | None]:
+        """root固定視点で最大化/最小化し、パスでは残placement数を保つ。"""
+        nonlocal nodes, leaves, passes
+        nodes += 1
+        moves = legal_moves_for(snapshot, turn) if known_moves is None else known_moves
+        other = 'W' if turn == 'B' else 'B'
+        if remaining == 0 or (not moves and not legal_moves_for(snapshot, other)):
+            leaves += 1
+            return evaluate_position(snapshot, color, legal_moves_for), None
+        if not moves:
+            passes += 1
+            value, _ = _visit(snapshot, other, remaining)
+            return value, None
+
+        maximizing = turn == color
+        best_value = float('-inf') if maximizing else float('inf')
+        best_move = None
+        for move in sorted(moves, key=lambda candidate: (candidate[1], candidate[0])):
+            value, _ = _visit(apply_move(snapshot, turn, move), other, remaining - 1)
+            # 厳密に改善した場合だけ更新し、同点の先頭(y,x)を保持する。
+            if (maximizing and value > best_value) or (not maximizing and value < best_value):
+                best_value, best_move = value, move
+        return best_value, best_move
+
+    value, move = _visit(rows, color, depth, root_moves)
+    return SearchResult(move, value, depth, nodes, leaves, passes)
+
+
+def search_minimax(
+    rows: BoardRows,
+    color: str,
+    depth: int,
+    legal_moves_for: LegalMovesFor,
+    apply_move: ApplyMove,
+) -> SearchResult:
+    """通常intの深度0〜4で剪定なしMinimaxを行い、不変の診断値を返す。
+
+    root色の評価視点を保ち、相手は最小化する。rootパスでも残深度を
+    減らさず後続価値を探索するが、返却moveはNone。深度0は評価のみ。
+    snapshot/色/深度の違反はValueError、callbackの例外は伝播する。
+    入力・実Board・乱数・stdout/stderrを変更せず、自動保存もしない。
+    """
+    _validate_search_depth(depth, 0)
+    validate_position(rows, color)
+    return _run_minimax(
+        rows, color, depth, legal_moves_for, apply_move, legal_moves_for(rows, color)
+    )
+
+
+def make_minimax_selector(
+    legal_moves_for: LegalMovesFor,
+    apply_move: ApplyMove,
+    *,
+    depth: int = DEFAULT_SEARCH_DEPTH,
+) -> MoveSelector:
+    """通常int深度1〜4の決定的selectorを作る。既定は固定深度2。
+
+    callbackは完全な合法手と独立した新snapshotを返す契約。実盤面への
+    bound methodを渡さない。時間中断やfallbackはこの参照実装に含めない。
+    """
+    _validate_search_depth(depth, 1)
+
+    def _select_minimax(rows: BoardRows, color: str, legal_moves: LegalMoves) -> Move | None:
+        """Boardの完全候補から選び、空候補ではcallbackなしNoneを返す。"""
+        if not legal_moves:
+            return None
+        validate_position(rows, color)
+        return _run_minimax(rows, color, depth, legal_moves_for, apply_move, legal_moves).move
+
+    return _select_minimax

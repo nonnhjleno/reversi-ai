@@ -446,13 +446,15 @@ def test_default_board_keeps_real_cells_during_analysis_and_commits_once():
 
 def test_default_factory_receives_only_stateless_module_callbacks():
     """実Boardへの束縛や実cellのclosure共有をfactory境界で防ぐ。"""
-    original = ai_engine.make_one_ply_selector
-    with patch.object(ai_engine, 'make_one_ply_selector', wraps=original) as factory:
+    original = ai_engine.make_minimax_selector
+    with patch.object(ai_engine, 'make_minimax_selector', wraps=original) as factory:
         board = reversi.Board()
     factory.assert_called_once_with(reversi.legal_moves_for, reversi.apply_move)
     contents = [cell.cell_contents for cell in board._selector.__closure__]
-    assert set(contents) == {reversi.legal_moves_for, reversi.apply_move}
-    assert all(getattr(callback, '__self__', None) is None for callback in contents)
+    assert set(contents) == {reversi.legal_moves_for, reversi.apply_move, 2}
+    assert all(
+        getattr(callback, '__self__', None) is None for callback in contents if callable(callback)
+    )
 
 
 def test_nonterminal_bounds_over_independent_legal_trajectory():
