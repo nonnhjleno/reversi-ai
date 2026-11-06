@@ -421,7 +421,7 @@ Phase 2には実AIの正式producer追加を含めない。callbackの戻り値�
 
 ## 16. Phase 3の探索境界
 
-[Phase 3設計・実装契約](phase3_design.md)と[呼出図](harness_architecture.md#phase3-design)を実装前に確定した。第15節のsnapshot、callback、実着手、故障の責務を維持し、Board既定だけを固定深度2のMinimaxへ切り替える。1手・位置・ランダムselectorの明示注入は維持する。
+[Phase 3設計・実装契約](phase3_design.md)と[呼出図](harness_architecture.md#phase3-design)を実装前に確定した。第15節のsnapshot、callback、実着手、故障の責務を維持し、Phase 3ではBoard既定だけを固定深度2のMinimaxへ切り替えた。現在の既定はPhase 4のAlpha-Betaで、参照Minimaxは維持する。1手・位置・ランダムselectorの明示注入は維持する。
 
 `search_minimax(rows, color, depth, legal_moves_for, apply_move)` はroot色の固定視点で、深度0〜4の剪定なし探索を返す。depthは通常intとしboolは許容しない。factoryは深度1〜4だけを受理する。範囲違反はValueError。rootパスでも診断APIは相手へ同じ深度で進み、rootの返却moveはNoneとする。selectorは空候補でcallbackを呼ばずNoneを返す。
 
@@ -430,3 +430,7 @@ Phase 2には実AIの正式producer追加を含めない。callbackの戻り値�
 `SearchResult` はmove/value/depth/nodes/leaves/passesを保持する不変値。計数 `minimax-call-v1` のnodesはrootとパス後を含む再帰呼出し数、leavesは深度0または終局の評価返却数、passesは深度が残る非終局でパス辺をたどった数。同盤面の別経路を重複して数え、評価内のcallbackは数えない。深度0や双方合法手なしはpassesを増やさない。
 
 計数は診断用で正式予算値ではない。schema5/trace4/validation3、正式AND、ハーネスの取得・保存・再解析は変更しない。固定深度の参考評価から同一workや正式優越性を主張しない。
+
+## Phase 4実AIの対応範囲
+
+実装前の[Phase 4設計](phase4_design.md)に、depth1〜4、minimax-call-v1、固定深度完了・パス問い合わせの計数、モデルなし、子時計・全コマンド・quit/終了の原trace生成を定義した。未対応予算は拒否する。unknown＋空searchの既存非計測経路はunknownのまま保持する。本章の限定対応は、ハーネスの既存契約・正式資格の要件を緩和しない。

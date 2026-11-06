@@ -11,6 +11,7 @@
 | 開発の順序・完了条件 | [開発計画](docs/開発計画.md) |
 | Phase 2の設計・実装契約 | [盤面評価・契約・テスト・比較条件](docs/phase2_design.md) |
 | Phase 3の探索契約と実行結果 | [Minimax設計](docs/phase3_design.md)・[実装・評価記録](docs/reports/20261106_phase3_implementation.md) |
+| Phase 4のAlpha-Beta・実AI計測 | [設計と計数契約](docs/phase4_design.md)・[実装・評価記録](docs/reports/20261107_phase4_implementation.md) |
 | テスト・品質ゲート・対戦評価・GUIの操作 | [ハーネス](docs/ハーネス.md) |
 | 現行の責務・依存・データフロー・状態 | [アーキテクチャ](docs/harness_architecture.md) |
 | 現行の識別子・予算・時計・正式評価資格 | [データ契約](docs/harness_contracts.md) |

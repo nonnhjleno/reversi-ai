@@ -1,15 +1,21 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import random as random
+import time
 from typing import TYPE_CHECKING
+
+_CHILD_ENTRY_NS = time.perf_counter_ns()
 
 if TYPE_CHECKING:
     from typing import Any, Literal, TypeGuard
-    from reversi_player import ai_engine
+    from reversi_player import ai_engine, search_trace
 elif __package__:
-    from . import ai_engine
+    from . import ai_engine, search_trace
 else:
     import ai_engine
+    import search_trace
 
 
 def _is_move(value: object) -> TypeGuard[ai_engine.Move]:
@@ -68,7 +74,7 @@ class Board(object):
     def __init__(self, *, selector: ai_engine.MoveSelector | None = None) -> None:
         """初期盤面を作り、任意の着手選択器を保持する。
 
-        selector省略時は固定深度2の剪定なしMinimaxを使う。盤面規則と実盤面更新は
+        selector省略時は固定深度2の内部順序付きAlpha-Betaを使う。盤面規則と実盤面更新は
         常にBoardが担当する。
         """
         self.cell: list[list[str]] = [['E' for _ in range(8)] for _ in range(8)]
@@ -77,7 +83,7 @@ class Board(object):
         self.cell[3][3] = 'W'
         self.cell[4][4] = 'W'
         self._selector = (
-            ai_engine.make_minimax_selector(legal_moves_for, apply_move)
+            ai_engine.make_alpha_beta_selector(legal_moves_for, apply_move)
             if selector is None else selector
         )
 
@@ -331,31 +337,48 @@ def apply_move(
     return tuple(''.join(row) for row in board.cell)
 
 
+def _dispatch(board: Board, cmd: list[str]) -> bool:
+    """既存コマンドを処理し、quitだけFalseを返す。"""
+    if cmd[0] == 'quit':
+        return False
+    if cmd[0] == 'name':
+        print('sample', flush=True)
+    elif len(cmd) == 4 and cmd[0] == 'ask':
+        board.ask(cmd[1], Pos(int(cmd[2]), int(cmd[3])))
+    elif len(cmd) == 4 and cmd[0] == 'play':
+        board.play(cmd[1], Pos(int(cmd[2]), int(cmd[3])))
+    elif len(cmd) == 2 and cmd[0] == 'genmove':
+        board.genmove(cmd[1])
+    elif cmd[0] == 'showboard':
+        board.showboard()
+    elif cmd == ['result']:
+        print(board.result(), flush=True)
+    return True
+
+
 def main() -> None:
-    """GUIとの標準入出力プロトコルを読み取り、盤面操作を実行する。
-
-    1行ずつコマンドを受け取り、quit で終了する。name、ask、play、
-    genmove、showboard、result に応答するため、標準出力には応答だけを出す。
-    """
-    board = Board()
-
+    """通常経路の入出力を維持し、対応設定では実計測を別JSONLへ保存する。"""
+    trace = search_trace.load(_CHILD_ENTRY_NS, legal_moves_for, apply_move)
+    board = Board(selector=trace.select if trace is not None else None)
+    if trace is not None:
+        trace.ready()
+    index = 0
     while True:
-        cmd = input().split()
-
-        if cmd[0] == 'quit':
+        line = input()
+        received = time.perf_counter_ns()
+        cmd = line.split()
+        if trace is None:
+            running = _dispatch(board, cmd)
+        else:
+            before = tuple(''.join(row) for row in board.cell)
+            response = io.StringIO()
+            with contextlib.redirect_stdout(response):
+                running = _dispatch(board, cmd)
+            trace.record(index, line.strip(), received, before, response.getvalue())
+            print(response.getvalue(), end='', flush=True)
+        if not running:
             return
-        if cmd[0] == 'name':
-            print('sample', flush=True)
-        elif len(cmd) == 4 and cmd[0] == 'ask':
-            board.ask(cmd[1], Pos(int(cmd[2]), int(cmd[3])))
-        elif len(cmd) == 4 and cmd[0] == 'play':
-            board.play(cmd[1], Pos(int(cmd[2]), int(cmd[3])))
-        elif len(cmd) == 2 and cmd[0] == 'genmove':
-            board.genmove(cmd[1])
-        elif cmd[0] == 'showboard':
-            board.showboard()
-        elif cmd == ['result']:
-            print(board.result(), flush=True)
+        index += 1
 
 
 if __name__ == '__main__':
