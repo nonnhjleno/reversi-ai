@@ -19,7 +19,7 @@
 | contracts | decode、必要role/検証軸、母集合/全予定coverage/棋譜/両通信、原rawとcache/summaryのfresh照合、共通writer |
 | analysis | 公開原report wrapper、private共通Assessment、正式AND、単独/対応推定、再解析/比較serializer |
 | statistics | 得点・ペア・有限母集合区間の算術。computed/arithmetic_onlyであり正式資格の発行元ではない |
-| reversi_player | 対戦プログラムとGUI。実AIは現状random選択でtrace未対応。web.Processはharness.Playerとは別経路 |
+| reversi_player | 対戦プログラムとGUI。実AIは既定で固定深度2のAlpha-Betaを使い、対応depth設定では原trace4を生成する。web.Processはharness.Playerとは別経路 |
 | tests/fixtures | budget_playerは計測契約の模擬producer、fault_playerは異常注入。実AIの強さ・counter真正性を証明しない |
 
 protocolからcontracts/analysis/evaluateへ逆importしない。contractsからstatisticsへ直接依存せず、検証と算術を分離する。現在のimport DAGに循環はない。canonical JSON等の小さな表現処理は複数箇所に残るが、正式判定・比較条件・集計を別々に再定義しない。
@@ -288,7 +288,7 @@ stateDiagram-v2
 ## 8. 現在の保証と残る課題
 
 - 母集合N/manifest/coverage・盤面/両通信・予算/raw意味・起動/要求間/終了・cache/summary・公開入口の回帰はある。実行範囲は[検証記録](reports/ハーネス検証記録.md)と[正常化報告](reports/ハーネス正常化完了報告.md)で確認する。
-- 実AIはtrace未対応で参考対局に限る。fixtureの正式成功を実AIの正式予算対応や強さとしない。
+- Phase 4の実AIはdepth1〜4の計測に対応する。実AI取得の資格は個別に判定し、fixtureの正式成功を実AIの正式予算対応や強さとしない。
 - 新規clock descriptorのlifecycle_v2登録はlocal CPython3.13.5/Windows/QPCと有効周波数を要求する。低水準clock_statusには旧enclosed_v1の互換判定もある。実際の識別条件は契約第5節で確認し、未知clock・lazy/background/GPU scope・全case決定性・counter/ログ真正性・全AI依存自動固定を保証しない。
 - GUIのdepth/temperature接続、通常応答timeout、ブラウザ描画/操作はharnessの機能で補完済みとしない。
 - 旧schemaの予算設定に関する監査F02は共通decode_inputと専用回帰で対応。旧rawの完全検証を保証したわけではない。scopeの実AI/fixture差、独立baseline、学習/評価集合リーク、多重主張等は必要段階で再確認する。
@@ -569,7 +569,7 @@ sequenceDiagram
 
 ## 14. Phase 2のコピー接続と盤面評価（実装済み・2026-10-30）
 
-以下は[Phase 2設計・実装契約](phase2_design.md)に従って実装した、Phase 2時点のAI内部の呼出図。現在のMinimaxへの接続は[第15節](#phase3-design)を参照する。`Board()`は`make_one_ply_selector(legal_moves_for, apply_move)`を既定とし、第13節の選択器を明示注入する機能も保持する。検証・候補採否の結果は[実装記録](reports/20261030_phase2_implementation.md)を参照する。ハーネスの現行import DAG・正式入口・状態遷移・schemaは変更しない。
+以下は[Phase 2設計・実装契約](phase2_design.md)に従って実装した、Phase 2時点のAI内部の呼出図。Phase 3のMinimaxへの接続は[第15節](#phase3-design)を参照する。`Board()`は`make_one_ply_selector(legal_moves_for, apply_move)`を既定とし、第13節の選択器を明示注入する機能も保持する。検証・候補採否の結果は[実装記録](reports/20261030_phase2_implementation.md)を参照する。ハーネスの現行import DAG・正式入口・状態遷移・schemaは変更しない。
 
 ```mermaid
 flowchart LR
@@ -617,3 +617,7 @@ flowchart LR
 パスは残深度を減らさず手番だけを交代し、双方合法手なしで終了する。root色の手番は最大化、相手は最小化する。探索は仮snapshotだけを変更し、実盤面・乱数・stdout/stderrを変更しない。root空候補のselectorはcallbackなしNoneであり、診断APIのrootパス探索とは区別する。
 
 `minimax-call-v1` のnodes/leaves/passesは探索呼出し内の参考値として返す。正式trace4・内部予算・時計のverifiedを追加しない。engineから本体やharnessへの逆import、新規本番module、ハーネスDAG・状態・正式入口・schemaの変更はない。意味と計数は[契約第16節](harness_contracts.md#phase3-boundary)を参照する。
+
+## Phase 4の実AI接続
+
+実装前に実AI側の責務・依存・状態と計測区間を[Phase 4設計](phase4_design.md)に定義した。reversi.py→search_trace.py→ai_engine.pyの順に依存し、ルールはstateless callbackで渡す。harnessへの逆importは追加しない。ハーネス側のschema5・trace4・validation3と正式資格の状態遷移は変更しない。

@@ -315,3 +315,114 @@ def make_minimax_selector(
         return _run_minimax(rows, color, depth, legal_moves_for, apply_move, legal_moves).move
 
     return _select_minimax
+
+
+@dataclass(frozen=True)
+class AlphaBetaResult(SearchResult):
+    """参照と同じ実呼出し計数に、兄弟を省略した節点数を加える。"""
+
+    cutoffs: int
+
+
+def _run_alpha_beta(
+    rows: BoardRows,
+    color: str,
+    depth: int,
+    legal_moves_for: LegalMovesFor,
+    apply_move: ApplyMove,
+    root_moves: LegalMoves,
+    ordered: bool,
+) -> AlphaBetaResult:
+    """root順を固定し、内部だけ並べ替えるfail-soft Alpha-Beta。"""
+    nodes = leaves = passes = cutoffs = 0
+
+    def _visit(
+        snapshot: BoardRows,
+        turn: str,
+        remaining: int,
+        alpha: float,
+        beta: float,
+        known_moves: LegalMoves | None = None,
+    ) -> tuple[float, Move | None]:
+        """同じplacement深度とroot視点で実際に訪問した呼出しを数える。"""
+        nonlocal nodes, leaves, passes, cutoffs
+        nodes += 1
+        moves = legal_moves_for(snapshot, turn) if known_moves is None else known_moves
+        other = 'W' if turn == 'B' else 'B'
+        if remaining == 0 or (not moves and not legal_moves_for(snapshot, other)):
+            leaves += 1
+            return evaluate_position(snapshot, color, legal_moves_for), None
+        if not moves:
+            passes += 1
+            value, _ = _visit(snapshot, other, remaining, alpha, beta)
+            return value, None
+        # rootを並べ替えない。後続子のfail-low同値では先行の厳密最善手を保つ。
+        if ordered and known_moves is None:
+            sequence = sorted(
+                moves,
+                key=lambda m: (m not in _CORNERS, -POSITION_WEIGHTS[m[1]][m[0]], m[1], m[0]),
+            )
+        else:
+            sequence = sorted(moves, key=lambda m: (m[1], m[0]))
+        maximizing = turn == color
+        best = float('-inf') if maximizing else float('inf')
+        selected = None
+        for index, move in enumerate(sequence):
+            value, _ = _visit(apply_move(snapshot, turn, move), other, remaining - 1, alpha, beta)
+            if (maximizing and value > best) or (not maximizing and value < best):
+                best, selected = value, move
+            if maximizing:
+                alpha = max(alpha, best)
+            else:
+                beta = min(beta, best)
+            if alpha >= beta and index + 1 < len(sequence):
+                cutoffs += 1
+                break
+        return best, selected
+
+    value, move = _visit(rows, color, depth, float('-inf'), float('inf'), root_moves)
+    return AlphaBetaResult(move, value, depth, nodes, leaves, passes, cutoffs)
+
+
+def search_alpha_beta(
+    rows: BoardRows,
+    color: str,
+    depth: int,
+    legal_moves_for: LegalMovesFor,
+    apply_move: ApplyMove,
+    *,
+    ordered: bool = True,
+) -> AlphaBetaResult:
+    """深度0〜4で厳密なroot値と従来同点順の最善手を返す。
+
+    パスはplacement深度を消費しない。orderedは内部だけの単純順序。
+    入力・乱数・実Boardは変更せず、callback例外は伝播する。
+    """
+    _validate_search_depth(depth, 0)
+    if type(ordered) is not bool:
+        raise ValueError('invalid_search_order')
+    validate_position(rows, color)
+    return _run_alpha_beta(
+        rows, color, depth, legal_moves_for, apply_move, legal_moves_for(rows, color), ordered
+    )
+
+
+def make_alpha_beta_selector(
+    legal_moves_for: LegalMovesFor,
+    apply_move: ApplyMove,
+    *,
+    depth: int = DEFAULT_SEARCH_DEPTH,
+) -> MoveSelector:
+    """固定深度1〜4の決定的な内部順序付きselectorを作る。"""
+    _validate_search_depth(depth, 1)
+
+    def _select_alpha_beta(rows: BoardRows, color: str, legal_moves: LegalMoves) -> Move | None:
+        """完全な候補集合から選択し、実盤面の確定は本体へ委ねる。"""
+        if not legal_moves:
+            return None
+        validate_position(rows, color)
+        return _run_alpha_beta(
+            rows, color, depth, legal_moves_for, apply_move, legal_moves, True
+        ).move
+
+    return _select_alpha_beta

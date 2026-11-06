@@ -1,5 +1,14 @@
 # 品質基盤導入の進捗と検証証拠
 
+## AI開発Phase 4（2026-11-07最終照合）
+
+実装前に[設計・計数・API・予算範囲](phase4_design.md)と現行図・契約を更新した。参照Minimax・評価関数と固定資産を保全し、新規search_trace.pyをstrict対象へ明示登録した。lintは既存glob、formatも既存scopeで新規moduleを対象とする。strictは18本となった。
+
+直接CPython 3.13.5で最終Full全11工程PASS、全pytest1391成功・独立smoke成功、44sourceの開始/終了/現在hash一致、publication検証成功。原証拠は`evaluation_results\quality-d9ed36897eea4eff9809265eebb11edd/`。Phase 4新規227件は専用ファイルでFull実行し、Quick/Standardへ自動追加していない。
+
+初期のテスト側の引数・fixture名・例外型の誤りは修正して再検証した。最初のFullは旧docstringを見つけて中断し、修正後に取り直した。部分結果をPASSとしていない。実AIの正式4局取得とfresh再解析は別に実施し、depth2の計測資格が成立した。品質成功を棋力向上へ読み替えない。詳細は[Phase 4実装・評価記録](reports/20261107_phase4_implementation.md)を参照。
+
+
 ## AI開発Phase 2（2026-10-30、実装PASS・参考評価完了）
 
 開始HEAD ed7b4af、feat/ai-phase2・clean。先行設計の後、本番2ファイルへコピーcallback・固定視点の特徴評価・決定的1手selectorを実装した。新規135ケースと既存回帰を含むFull1041成功・独立smoke1成功・必須11工程PASS、strict17維持。40sourceの開始/終了/現在hash一致、publication=[]。原証拠は `evaluation_results/quality-bc0fb825dd474969a5c2804d69f6b54a/`。

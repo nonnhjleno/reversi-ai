@@ -446,8 +446,8 @@ def test_default_board_keeps_real_cells_during_analysis_and_commits_once():
 
 def test_default_factory_receives_only_stateless_module_callbacks():
     """実Boardへの束縛や実cellのclosure共有をfactory境界で防ぐ。"""
-    original = ai_engine.make_minimax_selector
-    with patch.object(ai_engine, 'make_minimax_selector', wraps=original) as factory:
+    original = ai_engine.make_alpha_beta_selector
+    with patch.object(ai_engine, 'make_alpha_beta_selector', wraps=original) as factory:
         board = reversi.Board()
     factory.assert_called_once_with(reversi.legal_moves_for, reversi.apply_move)
     contents = [cell.cell_contents for cell in board._selector.__closure__]

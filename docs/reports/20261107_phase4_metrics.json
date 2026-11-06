@@ -1,0 +1,939 @@
+{
+  "head": "bf8ae76ed6f71e3f2b0bd2bddab76f3b813dce99",
+  "branch": "feat/ai-phase4",
+  "quality": "evaluation_results\\quality-d9ed36897eea4eff9809265eebb11edd",
+  "pytest_passed": 1391,
+  "full_steps": 11,
+  "source_count": 44,
+  "strict_sources": 18,
+  "nodes": {
+    "alphabeta_same": {
+      "count": 40,
+      "median_reduction": 0.2690258751902588,
+      "min_reduction": 0.0,
+      "max_reduction": 0.963986926144712,
+      "quartiles": [
+        0.0,
+        0.2690258751902588,
+        0.5767627602960581
+      ],
+      "worse_than_minimax": []
+    },
+    "alphabeta_ordered": {
+      "count": 40,
+      "median_reduction": 0.4071400316455696,
+      "min_reduction": 0.0,
+      "max_reduction": 0.9576823717554435,
+      "quartiles": [
+        0.0,
+        0.4071400316455696,
+        0.7081596188207265
+      ],
+      "worse_than_minimax": []
+    },
+    "ordered_worse_than_same": [
+      {
+        "label": "initial",
+        "depth": 4,
+        "same_nodes": 138,
+        "ordered_nodes": 143
+      },
+      {
+        "label": "multiple_directions",
+        "depth": 3,
+        "same_nodes": 296,
+        "ordered_nodes": 358
+      },
+      {
+        "label": "multiple_directions",
+        "depth": 4,
+        "same_nodes": 1201,
+        "ordered_nodes": 1948
+      },
+      {
+        "label": "late",
+        "depth": 4,
+        "same_nodes": 786,
+        "ordered_nodes": 877
+      }
+    ]
+  },
+  "provisional_twenty_percent_target_met": true,
+  "reference_ast_unchanged": true,
+  "protected_assets_unchanged": true,
+  "formal": {
+    "run_id": "4b88f2a5c4c64fc6aadf435939b92187",
+    "sha256": "cd3245b2ccd95159c804af6a569c65351cbdc96aeff271a7d15614f7b2269650",
+    "statistics_status": "available",
+    "assessment": {
+      "input_status": "valid",
+      "quality_status": "verified",
+      "formal_eligibility": "eligible",
+      "formal_reason": null,
+      "confidence": 0.95,
+      "reference_available": true,
+      "request_success": true,
+      "metrics_certified": true,
+      "requirements": {
+        "roles": [
+          "A",
+          "B"
+        ],
+        "budget_required": true,
+        "formal_requested": true,
+        "baseline_exemption_allowed": false
+      },
+      "reasons": [],
+      "validation_contract_version": 3,
+      "validator_fingerprint": "527096a88cfba9e7dcc5e697d4fc7fc2ffe140fb21c3c5de90a8cd6a1e7eef33",
+      "source_report_sha256": "ce55d846106b3dfc4664f8e171cc398a28729844593489d1848c08e0b447c5d3"
+    },
+    "phases": {
+      "normal_move": 208,
+      "terminal_probe": 8,
+      "pass_probe": 6
+    },
+    "interval": {
+      "mean": 0.5,
+      "lower": 0.0,
+      "upper": 1.0,
+      "half_width": 0.9598425098238541,
+      "method": "hoeffding_serfling_finite_population",
+      "confidence": 0.95,
+      "rho": 0.999,
+      "calculation_status": "computed",
+      "result_scope": "arithmetic_only",
+      "formal_eligibility": "not_assessed"
+    },
+    "scope": "measurement qualification; not strength superiority"
+  },
+  "reference": [
+    {
+      "name": "after-vs-random-smoke",
+      "run_id": "fcb1d817f1774f38aa6040992a0ee4f0",
+      "sha256": "1980c73b41f931302b5c80e84e67abfa69c070053e2230e85fdfa02d82326acf",
+      "summary": {
+        "attempted": 2,
+        "completed": 2,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 2,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.009101227419354837,
+          "max_genmove_seconds": 0.0274506,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        },
+        "B": {
+          "wins": 0,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.00017456129032258064,
+          "max_genmove_seconds": 0.0005422,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        }
+      },
+      "by_color": {
+        "B": {
+          "wins": 1,
+          "losses": 0,
+          "draws": 0
+        },
+        "W": {
+          "wins": 1,
+          "losses": 0,
+          "draws": 0
+        }
+      },
+      "statistics_status": "descriptive_only"
+    },
+    {
+      "name": "after-vs-random-100",
+      "run_id": "2c94787c37314c3f855a086d8ae3bee8",
+      "sha256": "df2652200ccfea04f2da31af894f0d9be8bedd3777b73aa689a4c0332842a4f6",
+      "summary": {
+        "attempted": 100,
+        "completed": 100,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 100,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 2785,
+          "mean_genmove_seconds": 0.01000222775583483,
+          "max_genmove_seconds": 0.0694928,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "B": {
+          "wins": 0,
+          "losses": 100,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 2773,
+          "mean_genmove_seconds": 0.00021002773169852143,
+          "max_genmove_seconds": 0.0421268,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        }
+      },
+      "by_color": {
+        "B": {
+          "wins": 50,
+          "losses": 0,
+          "draws": 0
+        },
+        "W": {
+          "wins": 50,
+          "losses": 0,
+          "draws": 0
+        }
+      },
+      "statistics_status": "descriptive_only"
+    },
+    {
+      "name": "after-vs-positional-smoke",
+      "run_id": "ea4b2dc81f5e4689a6a1e19e97e9848f",
+      "sha256": "cc0d95484f22173ee098b0fcb9053b1d59157e25de31182786eb535ee9c3a02b",
+      "summary": {
+        "attempted": 2,
+        "completed": 2,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 2,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 63,
+          "mean_genmove_seconds": 0.010144933333333333,
+          "max_genmove_seconds": 0.0274128,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        },
+        "B": {
+          "wins": 0,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.00017996774193548387,
+          "max_genmove_seconds": 0.0004909,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        }
+      },
+      "by_color": {
+        "B": {
+          "wins": 1,
+          "losses": 0,
+          "draws": 0
+        },
+        "W": {
+          "wins": 1,
+          "losses": 0,
+          "draws": 0
+        }
+      },
+      "statistics_status": "descriptive_only"
+    },
+    {
+      "name": "after-vs-positional-100",
+      "run_id": "9f6d06bd37554ee3ae3084bfc1374125",
+      "sha256": "507e850a9671dcfaa51267aa99dbb1a01e360453f6121fab4de0ea7f82d70338",
+      "summary": {
+        "attempted": 100,
+        "completed": 100,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 80,
+          "losses": 20,
+          "draws": 0,
+          "win_rate": 0.8,
+          "point_rate": 0.8,
+          "genmove_samples": 2797,
+          "mean_genmove_seconds": 0.011426213907758312,
+          "max_genmove_seconds": 0.062498,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "B": {
+          "wins": 20,
+          "losses": 80,
+          "draws": 0,
+          "win_rate": 0.2,
+          "point_rate": 0.2,
+          "genmove_samples": 2778,
+          "mean_genmove_seconds": 0.00024225323974082073,
+          "max_genmove_seconds": 0.0069518,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        }
+      },
+      "by_color": {
+        "B": {
+          "wins": 40,
+          "losses": 10,
+          "draws": 0
+        },
+        "W": {
+          "wins": 40,
+          "losses": 10,
+          "draws": 0
+        }
+      },
+      "statistics_status": "descriptive_only"
+    }
+  ],
+  "comparison": [
+    {
+      "opponent": "random",
+      "matched_games": 100,
+      "same_moves_and_results": true,
+      "comparable": true
+    },
+    {
+      "opponent": "positional",
+      "matched_games": 100,
+      "same_moves_and_results": true,
+      "comparable": true
+    }
+  ],
+  "G0_G5": {
+    "0": "PASS",
+    "1": "PASS",
+    "2": "PASS",
+    "3": "PASS",
+    "4": "PASS",
+    "5": "PASS"
+  },
+  "phase4_status": "PASS: correctness/efficiency measurements/real-AI formal measurement qualification",
+  "phase5": "may proceed; no Phase5 implementation",
+  "not_run": [
+    "real browser manual replay in this phase",
+    "time/nodes budgets",
+    "all-position wall-time guarantee",
+    "held-out games",
+    "strength superiority trial"
+  ],
+  "raw_evidence": "evaluation_results\\phase4\\run-327c43552a074fb79d0aaed6314615e1",
+  "response_times": {
+    "path": "evaluation_results\\phase4\\run-327c43552a074fb79d0aaed6314615e1\\response-times.json",
+    "sha256": "b20e7e97ffc1fd64d5289a9752f0ab1b8300fdd19b9953220072d17265ee6e62",
+    "records": [
+      {
+        "opponent": "random",
+        "stage": "before",
+        "source": "evaluation_results\\phase3\\run-01a13b34aab34ddb844ded6bd9bcdb40\\after-vs-random-100.json",
+        "sha256": "1b369567b2bae5c672234bc6daa7e85f0a20d05cb7a45003d46dc37de5d5035e",
+        "summary_A": {
+          "wins": 100,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 2785,
+          "mean_genmove_seconds": 0.02121400868940754,
+          "max_genmove_seconds": 0.110429,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "roles": {
+          "A": {
+            "samples": 18965,
+            "max_ns": 145503200,
+            "by_command": {
+              "genmove": {
+                "samples": 2785,
+                "mean_ns": 21214008.68940754,
+                "median_ns": 17449400,
+                "p95_nearest_rank_ns": 52746700,
+                "max_ns": 110429000
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 66887440,
+                "median_ns": 64732700.0,
+                "p95_nearest_rank_ns": 81158600,
+                "max_ns": 145503200
+              },
+              "play": {
+                "samples": 3264,
+                "mean_ns": 108195.1593137255,
+                "median_ns": 85400.0,
+                "p95_nearest_rank_ns": 239800,
+                "max_ns": 6242900
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 7539130,
+                "median_ns": 7229500.0,
+                "p95_nearest_rank_ns": 8744400,
+                "max_ns": 22553300
+              },
+              "result": {
+                "samples": 6358,
+                "mean_ns": 124029.09720037748,
+                "median_ns": 101900.0,
+                "p95_nearest_rank_ns": 263900,
+                "max_ns": 1781400
+              },
+              "showboard": {
+                "samples": 6358,
+                "mean_ns": 140587.24441648318,
+                "median_ns": 117300.0,
+                "p95_nearest_rank_ns": 294600,
+                "max_ns": 4651100
+              }
+            }
+          },
+          "B": {
+            "samples": 19171,
+            "max_ns": 108338300,
+            "by_command": {
+              "genmove": {
+                "samples": 2773,
+                "mean_ns": 199757.87955283085,
+                "median_ns": 171000,
+                "p95_nearest_rank_ns": 403400,
+                "max_ns": 1753400
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 51645348,
+                "median_ns": 49902650.0,
+                "p95_nearest_rank_ns": 60420900,
+                "max_ns": 108338300
+              },
+              "play": {
+                "samples": 3482,
+                "mean_ns": 134075.64618035613,
+                "median_ns": 116400.0,
+                "p95_nearest_rank_ns": 289200,
+                "max_ns": 1219700
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 6067923,
+                "median_ns": 5797750.0,
+                "p95_nearest_rank_ns": 7411100,
+                "max_ns": 11260700
+              },
+              "result": {
+                "samples": 6358,
+                "mean_ns": 112519.4086190626,
+                "median_ns": 95850.0,
+                "p95_nearest_rank_ns": 225300,
+                "max_ns": 1548000
+              },
+              "showboard": {
+                "samples": 6358,
+                "mean_ns": 120609.45265806858,
+                "median_ns": 108500.0,
+                "p95_nearest_rank_ns": 233400,
+                "max_ns": 1463500
+              }
+            }
+          }
+        }
+      },
+      {
+        "opponent": "random",
+        "stage": "after",
+        "source": "evaluation_results\\phase4\\run-327c43552a074fb79d0aaed6314615e1\\after-vs-random-100.json",
+        "sha256": "df2652200ccfea04f2da31af894f0d9be8bedd3777b73aa689a4c0332842a4f6",
+        "summary_A": {
+          "wins": 100,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 2785,
+          "mean_genmove_seconds": 0.01000222775583483,
+          "max_genmove_seconds": 0.0694928,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "roles": {
+          "A": {
+            "samples": 18965,
+            "max_ns": 299440000,
+            "by_command": {
+              "genmove": {
+                "samples": 2785,
+                "mean_ns": 10002227.755834829,
+                "median_ns": 8057700,
+                "p95_nearest_rank_ns": 25643900,
+                "max_ns": 69492800
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 97869617,
+                "median_ns": 81308200.0,
+                "p95_nearest_rank_ns": 191175200,
+                "max_ns": 299440000
+              },
+              "play": {
+                "samples": 3264,
+                "mean_ns": 95360.75367647059,
+                "median_ns": 73400.0,
+                "p95_nearest_rank_ns": 212400,
+                "max_ns": 2267800
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 9806581,
+                "median_ns": 8971050.0,
+                "p95_nearest_rank_ns": 14466400,
+                "max_ns": 21236800
+              },
+              "result": {
+                "samples": 6358,
+                "mean_ns": 118458.52469329978,
+                "median_ns": 92900.0,
+                "p95_nearest_rank_ns": 266500,
+                "max_ns": 5212500
+              },
+              "showboard": {
+                "samples": 6358,
+                "mean_ns": 135558.49323686693,
+                "median_ns": 98800.0,
+                "p95_nearest_rank_ns": 280200,
+                "max_ns": 18610300
+              }
+            }
+          },
+          "B": {
+            "samples": 19171,
+            "max_ns": 167922200,
+            "by_command": {
+              "genmove": {
+                "samples": 2773,
+                "mean_ns": 210027.73169852147,
+                "median_ns": 157500,
+                "p95_nearest_rank_ns": 396600,
+                "max_ns": 42126800
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 61751954,
+                "median_ns": 54803700.0,
+                "p95_nearest_rank_ns": 103103000,
+                "max_ns": 167922200
+              },
+              "play": {
+                "samples": 3482,
+                "mean_ns": 130160.13785180931,
+                "median_ns": 94850.0,
+                "p95_nearest_rank_ns": 266200,
+                "max_ns": 21681800
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 7108335,
+                "median_ns": 6419550.0,
+                "p95_nearest_rank_ns": 10235900,
+                "max_ns": 24793000
+              },
+              "result": {
+                "samples": 6358,
+                "mean_ns": 117010.05033029255,
+                "median_ns": 86600.0,
+                "p95_nearest_rank_ns": 235700,
+                "max_ns": 54248400
+              },
+              "showboard": {
+                "samples": 6358,
+                "mean_ns": 111682.63604907204,
+                "median_ns": 86700.0,
+                "p95_nearest_rank_ns": 229900,
+                "max_ns": 11822100
+              }
+            }
+          }
+        }
+      },
+      {
+        "opponent": "positional",
+        "stage": "before",
+        "source": "evaluation_results\\phase3\\run-01a13b34aab34ddb844ded6bd9bcdb40\\after-vs-positional-100.json",
+        "sha256": "7e6fccc6cf9547d2d40571b044b28da2b37a26e57ee45ac85218e5223c8477bb",
+        "summary_A": {
+          "wins": 80,
+          "losses": 20,
+          "draws": 0,
+          "win_rate": 0.8,
+          "point_rate": 0.8,
+          "genmove_samples": 2797,
+          "mean_genmove_seconds": 0.02103697450840186,
+          "max_genmove_seconds": 0.1124874,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "roles": {
+          "A": {
+            "samples": 19034,
+            "max_ns": 132063000,
+            "by_command": {
+              "genmove": {
+                "samples": 2797,
+                "mean_ns": 21036974.50840186,
+                "median_ns": 17620000,
+                "p95_nearest_rank_ns": 53594200,
+                "max_ns": 112487400
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 73083364,
+                "median_ns": 67730750.0,
+                "p95_nearest_rank_ns": 102303200,
+                "max_ns": 132063000
+              },
+              "play": {
+                "samples": 3287,
+                "mean_ns": 124109.18770915728,
+                "median_ns": 94500,
+                "p95_nearest_rank_ns": 271600,
+                "max_ns": 5200400
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 8313564,
+                "median_ns": 7946400.0,
+                "p95_nearest_rank_ns": 11153800,
+                "max_ns": 13932600
+              },
+              "result": {
+                "samples": 6375,
+                "mean_ns": 142748.53333333333,
+                "median_ns": 113900,
+                "p95_nearest_rank_ns": 306100,
+                "max_ns": 3109200
+              },
+              "showboard": {
+                "samples": 6375,
+                "mean_ns": 164399.43529411763,
+                "median_ns": 130500,
+                "p95_nearest_rank_ns": 346200,
+                "max_ns": 8288700
+              }
+            }
+          },
+          "B": {
+            "samples": 19219,
+            "max_ns": 111058400,
+            "by_command": {
+              "genmove": {
+                "samples": 2778,
+                "mean_ns": 229707.77537796975,
+                "median_ns": 201250.0,
+                "p95_nearest_rank_ns": 451800,
+                "max_ns": 1397800
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 57867022,
+                "median_ns": 54101500.0,
+                "p95_nearest_rank_ns": 80963900,
+                "max_ns": 111058400
+              },
+              "play": {
+                "samples": 3491,
+                "mean_ns": 161651.93354339732,
+                "median_ns": 134000,
+                "p95_nearest_rank_ns": 353800,
+                "max_ns": 1862800
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 6679993,
+                "median_ns": 6254650.0,
+                "p95_nearest_rank_ns": 9052100,
+                "max_ns": 12492500
+              },
+              "result": {
+                "samples": 6375,
+                "mean_ns": 133800.98823529412,
+                "median_ns": 106100,
+                "p95_nearest_rank_ns": 281900,
+                "max_ns": 8490200
+              },
+              "showboard": {
+                "samples": 6375,
+                "mean_ns": 140903.62352941177,
+                "median_ns": 115700,
+                "p95_nearest_rank_ns": 295300,
+                "max_ns": 2066700
+              }
+            }
+          }
+        }
+      },
+      {
+        "opponent": "positional",
+        "stage": "after",
+        "source": "evaluation_results\\phase4\\run-327c43552a074fb79d0aaed6314615e1\\after-vs-positional-100.json",
+        "sha256": "507e850a9671dcfaa51267aa99dbb1a01e360453f6121fab4de0ea7f82d70338",
+        "summary_A": {
+          "wins": 80,
+          "losses": 20,
+          "draws": 0,
+          "win_rate": 0.8,
+          "point_rate": 0.8,
+          "genmove_samples": 2797,
+          "mean_genmove_seconds": 0.011426213907758312,
+          "max_genmove_seconds": 0.062498,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "roles": {
+          "A": {
+            "samples": 19034,
+            "max_ns": 292464400,
+            "by_command": {
+              "genmove": {
+                "samples": 2797,
+                "mean_ns": 11426213.907758312,
+                "median_ns": 9321000,
+                "p95_nearest_rank_ns": 31796300,
+                "max_ns": 62498000
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 117942641,
+                "median_ns": 122576500.0,
+                "p95_nearest_rank_ns": 161005900,
+                "max_ns": 292464400
+              },
+              "play": {
+                "samples": 3287,
+                "mean_ns": 159983.35868573168,
+                "median_ns": 109200,
+                "p95_nearest_rank_ns": 292600,
+                "max_ns": 60190900
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 12903941,
+                "median_ns": 12436750.0,
+                "p95_nearest_rank_ns": 17950200,
+                "max_ns": 38977100
+              },
+              "result": {
+                "samples": 6375,
+                "mean_ns": 161738.47843137255,
+                "median_ns": 123200,
+                "p95_nearest_rank_ns": 330400,
+                "max_ns": 8277700
+              },
+              "showboard": {
+                "samples": 6375,
+                "mean_ns": 190699.43529411763,
+                "median_ns": 143700,
+                "p95_nearest_rank_ns": 361500,
+                "max_ns": 20122200
+              }
+            }
+          },
+          "B": {
+            "samples": 19219,
+            "max_ns": 138444800,
+            "by_command": {
+              "genmove": {
+                "samples": 2778,
+                "mean_ns": 242253.23974082075,
+                "median_ns": 201750.0,
+                "p95_nearest_rank_ns": 502100,
+                "max_ns": 6951800
+              },
+              "name": {
+                "samples": 100,
+                "mean_ns": 75658331,
+                "median_ns": 75417500.0,
+                "p95_nearest_rank_ns": 108102100,
+                "max_ns": 138444800
+              },
+              "play": {
+                "samples": 3491,
+                "mean_ns": 191913.3199656259,
+                "median_ns": 130800,
+                "p95_nearest_rank_ns": 375600,
+                "max_ns": 21518500
+              },
+              "quit": {
+                "samples": 100,
+                "mean_ns": 8863364,
+                "median_ns": 8149250.0,
+                "p95_nearest_rank_ns": 13171100,
+                "max_ns": 34496400
+              },
+              "result": {
+                "samples": 6375,
+                "mean_ns": 154101.80392156861,
+                "median_ns": 119100,
+                "p95_nearest_rank_ns": 311200,
+                "max_ns": 61916600
+              },
+              "showboard": {
+                "samples": 6375,
+                "mean_ns": 148285.34901960785,
+                "median_ns": 125900,
+                "p95_nearest_rank_ns": 311900,
+                "max_ns": 4686300
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "fresh_evidence": "evaluation_results\\phase4\\run-327c43552a074fb79d0aaed6314615e1\\fresh-2d3feb3765794ab294f4e946803ade97"
+}
