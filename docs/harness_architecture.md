@@ -405,6 +405,7 @@ flowchart TD
     ROUTE -->|"限定AI・既知テスト・資料"| STATIC["対応環境・モデル・scope・pip・Ruff・strict"]
     ROUTE -->|"明示measure-profile / Full未実行を固定"| STATIC
     STATIC --> PLAN["collect-only / 選択計画<br/>全nodeid・選択・未選択・policy hash"]
+    REVIEW["レビュー済みテスト名<br/>Quick / Standard追加 / Full専用"] --> PLAN
     PLAN --> EXEC["同一collectionの選択pytest<br/>Quick / Standard_AI"]
     EXEC --> RAW["JUnit・直列journal / collect_step<br/>原参照はrun内へ同一bytesを保管"]
     RAW --> VERIFY["選択一致・skip・source一致・原参照照合"]
@@ -415,7 +416,7 @@ flowchart TD
 
 feedback→quality/evidence、pytest→feedback/evidence_pluginの依存のみ追加する。qualityからfeedbackへの逆依存やharness→toolsは作らない。Fullのevidence collector/publication規則をfeedbackへ偽装流用しない。補助経路のpassedはscope内の完走・選択/証拠整合のみで、正式AI資格にもFull成功にも接続しない。未知変更のfallbackは別のFull証拠を発行する。測定専用指定はそのfallbackを抑止できるが、Full未実行と理由を必ず保持する。
 
-状態は planned → collected → executed → evidence_verified → feedback_passed。空選択・誤選択・欠損・skip・実行失敗・snapshot不一致はfeedback_failed、原参照の後日消失は再検証不能として扱う。Full未実行は常に別軸であり成功へ昇格しない。新規テストファイル・共有fixture/品質設定の変更はFullへ戻す。既知AIテストファイルの新caseは全件選択、契約テストは明示基底名で選択する。
+状態は planned → collected → executed → evidence_verified → feedback_passed。空選択・誤選択・欠損・skip・実行失敗・snapshot不一致はfeedback_failed、原参照の後日消失は再検証不能として扱う。Full未実行は常に別軸であり成功へ昇格しない。新規テストファイル・共有fixture/品質設定の変更はFullへ戻す。従来の既知AIテスト5ファイルは全件選択、契約テストは明示基底名で選択する。2026-11-06のPhase 2/3分類では、追加のレビュー済み基底名をQuick・Standard追加・Full専用の3群へ登録する。StandardはQuickを包含し、Fullは従来どおり全pytestを実行する。登録済み基底名の欠損・群の重複は拒否し、未登録名は短時間profileへ自動追加しない。レビュー済みテストのファイルを編集した場合も、差分routingは従来どおりFullへ戻す。
 
 ### 11.C CI頻度と自動選択（2026-10-20先行設計）
 

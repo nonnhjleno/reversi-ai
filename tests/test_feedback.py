@@ -407,6 +407,12 @@ def test_feedback_profiles_preserve_audit_candidates():
     )
     profiles = audit['inventory_analysis']['profiles']
     all_ids = [row[0] for row in audit['inventory_analysis']['inventory']]
+    all_ids += [
+        f'{path}::{name}'
+        for files in feedback.REVIEWED_AI_TESTS.values()
+        for path, names in files.items()
+        for name in names
+    ]
     for profile, expected in zip(('quick', 'standard-ai'), profiles, strict=True):
         selected = feedback.select_tests(all_ids + ['tests/test_feedback.py::test_probe'], profile)
         assert set(expected['base_tests']) <= set(selected)
@@ -424,6 +430,12 @@ def test_feedback_rejects_incomplete_selection(mutation):
         (ROOT / 'docs/reports/20261020_quality_gate_audit_metrics.json').read_text(encoding='utf-8')
     )
     ids = [row[0] for row in audit['inventory_analysis']['inventory']]
+    ids += [
+        f'{path}::{name}'
+        for files in feedback.REVIEWED_AI_TESTS.values()
+        for path, names in files.items()
+        for name in names
+    ]
     if mutation == 'empty':
         ids = []
     elif mutation == 'missing':
@@ -477,6 +489,9 @@ def feedback_template(tmp_path_factory):
         bodies[file] = ['test_synthetic']
     bodies['tests/test_harness.py'] = ['test_' + name for name in feedback.QUICK_HARNESS]
     bodies['tests/test_quality.py'] = ['test_' + name for name in feedback.QUICK_QUALITY]
+    for files in feedback.REVIEWED_AI_TESTS.values():
+        for file, names in files.items():
+            bodies.setdefault(file, []).extend(names)
     for file, names in bodies.items():
         text = 'from tools import evidence_plugin as ep\n'
         for name in names:

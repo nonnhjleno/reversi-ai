@@ -25,6 +25,64 @@ AI_TEST_FILES = frozenset(
         'tests/test_stdin_commands.py',
     }
 )
+# Phase終了後に目的と実測を確認した基底名だけを追加する。Standardの群はQuickへの追加分。
+REVIEWED_AI_TESTS: dict[str, dict[str, tuple[str, ...]]] = {
+    'quick': {
+        'tests/test_ai_phase2.py': (
+            'test_snapshot_copy_cells_are_separate_and_constructor_is_not_recursive',
+            'test_snapshot_boundary_rejects_invalid_shape_or_cells',
+            'test_snapshot_boundary_rejects_invalid_color',
+            'test_apply_rejects_invalid_or_illegal_move_without_mutation',
+            'test_initial_features_and_hand_calculated_first_move',
+            'test_corner_adjacency_mask_is_local_and_does_not_mutate_phase1_table',
+            'test_terminal_outcome_dominates_nonterminal_heuristic',
+            'test_reachable_pass_and_terminal_with_empty_squares',
+            'test_integer_numerator_preserves_mathematical_ties',
+            'test_empty_selector_calls_neither_rule_callback',
+            'test_selector_evaluates_children_from_root_color',
+            'test_rule_callback_exception_propagates_without_side_effects',
+            'test_default_factory_receives_only_stateless_module_callbacks',
+        ),
+        'tests/test_ai_phase3.py': (
+            'test_initial_tree_has_known_counts',
+            'test_root_and_internal_pass_preserve_placement_depth',
+            'test_depth_one_matches_one_ply_and_order_is_deterministic',
+            'test_search_rejects_invalid_depth',
+            'test_factory_rejects_invalid_depth',
+            'test_search_rejects_invalid_snapshot',
+            'test_selector_empty_input_has_no_callbacks',
+            'test_callback_failures_propagate',
+            'test_search_is_immutable_repeatable_and_silent',
+        ),
+        'tests/test_profile_classification.py': (
+            'test_reviewed_groups_are_disjoint_and_ordered',
+            'test_quick_standard_and_full_membership',
+            'test_missing_reviewed_base_fails_closed',
+            'test_unreviewed_case_stays_full_only',
+            'test_collection_order_and_parameter_families_are_preserved',
+            'test_reviewed_files_still_require_full_on_modification',
+            'test_existing_ai_file_routing_is_preserved',
+        ),
+    },
+    'standard-ai': {
+        'tests/test_ai_phase2.py': (
+            'test_fixed_positions_replay_and_independent_expected_values',
+            'test_snapshot_callbacks_match_independent_rules_without_mutation',
+            'test_features_evaluation_and_each_candidate_match_independent_oracle',
+            'test_evaluation_is_antisymmetric_and_invariant_under_eight_symmetries',
+            'test_one_ply_selector_matches_independent_candidate_scores_and_order',
+            'test_one_ply_hand_calculated_white_reply_and_difference_from_positional',
+            'test_default_board_keeps_real_cells_during_analysis_and_commits_once',
+            'test_nonterminal_bounds_over_independent_legal_trajectory',
+        ),
+        'tests/test_ai_phase3.py': (
+            'test_all_fixed_positions_match_independent_negamax',
+            'test_default_board_searches_copies_and_commits_once',
+        ),
+    },
+    'full': {'tests/test_ai_phase3.py': ('test_depth_zero_through_four_and_terminal_early_stop',)},
+}
+
 QUICK_HARNESS = (
     'response_contract_accepts_exact_wire_format_without_mutation',
     'response_contract_rejects_malformed_output_without_mutation',
@@ -85,13 +143,26 @@ def policy_hash() -> str:
 
 
 def select_tests(nodeids: list[str], profile: str) -> list[str]:
-    """明示基底名とAI専用ファイル全件を選択する。重複・必須欠損・空は例外。"""
+    """従来の全件対象とレビュー済み基底名を選ぶ。群の重複・必須欠損・空は例外。"""
     if profile not in ('quick', 'standard-ai') or len(set(nodeids)) != len(nodeids):
         raise ValueError('profile_or_duplicate_selection')
     required = {f'tests/test_harness.py::test_{name}' for name in QUICK_HARNESS}
     required.update(f'tests/test_quality.py::test_{name}' for name in QUICK_QUALITY)
     if profile == 'standard-ai':
         required.update(f'tests/test_harness.py::test_{name}' for name in STANDARD_EXTRA)
+    reviewed = {
+        tier: [f'{path}::{name}' for path, names in files.items() for name in names]
+        for tier, files in REVIEWED_AI_TESTS.items()
+    }
+    all_reviewed = [base for group in reviewed.values() for base in group]
+    if set(reviewed) != {'quick', 'standard-ai', 'full'} or len(set(all_reviewed)) != len(
+        all_reviewed
+    ):
+        raise ValueError('reviewed_selection_groups_invalid')
+    approved = required | set(reviewed['quick'])
+    if profile == 'standard-ai':
+        approved.update(reviewed['standard-ai'])
+    required.update(all_reviewed)
     bases = {nodeid.split('[', 1)[0] for nodeid in nodeids}
     if not required <= bases or not AI_TEST_FILES <= {nodeid.split('::')[0] for nodeid in nodeids}:
         raise ValueError('required_selection_missing')
@@ -99,7 +170,7 @@ def select_tests(nodeids: list[str], profile: str) -> list[str]:
         nodeid
         for nodeid in nodeids
         if nodeid.split('::')[0] in AI_TEST_FILES | {'tests/test_feedback.py'}
-        or nodeid.split('[', 1)[0] in required
+        or nodeid.split('[', 1)[0] in approved
     ]
     if not selected:
         raise ValueError('empty_selection')
