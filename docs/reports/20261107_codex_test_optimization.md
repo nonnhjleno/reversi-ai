@@ -63,7 +63,7 @@ Fullは合計4回実行した。最初は1800秒でtimeoutし、1207件完了の
 
 ## 証拠と未達事項
 
-[最終Full](../../evaluation_results/quality-9afa72e6d87e4bb28f95dd03a1242ea1/quality.json) と、[証拠アーカイブ](../../evaluation_results/codex-test-optimization-evidence-ba1afcb2ea7a.zip)、[アーカイブhash・内容照合](../../evaluation_results/codex-test-optimization-evidence-ba1afcb2ea7a.zip.json) を保存する。アーカイブには今回の全試行、既存runner故障注入、比較、保護hash、外部artifactの同一bytes複製と対応表、最終ソースsnapshotを含める。ZIPとpublication JSONをセットでバックアップする。Git管理外なので新checkoutへ自動で引き継がれるとは扱わない。
+最終Full（Git管理外）：`../../evaluation_results/quality-9afa72e6d87e4bb28f95dd03a1242ea1/quality.json` と、証拠アーカイブ（Git管理外）：`../../evaluation_results/codex-test-optimization-evidence-ba1afcb2ea7a.zip`、アーカイブhash・内容照合（Git管理外）：`../../evaluation_results/codex-test-optimization-evidence-ba1afcb2ea7a.zip.json` を保存する。アーカイブには今回の全試行、既存runner故障注入、比較、保護hash、外部artifactの同一bytes複製と対応表、最終ソースsnapshotを含める。ZIPとpublication JSONをセットでバックアップする。Git管理外なので新checkoutへ自動で引き継がれるとは扱わない。
 
 外部Tempはpytest整理で消える可能性がある。今回作成した4品質報告の参照bytesは改変せず複製し、hash名の平坦な保存形式にしてWindowsパス長制限を避けた。raw参照を書き換えて資格を作らず、復旧時は対応表に従い同一bytesだけを扱い、異なる既存ファイルは上書きしない。
 
@@ -76,14 +76,14 @@ Fullは合計4回実行した。最初は1800秒でtimeoutし、1207件完了の
 
 参照元のpytest一時領域に範囲を限定し、同じファイル名の候補2609件をSHA-256で照合した。共通のopening-population.jsonには121件が一致したが、残る9件の原証拠には同一hashがなかった。読み取りエラーは0件。利用者の回答はバックアップなし・不明であり、原traceの再構築や期待hashの変更は行っていない。
 
-[継続監査JSON](../../evaluation_results/continuation-temp-search.json)（SHA-256 `fe646e0ee52e583550cd9914117df5b00f044c47945cd392f710509705157093`）へ結果を保存した。既存のZIPは前ターン時点の封印snapshotであり、この追補JSONは別途保管する。Fullを再実行せず、現在のsource hashと最終Fullの原証拠公開を再確認した。9件の復元または開始時の存在を示す外部証拠がない限り、全範囲保護の完了は証明できず、Goalは未完了である。
+継続監査JSON（Git管理外）：`../../evaluation_results/continuation-temp-search.json`（SHA-256 `fe646e0ee52e583550cd9914117df5b00f044c47945cd392f710509705157093`）へ結果を保存した。既存のZIPは前ターン時点の封印snapshotであり、この追補JSONは別途保管する。Fullを再実行せず、現在のsource hashと最終Fullの原証拠公開を再確認した。9件の復元または開始時の存在を示す外部証拠がない限り、全範囲保護の完了は証明できず、Goalは未完了である。
 
 
 ## 当初のGoalブロック判定（履歴）
 
 同じ外部証拠不足を3回のGoalターンで確認した。最後の確認でも9件の原パスは存在せず、利用者のバックアップ回答はなし・不明だった。現行Fullとsource hashは適合しているが、過去外部一時証拠の保護は証明できないため、Goalをblocked（外部証拠待ち）とする。再開には、欠損9件の期待SHA-256と一致する元bytes、または最適化開始前に既に欠損していたことを示す確実な資料が必要である。原traceの再構築、hash/validatorの変更、過去PASSの読み替えでは解消しない。
 
-[3ターン目のブロック監査](../../evaluation_results/blocked-audit-third-turn.json)は追補として別途保管する。Fullの再実行は行っていない。
+3ターン目のブロック監査（Git管理外）：`../../evaluation_results/blocked-audit-third-turn.json`は追補として別途保管する。Fullの再実行は行っていない。
 
 
 ## 2026-11-08の統合判断
@@ -92,4 +92,9 @@ Fullは合計4回実行した。最初は1800秒でtimeoutし、1207件完了の
 
 対象はAGENTS、本報告、集計JSONの3ファイルのみ。AGENTSを含む検証対象44ファイルは最終Fullのhashと一致し、品質設定・テスト集合・探索・評価・ハーネス・固定資産に変更はない。報告・集計の更新はFullの実行対象を変えないため、同じコードへの理由のないFull再実行を避け、既存Fullの原証拠公開・source hashとGit差分を再検証して統合する。
 
-[今回のローカル統合記録](../../evaluation_results/codex-test-optimization-integration-731dfd0ece9947d8a32649b881419b3a/integration-final.json)へ、実際の各HEAD、作業ツリー状態、変更ファイル、Phase 5への反映結果を記録する。自己参照するcommit hashを本文へ埋め込まず、統合後の値はこの別記録と最終作業報告で示す。元の証拠ZIPは検証時点の封印snapshotとして変更しない。Git管理外の必要な証拠は既存bytesのままmain側の評価領域へ複製し、別worktreeの削除でリンク切れになることを防ぐ。
+今回のローカル統合記録（Git管理外）：`../../evaluation_results/codex-test-optimization-integration-731dfd0ece9947d8a32649b881419b3a/integration-final.json`へ、実際の各HEAD、作業ツリー状態、変更ファイル、Phase 5への反映結果を記録する。自己参照するcommit hashを本文へ埋め込まず、統合後の値はこの別記録と最終作業報告で示す。元の証拠ZIPは検証時点の封印snapshotとして変更しない。Git管理外の必要な証拠は既存bytesのままmain側の評価領域へ複製し、別worktreeの削除でリンク切れになることを防ぐ。
+
+
+## クリーンcheckoutでの証拠参照
+
+PRの初回CIでは、Git管理外の証拠への6リンクがクリーンcheckoutに存在せず、既存の文書リンク検査が失敗した。ローカルでのファイル存在確認だけでは不足していたため、これらはクリック可能なMarkdownリンクから通常のパス表記へ修正した。証拠そのものは削除・改変せず、別途バックアップする。追跡済みの集計JSON等へのリンクは維持し、リンク検査や品質条件は変更しない。
