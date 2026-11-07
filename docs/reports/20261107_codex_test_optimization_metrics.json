@@ -1,0 +1,151 @@
+{
+  "summary_only": true,
+  "branch": "chore/codex-test-optimization",
+  "starting_head": "c1cda2cee8889836b4d7afca2f6f400cd7f0ad11",
+  "ending_head": "c1cda2cee8889836b4d7afca2f6f400cd7f0ad11",
+  "current_full": {
+    "passed": true,
+    "exit_code": 0,
+    "quality": "evaluation_results\\quality-9afa72e6d87e4bb28f95dd03a1242ea1",
+    "checks": 11,
+    "pytest": {
+      "before": 1391,
+      "after": 1391,
+      "same_test_multiset": true,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0
+    },
+    "smoke": {
+      "before": 1,
+      "after": 1,
+      "same_test_multiset": true,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0
+    },
+    "evidence_publication_verified": true,
+    "source_hashes_unchanged_during_full": true
+  },
+  "current_quality_sha256": "4a5e5201c0d374ea65d8cf451c2525aafa277933c746f5787c05d0a06514fa32",
+  "full_attempts": [
+    {
+      "path": "quality-9afa72e6d87e4bb28f95dd03a1242ea1",
+      "stored_passed": true,
+      "pytest_exit_code": 0,
+      "pytest_seconds": 1130.6159026000023,
+      "current_state": true
+    },
+    {
+      "path": "quality-a1a766e3f01543c6acbe1035b24521b1",
+      "stored_passed": false,
+      "pytest_exit_code": null,
+      "pytest_seconds": 1800.5888381999976,
+      "current_state": false
+    },
+    {
+      "path": "quality-de5968e2235543b5b06cc37cc3387739",
+      "stored_passed": false,
+      "pytest_exit_code": 1,
+      "pytest_seconds": 686.1900381000014,
+      "current_state": false
+    },
+    {
+      "path": "quality-fa27ecb7efbe4b599e744c6fcc86e7c1",
+      "stored_passed": true,
+      "pytest_exit_code": 0,
+      "pytest_seconds": 972.1233737000002,
+      "current_state": false
+    }
+  ],
+  "full_invocations": 4,
+  "new_wrapper_added": false,
+  "runner_fault_checks": 11,
+  "foreign_cwd_entry_verified": true,
+  "strict_test_selection_and_limits_unchanged": true,
+  "mandatory_argv_equivalent": true,
+  "protected_original_project_files": 117,
+  "protected_original_evaluation_files": 8578,
+  "protected_original_evaluation_bytes": 3190561333,
+  "checkout_bytes_restored_count": 43,
+  "current_assets_match_original_bytes": true,
+  "benchmark": {
+    "duration_seconds": 30,
+    "short_wait_calls": 5,
+    "long_wait_calls": 1,
+    "wait_calls_reduction_fraction": 0.8,
+    "nested_tool_calls_before": 6,
+    "nested_tool_calls_after": 2,
+    "model_facing_rounds_each": 2,
+    "full_logs_each_bytes": 1048608,
+    "full_logs_equal": true
+  },
+  "display": {
+    "returned_summary_utf8_bytes": 383,
+    "saved_quality_json_bytes": 16109,
+    "saved_evidence_json_bytes": 2577494,
+    "actual_before_after_model_log_volume_measured": false
+  },
+  "subscription_usage_reduction_measured": false,
+  "token_reduction_measured": false,
+  "full_rerun_reduction_demonstrated": false,
+  "avoidable_extra_full_reason": "Initial checkout byte comparison missed Git newline conversion; restoring43 files required another Full. Other retries followed actual failures.",
+  "historical_publication_verified": false,
+  "historical_missing_external_files": 10,
+  "historical_missing_without_duplicate_bytes": 9,
+  "historical_external_preservation_proven": false,
+  "user_reported_historical_backup": "none/unknown",
+  "goal_complete": true,
+  "remaining_blocker": null,
+  "evidence_archive": "evaluation_results/codex-test-optimization-evidence-ba1afcb2ea7a.zip",
+  "archive_publication": "evaluation_results/codex-test-optimization-evidence-ba1afcb2ea7a.zip.json",
+  "new_current_external_reference_copies": 14,
+  "evidence_backups_include_all_four_attempt_references": true,
+  "limits": [
+    "Windows/direct CPython3.13.5 only",
+    "No Codex usage dashboard before/after or tokenizer comparison",
+    "No app-close/host-crash detached survival test; no detached wrapper",
+    "Cached origin/main was not fetched",
+    "Historic external Temp availability was not inventoried at start"
+  ],
+  "continuation_audit": {
+    "candidate_files_hashed": 2609,
+    "matching_unique_hashes": 1,
+    "matching_common_population_files": 121,
+    "remaining_unique_artifacts_without_copy": 9,
+    "read_errors": 0,
+    "report": "evaluation_results/continuation-temp-search.json",
+    "report_sha256": "fe646e0ee52e583550cd9914117df5b00f044c47945cd392f710509705157093",
+    "full_rerun": false
+  },
+  "goal_status": "operation_improvement_complete",
+  "blocking_audit": {
+    "same_condition_goal_turns": 3,
+    "remaining_unique_artifacts": 9,
+    "report": "evaluation_results/blocked-audit-third-turn.json",
+    "report_sha256": "a13eb82c3853a608ddb8dabc20d887116881de6c963d3a127eb464fb9c0bd36a",
+    "new_full_runs": 0
+  },
+  "previous_goal_assessment": {
+    "goal_complete": false,
+    "goal_status": "blocked",
+    "remaining_blocker": "Cannot prove historical outside-Temp preservation or recover9 unique files. Missing time not established; current project files and new proof verified."
+  },
+  "historical_gap_nonblocking_for_this_integration": true,
+  "integration_decision": {
+    "instruction_date": "2026-11-08",
+    "scope": "operation improvement local commit and main merge; Phase5 only when safe",
+    "allowed_files": [
+      "AGENTS.md",
+      "docs/reports/20261107_codex_test_optimization.md",
+      "docs/reports/20261107_codex_test_optimization_metrics.json"
+    ],
+    "historical_missing_unique_artifacts": 9,
+    "historical_gap_resolved": false,
+    "quality_criteria_changed": false,
+    "new_full_required": false,
+    "reason": "All44 tested source hashes match; only non-executable report/summary status updated.",
+    "record": "evaluation_results/codex-test-optimization-integration-731dfd0ece9947d8a32649b881419b3a/integration-final.json",
+    "push": false
+  }
+}
