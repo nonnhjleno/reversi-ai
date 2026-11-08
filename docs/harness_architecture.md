@@ -644,3 +644,17 @@ flowchart LR
 
 
 Phase 5のtime予約分を実測後に再設計した。search_traceからtimed_searchへ渡す要求上限と、内部の停止予約分を分け、SS基準のtime_stopとCC基準のコマンド停止の早い方で中断する。実測2回を受けた120msを含む予約分の式は[現行境界](harness_contracts.md#phase-5の時間対応境界)を参照する。上の依存図・状態遷移・時計端点・実着手の責務を照合し、変更が数値判定だけであることを確認した。
+
+
+## Phase 5最終レビュー：品質runnerの終了判定
+
+既存の所有子process待機・tree回収の後に、同じperf_counterの実経過を指定上限へ照合する。終了コード0とerrorなしだけではPASSにせず、実測上限超過をtimeout_elapsedとして失敗記録へ渡す。原ログ・実終了値を保存し、新しい常駐監視・独立process・品質上限の変更は導入しない。外部AIと正式評価の依存・通信は変えない。[品質step上限](harness_contracts.md#phase-5最終レビュー品質stepの経過上限)を参照する。
+
+```mermaid
+flowchart LR
+ S[step開始とperf_counter] --> W[既存process待機と回収]
+ W --> T[実経過と上限を終了後照合]
+ T -->|上限超過| F[timeout_elapsed / FAIL / 原ログ保持]
+ T -->|上限内かつexit0かつerrorなし| P[PASS候補 / 既存証拠検査へ]
+ T -->|終了値や回収に失敗| F
+```

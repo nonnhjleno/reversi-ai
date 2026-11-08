@@ -1,5 +1,14 @@
 # 品質基盤導入の進捗と検証証拠
 
+## Phase 5最終レビュー（2026-11-09）
+
+品質stepの実経過が上限を超えても、Windowsのnative待機が終了値0なら成功にできた問題を修正した。終了後にperf_counter実経過を照合し、超過は実終了値・原ログを保持してtimeout_elapsed・FAILとする。1800秒上限、既存1604件、Quick/Standard分類、strict19本、正式評価条件は維持した。過去の約31749秒はfixture setupではなくcallで、電源ログの休止31736.280034秒とほぼ一致する。CPU/I/O内訳は未確認。今回初回Fullも1800秒で失敗したため、Phase4比較表の同じ入力に対する独立参照だけを共有し、候補の全実行・assert・件数を維持した。入力keyと候補実行の2回帰を追加し、変更前後の局所比較も実行した。
+
+修正後は最終関連12件が成功し、新規7件を含むFull全11工程PASS、pytest1611成功・失敗/error/skip0、独立smoke1成功。48sourceの開始・終了・現在hash一致、publicationと原証拠fresh収集が成功した。原証拠は `evaluation_results\quality-b5bab628186d4e089fcb3a086c31003c`、quality.json SHA-256は `e89b1f747408f6806542f93f42e0a862f65ce0029a1cfb79f71d5828937087e2`。Temp依存14件はreview領域へhash付きbytesを保管した。外部媒体へのバックアップとは区別する。
+
+AI本体、search_v1、提出・復旧ZIP、旧rawは変更していない。人工callback待機の実時計診断5条件、100ms先行失敗と最終受入の別集計、固定B timeoutの限定調査を実施した。自然負荷7秒、未知サーバー、固定B原因、外部バックアップは未確認。過去Temp9件欠損は未解決を維持する。詳細は[最終レビュー・引き継ぎ](reports/20261109_phase5_review.md)を参照する。
+
+
 ## AI開発Phase 5（2026-11-08、ローカル最終）
 
 直接CPython 3.13.5 / WindowsのFull全11工程PASS。pytest1604成功・失敗/error/skip 0（1676.013秒）、独立smoke1成功、strict19本、47sourceの開始・終了・現在hash一致、publicationと原証拠fresh収集が成功した。timed_search.pyを明示登録し、response_config.jsonを品質hashへ加えた。新規213件はFull専用で、Quick/Standard分類と既存テストは不変。

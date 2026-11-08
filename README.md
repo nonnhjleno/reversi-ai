@@ -13,6 +13,7 @@
 | Phase 3の探索契約と実行結果 | [Minimax設計](docs/phase3_design.md)・[実装・評価記録](docs/reports/20261106_phase3_implementation.md) |
 | Phase 4のAlpha-Beta・実AI計測 | [設計と計数契約](docs/phase4_design.md)・[実装・評価記録](docs/reports/20261107_phase4_implementation.md) |
 | Phase 5の時間制御・安全応答・固定探索相手 | [実装設計](docs/phase5_design.md)・[実装記録](docs/reports/20261108_phase5_implementation.md)・[search_v1](baselines/search_v1/README.md) |
+| Phase 5最終レビュー・Phase 6への引き継ぎ | [調査・最小修正・検証結果](docs/reports/20261109_phase5_review.md) |
 | 提出ZIP・復旧・後日の実機試行 | [準備と記録様式](docs/reports/20261108_phase5_server_trials.md) |
 | テスト・品質ゲート・対戦評価・GUIの操作 | [ハーネス](docs/ハーネス.md) |
 | 現行の責務・依存・データフロー・状態 | [アーキテクチャ](docs/harness_architecture.md) |

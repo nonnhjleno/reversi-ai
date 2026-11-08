@@ -6,6 +6,7 @@ import io
 import json
 import random
 from pathlib import Path
+from functools import cache
 from unittest.mock import Mock, patch
 
 import pytest
@@ -15,6 +16,16 @@ from reversi_player import ai_engine, reversi, search_trace
 from test_ai_phase3 import CASES, _oracle
 
 
+@cache
+def _comparison_reference(rows, color, depth):
+    """不変入力ごとの独立期待値とMinimaxだけを共有し、候補探索は毎回実行する。"""
+    expected = _oracle(rows, color, depth)
+    reference = ai_engine.search_minimax(
+        rows, color, depth, referee.legal_moves, referee.apply_move
+    )
+    return expected, reference
+
+
 @pytest.mark.parametrize('label', CASES)
 @pytest.mark.parametrize('depth', range(5))
 @pytest.mark.parametrize('ordered', [False, True])
@@ -22,10 +33,7 @@ from test_ai_phase3 import CASES, _oracle
 def test_alpha_beta_matches_independent_oracle_and_reference(label, depth, ordered, color):
     """有理数Negamaxと保全Minimaxを使い、値・最善集合・同点規則を照合する。"""
     rows = tuple(CASES[label]['rows'])
-    expected, best, _ = _oracle(rows, color, depth)
-    reference = ai_engine.search_minimax(
-        rows, color, depth, referee.legal_moves, referee.apply_move
-    )
+    (expected, best, _), reference = _comparison_reference(rows, color, depth)
     result = ai_engine.search_alpha_beta(
         rows, color, depth, referee.legal_moves, referee.apply_move, ordered=ordered
     )
