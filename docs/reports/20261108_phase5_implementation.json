@@ -1,0 +1,3675 @@
+{
+  "format_version": 1,
+  "phase": 5,
+  "branch": "feat/ai-phase5",
+  "start_head": "518cd2aa263fbed869ed17ea9da64e126d78c1a3",
+  "end_head": "518cd2aa263fbed869ed17ea9da64e126d78c1a3",
+  "dirty": true,
+  "evidence_root": "evaluation_results/phase5/run-0f94162b39214839bcff342fe327a2f0/guard120",
+  "gates": {
+    "G0": {
+      "status": "PASS",
+      "scope": "Phase 5 API/clock/state/counts/config contracts and diagrams fixed before implementation; empirical guard correction separately recorded before code"
+    },
+    "G1": {
+      "status": "PASS",
+      "scope": "213 independent Phase5 tests plus unchanged Phase2-4/protocol/GUI automatic regressions; fake-clock interruption proofs separated from real clocks"
+    },
+    "G2": {
+      "status": "PASS",
+      "scope": "Full 11 steps, pytest1604, smoke1, strict19, 47 source hashes, publication verified; external artifacts14 copied"
+    },
+    "G3": {
+      "status": "PASS_current_cohort_only",
+      "scope": "A応答678件と再取得408局・隔離対局の範囲で合格。先行102局の固定B通常play timeout1件は原因未確定のまま保持し、全試行で異常0とは主張しない。実機保証なし。"
+    },
+    "G4": {
+      "status": "PASS_scoped",
+      "scope": "same fixed opponents/development/seed/deadlines; legacy204 identical chess; 100ms time and fixed depth2 not same work; fixed B formal budget unknown"
+    },
+    "G5": {
+      "status": "PASS",
+      "scope": "original failures retained, fresh analyses/hash/asset/ZIP evidence and limitations recorded; old external Temp9 remain missing"
+    }
+  },
+  "phase_specific": [
+    {
+      "number": 1,
+      "condition": "反復深化の正しさ",
+      "status": "PASS",
+      "evidence_scope": "全完了時は独立オラクル・保全参照と一致。実行した反復と中断分の計数を合算する。"
+    },
+    {
+      "number": 2,
+      "condition": "協調的中断と完了結果の保護",
+      "status": "PASS",
+      "evidence_scope": "専用中断と全時計点の偽時計試験。部分rootは採用しない。"
+    },
+    {
+      "number": 3,
+      "condition": "深度未完了時の合法応答",
+      "status": "PASS",
+      "evidence_scope": "深度1未完了も最初の(y,x)合法手、厳密値はNone。"
+    },
+    {
+      "number": 4,
+      "condition": "実盤面の一度だけの確定",
+      "status": "PASS",
+      "evidence_scope": "selectorはsnapshotだけを探索、本体で検査して一度適用。"
+    },
+    {
+      "number": 5,
+      "condition": "固定depthでのPhase 4との一致",
+      "status": "PASS",
+      "evidence_scope": "参照bytes不変、独立値・同点手と旧経路204局の棋譜・盤面・結果一致。"
+    },
+    {
+      "number": 6,
+      "condition": "実測した応答期限への適合",
+      "status": "PASS_測定範囲",
+      "evidence_scope": "678件の7/8/10秒超過0。実機や未測定負荷への保証はしない。"
+    },
+    {
+      "number": 7,
+      "condition": "time予算と実AI trace4の資格",
+      "status": "対象限定PASS",
+      "evidence_scope": "Windows直接CPython3.13.5、100ms deployment4局をfresh認証。depth2 confirmatory4局はavailable。"
+    },
+    {
+      "number": 8,
+      "condition": "参考棋力の結果と解釈",
+      "status": "完了",
+      "evidence_scope": "固定2相手各2+100局。100msと提出7秒の棋力を同一視せず、正式優越性は未確認。"
+    },
+    {
+      "number": 9,
+      "condition": "search_v1の独立固定・再現性",
+      "status": "PASS",
+      "evidence_scope": "全依存hash・shadow候補・別cwd・固定depthの再対局一致・Git改行変換保全。"
+    },
+    {
+      "number": 10,
+      "condition": "提出ZIPの保存・復旧可能性",
+      "status": "ローカルPASS",
+      "evidence_scope": "同じZIP bytesを展開、全コマンド・パス・終局・先後交換。正常版ZIPとhashを保持。"
+    },
+    {
+      "number": 11,
+      "condition": "提出サーバー実機での未確認事項",
+      "status": "未実施_予定どおり",
+      "evidence_scope": "OS、Python、ZIP階層、起動名、応答ログは未確認。外部提出なし。"
+    },
+    {
+      "number": 12,
+      "condition": "Phase 6へ進むための前提充足",
+      "status": "進行可能_ローカル",
+      "evidence_scope": "固定探索相手と学習前の比較基準を用意。Phase6実装・学習・Git統合は未実施。"
+    }
+  ],
+  "classification": {
+    "implementation": "PASS",
+    "reference_evaluation": "complete",
+    "formal_measurement": "PASS_scoped_depth2_confirmatory_and_100ms_deployment",
+    "response_safety": "PASS_measured_scope",
+    "search_v1": "frozen",
+    "zip": "local_preparation_complete",
+    "server": "not_performed",
+    "phase6": "ready_for_separate_design"
+  },
+  "quality": {
+    "native_exit_code_observed": 0,
+    "quality_passed": true,
+    "quality_root": "evaluation_results\\quality-8490738854b140f684bddfd6d9d24e4b",
+    "publication_errors": [],
+    "fresh_collection_passed": true,
+    "counts": {
+      "pytest": {
+        "tests": 1604,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "smoke": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "required_checks": 11,
+    "source_hashes_verified": 47,
+    "external_artifacts_backed_up": 14,
+    "quality_sha256": "d5b7c28224f17de6f630d84cea4653f1d520bc95416cdf4841150fd3ff49c727",
+    "steps": [
+      {
+        "name": "environment",
+        "command": [
+          "internal:environment"
+        ],
+        "exit_code": 0,
+        "seconds": 0.03612890001386404,
+        "log": "environment.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "model",
+        "command": [
+          "internal:model"
+        ],
+        "exit_code": 0,
+        "seconds": 0.1615886999934446,
+        "log": "model.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "typing_scope",
+        "command": [
+          "internal:typing_scope"
+        ],
+        "exit_code": 0,
+        "seconds": 0.02119259999017231,
+        "log": "typing_scope.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "dependencies",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "pip",
+          "check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.9577181999920867,
+        "log": "dependencies.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "lint",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "ruff",
+          "check",
+          ".",
+          "--no-cache",
+          "--config",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+        ],
+        "exit_code": 0,
+        "seconds": 0.18492209998657927,
+        "log": "lint.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "format",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "ruff",
+          "format",
+          "--check",
+          ".",
+          "--no-cache",
+          "--config",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+        ],
+        "exit_code": 0,
+        "seconds": 0.16872800001874566,
+        "log": "format.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "typing",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "mypy",
+          "--no-incremental",
+          "--config-file",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\pyproject.toml"
+        ],
+        "exit_code": 0,
+        "seconds": 9.901710400008596,
+        "log": "typing.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "pytest",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--tb=short",
+          "--strict-config",
+          "--strict-markers",
+          "-p",
+          "tools.evidence_plugin",
+          "--junitxml=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-8490738854b140f684bddfd6d9d24e4b\\pytest\\pytest.xml",
+          "--verification-evidence-dir=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-8490738854b140f684bddfd6d9d24e4b\\pytest",
+          "--verification-run-id=quality-8490738854b140f684bddfd6d9d24e4b",
+          "--verification-step=pytest"
+        ],
+        "exit_code": 0,
+        "seconds": 1676.0129542000068,
+        "log": "pytest.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "smoke",
+        "command": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--tb=short",
+          "--strict-config",
+          "--strict-markers",
+          "-m",
+          "smoke",
+          "-p",
+          "tools.evidence_plugin",
+          "--junitxml=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-8490738854b140f684bddfd6d9d24e4b\\smoke\\smoke.xml",
+          "--verification-evidence-dir=C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\quality-8490738854b140f684bddfd6d9d24e4b\\smoke",
+          "--verification-run-id=quality-8490738854b140f684bddfd6d9d24e4b",
+          "--verification-step=smoke"
+        ],
+        "exit_code": 0,
+        "seconds": 12.425272899999982,
+        "log": "smoke.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "snapshot",
+        "command": [
+          "internal:snapshot"
+        ],
+        "exit_code": 0,
+        "seconds": 0.1166932999913115,
+        "log": "snapshot.txt",
+        "error": null,
+        "passed": true
+      },
+      {
+        "name": "evidence",
+        "command": [
+          "internal:evidence"
+        ],
+        "exit_code": 0,
+        "seconds": 0.5898040999891236,
+        "log": "evidence.txt",
+        "error": null,
+        "passed": true
+      }
+    ],
+    "prior_failures_retained": true
+  },
+  "responses": {
+    "aggregate": {
+      "n": 678,
+      "mean_ns": 221327194.39528024,
+      "median_ns": 121877300.0,
+      "max_ns": 1097804200,
+      "p95_ns": 963338100,
+      "p99_ns": 1052052300
+    },
+    "stop_detection_delay": {
+      "n": 26,
+      "mean_ns": 92107.69230769231,
+      "median_ns": 27200.0,
+      "max_ns": 1358300,
+      "p95_ns": 213500,
+      "p99_ns": 1358300
+    },
+    "group_summary": {
+      "planned_requests": 678,
+      "observed_requests": 678,
+      "summary": [
+        {
+          "condition": "normal",
+          "target": 5,
+          "mode": "traced",
+          "planned": 100,
+          "failures": 0,
+          "external": {
+            "n": 100,
+            "mean_ns": 228351232,
+            "median_ns": 121869800.0,
+            "max_ns": 1097804200,
+            "p95_ns": 949572100,
+            "p99_ns": 962242900
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "depths": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 100
+          },
+          "started_depths": {
+            "4": 100
+          },
+          "stop_reasons": {
+            "max_depth_completed": 100
+          },
+          "search_elapsed": {
+            "n": 100,
+            "mean_ns": 227893941,
+            "median_ns": 121462500.0,
+            "max_ns": 1097411500,
+            "p95_ns": 949009500,
+            "p99_ns": 961761500
+          },
+          "counts": {
+            "nodes": {
+              "observed": 100,
+              "sum": 94231,
+              "max": 3155
+            },
+            "leaves": {
+              "observed": 100,
+              "sum": 71878,
+              "max": 2634
+            },
+            "passes": {
+              "observed": 100,
+              "sum": 0,
+              "max": 0
+            },
+            "cutoffs": {
+              "observed": 100,
+              "sum": 15284,
+              "max": 398
+            }
+          }
+        },
+        {
+          "condition": "normal",
+          "target": 7,
+          "mode": "traced",
+          "planned": 100,
+          "failures": 0,
+          "external": {
+            "n": 100,
+            "mean_ns": 229694656,
+            "median_ns": 124569800.0,
+            "max_ns": 1052052300,
+            "p95_ns": 945031100,
+            "p99_ns": 1031548900
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "depths": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 100
+          },
+          "started_depths": {
+            "4": 100
+          },
+          "stop_reasons": {
+            "max_depth_completed": 100
+          },
+          "search_elapsed": {
+            "n": 100,
+            "mean_ns": 229243990,
+            "median_ns": 124105800.0,
+            "max_ns": 1051456600,
+            "p95_ns": 944643200,
+            "p99_ns": 1031067600
+          },
+          "counts": {
+            "nodes": {
+              "observed": 100,
+              "sum": 94231,
+              "max": 3155
+            },
+            "leaves": {
+              "observed": 100,
+              "sum": 71878,
+              "max": 2634
+            },
+            "passes": {
+              "observed": 100,
+              "sum": 0,
+              "max": 0
+            },
+            "cutoffs": {
+              "observed": 100,
+              "sum": 15284,
+              "max": 398
+            }
+          }
+        },
+        {
+          "condition": "normal",
+          "target": 7,
+          "mode": "submission-untraced",
+          "planned": 100,
+          "failures": 0,
+          "external": {
+            "n": 100,
+            "mean_ns": 223649505,
+            "median_ns": 120349850.0,
+            "max_ns": 986794200,
+            "p95_ns": 952966000,
+            "p99_ns": 966959000
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "depths": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 0
+          },
+          "started_depths": {
+            "None": 100
+          },
+          "stop_reasons": {
+            "None": 100
+          },
+          "search_elapsed": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "counts": {
+            "nodes": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            },
+            "leaves": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            },
+            "passes": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            },
+            "cutoffs": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            }
+          }
+        },
+        {
+          "condition": "normal",
+          "target": 7,
+          "mode": "short",
+          "planned": 39,
+          "failures": 0,
+          "external": {
+            "n": 39,
+            "mean_ns": 120494794.87179486,
+            "median_ns": 67604200,
+            "max_ns": 880804700,
+            "p95_ns": 733893000,
+            "p99_ns": 880804700
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 13,
+            "mean_ns": 46907.692307692305,
+            "median_ns": 16500,
+            "max_ns": 213500,
+            "p95_ns": 213500,
+            "p99_ns": 213500
+          },
+          "depths": {
+            "0": 6,
+            "1": 1,
+            "2": 8,
+            "3": 4,
+            "4": 20
+          },
+          "started_depths": {
+            "4": 24,
+            "3": 8,
+            "2": 1,
+            "0": 6
+          },
+          "stop_reasons": {
+            "time_limit": 13,
+            "no_legal_move": 6,
+            "max_depth_completed": 20
+          },
+          "search_elapsed": {
+            "n": 39,
+            "mean_ns": 120028564.1025641,
+            "median_ns": 67087600,
+            "max_ns": 880052300,
+            "p95_ns": 733444900,
+            "p99_ns": 880052300
+          },
+          "counts": {
+            "nodes": {
+              "observed": 39,
+              "sum": 17801,
+              "max": 2511
+            },
+            "leaves": {
+              "observed": 39,
+              "sum": 13513,
+              "max": 2146
+            },
+            "passes": {
+              "observed": 39,
+              "sum": 0,
+              "max": 0
+            },
+            "cutoffs": {
+              "observed": 39,
+              "sum": 2767,
+              "max": 398
+            }
+          }
+        },
+        {
+          "condition": "single_cpu_with_competing_worker",
+          "target": 5,
+          "mode": "traced",
+          "planned": 100,
+          "failures": 0,
+          "external": {
+            "n": 100,
+            "mean_ns": 242256387,
+            "median_ns": 127815250.0,
+            "max_ns": 1087112400,
+            "p95_ns": 1027001000,
+            "p99_ns": 1043350200
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "depths": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 100
+          },
+          "started_depths": {
+            "4": 100
+          },
+          "stop_reasons": {
+            "max_depth_completed": 100
+          },
+          "search_elapsed": {
+            "n": 100,
+            "mean_ns": 241785394,
+            "median_ns": 127457350.0,
+            "max_ns": 1085947500,
+            "p95_ns": 1026520000,
+            "p99_ns": 1042953000
+          },
+          "counts": {
+            "nodes": {
+              "observed": 100,
+              "sum": 94231,
+              "max": 3155
+            },
+            "leaves": {
+              "observed": 100,
+              "sum": 71878,
+              "max": 2634
+            },
+            "passes": {
+              "observed": 100,
+              "sum": 0,
+              "max": 0
+            },
+            "cutoffs": {
+              "observed": 100,
+              "sum": 15284,
+              "max": 398
+            }
+          }
+        },
+        {
+          "condition": "single_cpu_with_competing_worker",
+          "target": 7,
+          "mode": "traced",
+          "planned": 100,
+          "failures": 0,
+          "external": {
+            "n": 100,
+            "mean_ns": 243271266,
+            "median_ns": 126794050.0,
+            "max_ns": 1061397900,
+            "p95_ns": 1018124600,
+            "p99_ns": 1054684800
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "depths": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 100
+          },
+          "started_depths": {
+            "4": 100
+          },
+          "stop_reasons": {
+            "max_depth_completed": 100
+          },
+          "search_elapsed": {
+            "n": 100,
+            "mean_ns": 242785693,
+            "median_ns": 126322150.0,
+            "max_ns": 1060962600,
+            "p95_ns": 1017607300,
+            "p99_ns": 1053499900
+          },
+          "counts": {
+            "nodes": {
+              "observed": 100,
+              "sum": 94231,
+              "max": 3155
+            },
+            "leaves": {
+              "observed": 100,
+              "sum": 71878,
+              "max": 2634
+            },
+            "passes": {
+              "observed": 100,
+              "sum": 0,
+              "max": 0
+            },
+            "cutoffs": {
+              "observed": 100,
+              "sum": 15284,
+              "max": 398
+            }
+          }
+        },
+        {
+          "condition": "single_cpu_with_competing_worker",
+          "target": 7,
+          "mode": "submission-untraced",
+          "planned": 100,
+          "failures": 0,
+          "external": {
+            "n": 100,
+            "mean_ns": 241939092,
+            "median_ns": 125567800.0,
+            "max_ns": 1072876700,
+            "p95_ns": 1020477600,
+            "p99_ns": 1071052800
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "depths": {
+            "0": 0,
+            "1": 0,
+            "2": 0,
+            "3": 0,
+            "4": 0
+          },
+          "started_depths": {
+            "None": 100
+          },
+          "stop_reasons": {
+            "None": 100
+          },
+          "search_elapsed": {
+            "n": 0,
+            "mean_ns": null,
+            "median_ns": null,
+            "max_ns": null,
+            "p95_ns": null,
+            "p99_ns": null
+          },
+          "counts": {
+            "nodes": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            },
+            "leaves": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            },
+            "passes": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            },
+            "cutoffs": {
+              "observed": 0,
+              "sum": null,
+              "max": null
+            }
+          }
+        },
+        {
+          "condition": "single_cpu_with_competing_worker",
+          "target": 7,
+          "mode": "short",
+          "planned": 39,
+          "failures": 0,
+          "external": {
+            "n": 39,
+            "mean_ns": 113957102.56410256,
+            "median_ns": 61277700,
+            "max_ns": 880482700,
+            "p95_ns": 678004300,
+            "p99_ns": 880482700
+          },
+          "over_target": 0,
+          "over_7": 0,
+          "over_8": 0,
+          "over_10": 0,
+          "budget_failures": 0,
+          "stop_detection_delay": {
+            "n": 13,
+            "mean_ns": 137307.6923076923,
+            "median_ns": 29100,
+            "max_ns": 1358300,
+            "p95_ns": 1358300,
+            "p99_ns": 1358300
+          },
+          "depths": {
+            "0": 6,
+            "1": 1,
+            "2": 8,
+            "3": 4,
+            "4": 20
+          },
+          "started_depths": {
+            "4": 24,
+            "3": 8,
+            "2": 1,
+            "0": 6
+          },
+          "stop_reasons": {
+            "time_limit": 13,
+            "no_legal_move": 6,
+            "max_depth_completed": 20
+          },
+          "search_elapsed": {
+            "n": 39,
+            "mean_ns": 113571828.20512821,
+            "median_ns": 60840200,
+            "max_ns": 880069500,
+            "p95_ns": 677617500,
+            "p99_ns": 880069500
+          },
+          "counts": {
+            "nodes": {
+              "observed": 39,
+              "sum": 18213,
+              "max": 2709
+            },
+            "leaves": {
+              "observed": 39,
+              "sum": 13849,
+              "max": 2299
+            },
+            "passes": {
+              "observed": 39,
+              "sum": 0,
+              "max": 0
+            },
+            "cutoffs": {
+              "observed": 39,
+              "sum": 2820,
+              "max": 398
+            }
+          }
+        }
+      ],
+      "environment": {
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+        "executable": "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "cpu_count": 18,
+        "processor": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+        "available_affinity_mask": 262143
+      },
+      "quantile": "nearest-rank sorted[ceil(p*n)-1]",
+      "not_server_emulation": true
+    },
+    "over_7": 0,
+    "over_8": 0,
+    "over_10": 0,
+    "untraced_internal_counters": "not_measured"
+  },
+  "references": {
+    "reference-random-2": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-random-2.json",
+      "source_sha256": "92422a7e55f634911a9630a52f8d9dac10c06966b22c75045c70c03aa6085485",
+      "source_canonical_sha256": "e0d8bca303479d042ba623ab6cacf53aac07065e0d616b0639234fbf9eeda098",
+      "fresh_file_sha256": "4a9c4e5e7d4a8d22698ebf26cb1dd2184c6863bb24cc7da9cd51cc4383480bbc",
+      "summary": {
+        "attempted": 2,
+        "completed": 2,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 2,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 64,
+          "mean_genmove_seconds": 0.0176538484375,
+          "max_genmove_seconds": 0.0210335,
+          "search_samples": 64,
+          "search_metric_status": "verified",
+          "search_sum_ns": 1106583400,
+          "search_max_ns": 20483400,
+          "normal_search_sum_ns": 1106583100,
+          "normal_search_max_ns": 20483400,
+          "mean_search_seconds": 0.017290365625,
+          "max_search_seconds": 0.0204834,
+          "normal_search_samples": 62,
+          "mean_normal_search_seconds": 0.01784811451612903,
+          "max_normal_search_seconds": 0.0204834,
+          "black_games": 1,
+          "white_games": 1
+        },
+        "B": {
+          "wins": 0,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 63,
+          "mean_genmove_seconds": 0.00016726349206349204,
+          "max_genmove_seconds": 0.0004655,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        },
+        "W": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 2,
+            "mean_ns": 95518600,
+            "median_ns": 95518600.0,
+            "max_ns": 96177900,
+            "p95_ns": 96177900,
+            "p99_ns": 96177900
+          },
+          "showboard": {
+            "n": 127,
+            "mean_ns": 153651.1811023622,
+            "median_ns": 149400,
+            "max_ns": 379100,
+            "p95_ns": 274200,
+            "p99_ns": 348400
+          },
+          "result": {
+            "n": 127,
+            "mean_ns": 124310.23622047243,
+            "median_ns": 112200,
+            "max_ns": 248600,
+            "p95_ns": 219700,
+            "p99_ns": 243500
+          },
+          "genmove": {
+            "n": 64,
+            "mean_ns": 17653848.4375,
+            "median_ns": 20420900.0,
+            "max_ns": 21033500,
+            "p95_ns": 20606900,
+            "p99_ns": 21033500
+          },
+          "play": {
+            "n": 58,
+            "mean_ns": 122098.27586206897,
+            "median_ns": 114400.0,
+            "max_ns": 228800,
+            "p95_ns": 194700,
+            "p99_ns": 228800
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 10320450,
+            "median_ns": 10320450.0,
+            "max_ns": 11168200,
+            "p95_ns": 11168200,
+            "p99_ns": 11168200
+          }
+        },
+        "B": {
+          "name": {
+            "n": 2,
+            "mean_ns": 58914350,
+            "median_ns": 58914350.0,
+            "max_ns": 62271700,
+            "p95_ns": 62271700,
+            "p99_ns": 62271700
+          },
+          "showboard": {
+            "n": 127,
+            "mean_ns": 96714.96062992126,
+            "median_ns": 87800,
+            "max_ns": 208800,
+            "p95_ns": 150600,
+            "p99_ns": 183700
+          },
+          "result": {
+            "n": 127,
+            "mean_ns": 90532.28346456694,
+            "median_ns": 76800,
+            "max_ns": 269100,
+            "p95_ns": 198700,
+            "p99_ns": 258000
+          },
+          "play": {
+            "n": 62,
+            "mean_ns": 193427.4193548387,
+            "median_ns": 143300.0,
+            "max_ns": 2879700,
+            "p95_ns": 216200,
+            "p99_ns": 2879700
+          },
+          "genmove": {
+            "n": 63,
+            "mean_ns": 167263.49206349207,
+            "median_ns": 159100,
+            "max_ns": 465500,
+            "p95_ns": 308500,
+            "p99_ns": 465500
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 6641900,
+            "median_ns": 6641900.0,
+            "max_ns": 6703900,
+            "p95_ns": 6703900,
+            "p99_ns": 6703900
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 2,
+        "planned_games": 2,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "smoke",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "time",
+              "limit_ns": 100000000
+            },
+            "search": {
+              "algorithm": "iterative",
+              "ordered": true,
+              "max_depth": 4,
+              "deterministic": false,
+              "counting_definition_id": "minimax-call-v1"
+            }
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "a4b351a769e57c5ff082156b42ac425c65089725a1198c2fdc9e2e346a616fa2",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": null,
+        "opening_population_size": 0,
+        "selection_manifest": null,
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    },
+    "reference-random-100": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-random-100.json",
+      "source_sha256": "0625a9ea3d591c8eabac93e4406243fe5c4a73de0d0a8f8c335300bd370743b8",
+      "source_canonical_sha256": "9511f417a520e6715887e190ea8b6ec59349a552cdd14d032dbcc15431446b68",
+      "fresh_file_sha256": "56a929cac6d8ccbd83d07d0dbf5f3e5348752467405996334d6c263a52ecaab9",
+      "summary": {
+        "attempted": 100,
+        "completed": 100,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 100,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 2810,
+          "mean_genmove_seconds": 0.017611019110320283,
+          "max_genmove_seconds": 0.0958425,
+          "search_samples": 2810,
+          "search_metric_status": "verified",
+          "search_sum_ns": 48313642100,
+          "search_max_ns": 21948100,
+          "normal_search_sum_ns": 48313627100,
+          "normal_search_max_ns": 21948100,
+          "mean_search_seconds": 0.01719346693950178,
+          "max_search_seconds": 0.0219481,
+          "normal_search_samples": 2709,
+          "mean_normal_search_seconds": 0.017834487670727206,
+          "max_normal_search_seconds": 0.0219481,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "B": {
+          "wins": 0,
+          "losses": 100,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 2784,
+          "mean_genmove_seconds": 0.0001797091235632184,
+          "max_genmove_seconds": 0.0015306,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 50,
+          "wins": 50,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        },
+        "W": {
+          "n": 50,
+          "wins": 50,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 100,
+            "mean_ns": 95985073,
+            "median_ns": 94339850.0,
+            "max_ns": 134959700,
+            "p95_ns": 111036600,
+            "p99_ns": 122560400
+          },
+          "showboard": {
+            "n": 6394,
+            "mean_ns": 178508.1482639975,
+            "median_ns": 162400.0,
+            "max_ns": 4410500,
+            "p95_ns": 307500,
+            "p99_ns": 415400
+          },
+          "result": {
+            "n": 6394,
+            "mean_ns": 152685.42383484516,
+            "median_ns": 135500.0,
+            "max_ns": 2928000,
+            "p95_ns": 269600,
+            "p99_ns": 389600
+          },
+          "play": {
+            "n": 3272,
+            "mean_ns": 138489.30317848412,
+            "median_ns": 125900.0,
+            "max_ns": 711100,
+            "p95_ns": 237800,
+            "p99_ns": 329300
+          },
+          "genmove": {
+            "n": 2810,
+            "mean_ns": 17611019.110320285,
+            "median_ns": 20446050.0,
+            "max_ns": 95842500,
+            "p95_ns": 20665400,
+            "p99_ns": 20859400
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 10274762,
+            "median_ns": 10151300.0,
+            "max_ns": 15668000,
+            "p95_ns": 11737200,
+            "p99_ns": 12240400
+          }
+        },
+        "B": {
+          "name": {
+            "n": 100,
+            "mean_ns": 57629297,
+            "median_ns": 55849100.0,
+            "max_ns": 89996400,
+            "p95_ns": 73697700,
+            "p99_ns": 85498800
+          },
+          "showboard": {
+            "n": 6394,
+            "mean_ns": 118451.67344385361,
+            "median_ns": 104900.0,
+            "max_ns": 1557000,
+            "p95_ns": 206700,
+            "p99_ns": 281800
+          },
+          "result": {
+            "n": 6394,
+            "mean_ns": 106703.23741007195,
+            "median_ns": 95650.0,
+            "max_ns": 842200,
+            "p95_ns": 189000,
+            "p99_ns": 286700
+          },
+          "play": {
+            "n": 3509,
+            "mean_ns": 153212.56768310058,
+            "median_ns": 149200,
+            "max_ns": 1959200,
+            "p95_ns": 260400,
+            "p99_ns": 347900
+          },
+          "genmove": {
+            "n": 2784,
+            "mean_ns": 179709.1235632184,
+            "median_ns": 167250.0,
+            "max_ns": 1530600,
+            "p95_ns": 316600,
+            "p99_ns": 434800
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 6524367,
+            "median_ns": 6450300.0,
+            "max_ns": 8243600,
+            "p95_ns": 7721400,
+            "p99_ns": 7982900
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 100,
+        "planned_games": 100,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "descriptive",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "time",
+              "limit_ns": 100000000
+            },
+            "search": {
+              "algorithm": "iterative",
+              "ordered": true,
+              "max_depth": 4,
+              "deterministic": false,
+              "counting_definition_id": "minimax-call-v1"
+            }
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "a4b351a769e57c5ff082156b42ac425c65089725a1198c2fdc9e2e346a616fa2",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+        "opening_population_size": 1000,
+        "selection_manifest": {
+          "format_version": 1,
+          "population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+          "population_size": 1000,
+          "selection_algorithm": "python_random_sample_without_replacement_v1",
+          "selection_seed": 20261020,
+          "selected_case_ids": [
+            "e1a2fda0a7a34ce1a58cdabc198a07877d9f4119fa5b7bd1d83be5f25d34b8eb",
+            "a70ba9d21fd5128f417ec9473004c432b9a73f4e9fdd9f7f80dea53435aaa0c5",
+            "4975cac09fe6fe4630fc635f686083cdc5a629c71362f5e960564929bc69bda3",
+            "64615a5afcd280f54bd25c0a250b2e88a383cdb32cf3bb43b1e7bf75cc210ca6",
+            "8ec957b37c70b4abf672cd1fa32839a19484d826e1966db3f86fd498779e3c29",
+            "ed609e98987e78354bc58ea76e7103ccc83c999d2b83e3e6729c110336b06a02",
+            "b939907209dc80efe27389a73f1fbda24eff722619c019ae0994fdc37b6e0c99",
+            "172b68d5063d6a38d1ae90520b04f83ae6d17102f8547c844c3ba5311155067a",
+            "ebb4baf515158cc1d54913d35d730596f3ceb5677b03f3ba22b145a4ed6f2806",
+            "752ca1644b524c63ed80874d025b3bb14acac4ccc1ae65d901e7cacac256d359",
+            "fd13d57c5240456bc386f73b551de2fd0d1a5adefe04009adffb03b690e1e2df",
+            "616b375728500fafecec57337f4c0e9f141eb898688c072995428a5d6eb52966",
+            "335825ab550ea01bcff4684f1373273e1856d32503ab879e396b7da680686311",
+            "992384f7ab5e27c4745c52c8522d4b61fea033efc6b6db64532843b8264f8243",
+            "2403e23551f87838a6a86df99b5a99f9879138a8411d968a63c9cf81b036ad3d",
+            "3a4efbc3a53cd69494d05cb83fea0c246351486827884f5b37fc574d70136fb2",
+            "39c15d81a25f37d46cdebec2ff482b0f7898a05ea096eceb7c177a54ece82562",
+            "e293c1a23ed9ac5f43b42d8033c4a9e2d7872bb356e3bd2efcf62ff2ba45945e",
+            "1af6315ffe6e127f5d4a89c239a2f9deb735f9246740993dd9d1d36a3b28cebb",
+            "dcdab338c58818a4cf8e0f7f96393dab5534d7bc045429134cd26937d1cb6280",
+            "db7af923e9cf6227419f28897623559cbabc48b80f9fa2468572cec9b62e6871",
+            "26dcef507213a8550ef013b8c5b5c9fe9fb7c30df8ebc33b9dcafb2a57b4bd6e",
+            "b58a926654d180c3c38bcae657b1afda5c202211a5211be921cf143f304f6116",
+            "0044e342b5039980530fb7e47bd3f1c69b73792ea233dd860ac5c409f9075db6",
+            "e3a4280d5bda3c44173a46e5a88c2e3522487c49f9e9f599a043528e08be0179",
+            "38b23633890ad4cb783c44183f2567dd02ce87e06742b23a34f89f2d863b66d6",
+            "b1259bfdda33995ba61c453ddf12e0cdb908af2b479c36aabfaf4493ee91eb9b",
+            "ec96ed362851a2baff43472e3e7692cbf41dfd26e497919a21bdb80e46265a0d",
+            "6d09b459273459c64411ac55da6087ff29c90f0b1e2a1b33666966adeac5cacc",
+            "9a7f95989f1c34e910141df4640beb5ed7d02aec22013210aee6b53a1d742e1a",
+            "f5e913f030ccaa8e6d8eacb53b5417c9c63021ecb4a66e2c87e1337d07a8d7ae",
+            "a486b1e007527427295237d5a54e10fb5f2c75224336af2b4f056bf59f150a79",
+            "88fe91f9e8c26fc37f39f413c8249809fdd3d0d798e57a29632c3b9fef2ebb62",
+            "7cd1ebc0d0c03f6e3b6e6aa00b7d4bf2b51fcde8120ab2b18870c820190863d0",
+            "23a965255dfc1e1991cdcd9f7a89fbdfca7c7d7f7b6daaff518601ab7e302ce0",
+            "7fb14c5857970ab540e3882733c9e899fb3a1470804938d67f8b9e86558c0782",
+            "561dffeabf6f85c19cdd62b5890537058004f92d0a838fc724c349a1f1ef7a47",
+            "7348f720d350ac701da9b282135744a1899df3917c28efdc9515591edab3adff",
+            "778e43efea21b7a41345906d30e115548e2875450aea35113275dfbbd8c94bd2",
+            "caea5fc64c96f1e42661dea9f5d327eb72d370791c1942d0c24317c143749d25",
+            "828457e2669fbbb7501dd949543c411e7c525068ecbfa4b4cdef4e291cfbe336",
+            "e56d9378de30e2ee7f3f4c8406aa2441da7b923845f33c1955803134ca78c422",
+            "ccf8ee06373d4def299b80988cd97ecf590e4d26decac5ccebc4c5ba02386a35",
+            "788741aa55019f8f91cec822c00d6e106dd26b64d4e001ac5b0104934eb31046",
+            "7e60495fefa84c2bbbf0386e0c69bcb50be96ebdfac1d488e6d8b35f6e2764c9",
+            "5c62fea844fe43d1e1c37b8437c0a6bbca9987316d1ea932c3d28b8f1a3eda6e",
+            "5762852b58bf103d27f729b7a9fbe1d2a1f28d8537b7f792ff674b5f80c9d46a",
+            "e81424fa81ecdc79dce3710220a03d963b7c4f2c317bd9ce640e592b41368207",
+            "7a4ab13584050516bf6902fde6250562457d07c3ceac5e9f0549c1e06444a696",
+            "f2eb2f226f1daced2478a3e6f236cf2c4eccf9f99fba9d3a8064ceb0cd2aa7c0"
+          ],
+          "sample_size": 50,
+          "selection_hash": "55fd7ac70e927b22a114b897cd70fdaf8fc9feedea27e80ebb481d99eb08588f"
+        },
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    },
+    "reference-positional-2": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-positional-2.json",
+      "source_sha256": "743430799f1e5699060138e0dc31c1f5288a60a8da46cc0a87713598a606433b",
+      "source_canonical_sha256": "e2e6b1bc31495869120c65ee44758beef506ff20a1158dba9fc1b9e285aba571",
+      "fresh_file_sha256": "5008561cf949f85bba7c2f21b7c878fd8450c86c698b1618763ef320c10e7953",
+      "summary": {
+        "attempted": 2,
+        "completed": 2,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 1,
+          "losses": 1,
+          "draws": 0,
+          "win_rate": 0.5,
+          "point_rate": 0.5,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.017898632258064515,
+          "max_genmove_seconds": 0.0212935,
+          "search_samples": 62,
+          "search_metric_status": "verified",
+          "search_sum_ns": 1085384700,
+          "search_max_ns": 20171300,
+          "normal_search_sum_ns": 1085384400,
+          "normal_search_max_ns": 20171300,
+          "mean_search_seconds": 0.01750620483870968,
+          "max_search_seconds": 0.0201713,
+          "normal_search_samples": 60,
+          "mean_normal_search_seconds": 0.01808974,
+          "max_normal_search_seconds": 0.0201713,
+          "black_games": 1,
+          "white_games": 1
+        },
+        "B": {
+          "wins": 1,
+          "losses": 1,
+          "draws": 0,
+          "win_rate": 0.5,
+          "point_rate": 0.5,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.0001659951612903226,
+          "max_genmove_seconds": 0.0003384,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 1,
+          "wins": 0,
+          "losses": 1,
+          "draws": 0,
+          "point_rate": 0.0
+        },
+        "W": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 2,
+            "mean_ns": 95164450,
+            "median_ns": 95164450.0,
+            "max_ns": 98918200,
+            "p95_ns": 98918200,
+            "p99_ns": 98918200
+          },
+          "showboard": {
+            "n": 124,
+            "mean_ns": 177925,
+            "median_ns": 143800.0,
+            "max_ns": 2901000,
+            "p95_ns": 272800,
+            "p99_ns": 379700
+          },
+          "result": {
+            "n": 124,
+            "mean_ns": 130133.06451612903,
+            "median_ns": 116950.0,
+            "max_ns": 455100,
+            "p95_ns": 230700,
+            "p99_ns": 333500
+          },
+          "genmove": {
+            "n": 62,
+            "mean_ns": 17898632.258064516,
+            "median_ns": 20443300.0,
+            "max_ns": 21293500,
+            "p95_ns": 20658100,
+            "p99_ns": 21293500
+          },
+          "play": {
+            "n": 60,
+            "mean_ns": 128421.66666666667,
+            "median_ns": 122050.0,
+            "max_ns": 259200,
+            "p95_ns": 183200,
+            "p99_ns": 259200
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 9748250,
+            "median_ns": 9748250.0,
+            "max_ns": 9912400,
+            "p95_ns": 9912400,
+            "p99_ns": 9912400
+          }
+        },
+        "B": {
+          "name": {
+            "n": 2,
+            "mean_ns": 54639900,
+            "median_ns": 54639900.0,
+            "max_ns": 55076500,
+            "p95_ns": 55076500,
+            "p99_ns": 55076500
+          },
+          "showboard": {
+            "n": 124,
+            "mean_ns": 98522.58064516129,
+            "median_ns": 84400.0,
+            "max_ns": 434700,
+            "p95_ns": 164300,
+            "p99_ns": 226700
+          },
+          "result": {
+            "n": 124,
+            "mean_ns": 81529.83870967742,
+            "median_ns": 75650.0,
+            "max_ns": 153400,
+            "p95_ns": 135000,
+            "p99_ns": 152300
+          },
+          "play": {
+            "n": 60,
+            "mean_ns": 157843.33333333334,
+            "median_ns": 144500.0,
+            "max_ns": 425400,
+            "p95_ns": 243000,
+            "p99_ns": 425400
+          },
+          "genmove": {
+            "n": 62,
+            "mean_ns": 165995.16129032258,
+            "median_ns": 163250.0,
+            "max_ns": 338400,
+            "p95_ns": 260700,
+            "p99_ns": 338400
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 7147700,
+            "median_ns": 7147700.0,
+            "max_ns": 7749700,
+            "p95_ns": 7749700,
+            "p99_ns": 7749700
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 2,
+        "planned_games": 2,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "smoke",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "time",
+              "limit_ns": 100000000
+            },
+            "search": {
+              "algorithm": "iterative",
+              "ordered": true,
+              "max_depth": 4,
+              "deterministic": false,
+              "counting_definition_id": "minimax-call-v1"
+            }
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "a4b351a769e57c5ff082156b42ac425c65089725a1198c2fdc9e2e346a616fa2",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": null,
+        "opening_population_size": 0,
+        "selection_manifest": null,
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    },
+    "reference-positional-100": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-positional-100.json",
+      "source_sha256": "84d46d98612daba5fe870e1ed8a75f0189b5d57504dd2b9da3f1b4847c99d42e",
+      "source_canonical_sha256": "c7054b4925dba1c0b960fe63c4b3a069e16a23c027d96c9968ab5889b36c1e88",
+      "fresh_file_sha256": "45d49c9bf947f6dea068cfb819058a445710f72017c25d3b5483d8116671a828",
+      "summary": {
+        "attempted": 100,
+        "completed": 100,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 76,
+          "losses": 22,
+          "draws": 2,
+          "win_rate": 0.76,
+          "point_rate": 0.77,
+          "genmove_samples": 2781,
+          "mean_genmove_seconds": 0.017454356382596188,
+          "max_genmove_seconds": 0.0248724,
+          "search_samples": 2781,
+          "search_metric_status": "verified",
+          "search_sum_ns": 47447464100,
+          "search_max_ns": 22022000,
+          "normal_search_sum_ns": 47447448900,
+          "normal_search_max_ns": 22022000,
+          "mean_search_seconds": 0.017061295972671704,
+          "max_search_seconds": 0.022022,
+          "normal_search_samples": 2677,
+          "mean_normal_search_seconds": 0.017724112401942473,
+          "max_normal_search_seconds": 0.022022,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "B": {
+          "wins": 22,
+          "losses": 76,
+          "draws": 2,
+          "win_rate": 0.22,
+          "point_rate": 0.23,
+          "genmove_samples": 2763,
+          "mean_genmove_seconds": 0.0001863068403908795,
+          "max_genmove_seconds": 0.0043951,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 50,
+          "wins": 40,
+          "losses": 9,
+          "draws": 1,
+          "point_rate": 0.81
+        },
+        "W": {
+          "n": 50,
+          "wins": 36,
+          "losses": 13,
+          "draws": 1,
+          "point_rate": 0.73
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 100,
+            "mean_ns": 94373504,
+            "median_ns": 93165300.0,
+            "max_ns": 110720200,
+            "p95_ns": 106139600,
+            "p99_ns": 110698500
+          },
+          "showboard": {
+            "n": 6344,
+            "mean_ns": 175747.60403530896,
+            "median_ns": 157700.0,
+            "max_ns": 2182200,
+            "p95_ns": 310600,
+            "p99_ns": 425500
+          },
+          "result": {
+            "n": 6344,
+            "mean_ns": 150134.6941992434,
+            "median_ns": 133600.0,
+            "max_ns": 2910100,
+            "p95_ns": 268800,
+            "p99_ns": 380200
+          },
+          "play": {
+            "n": 3300,
+            "mean_ns": 138430.21212121213,
+            "median_ns": 123200.0,
+            "max_ns": 3544000,
+            "p95_ns": 245900,
+            "p99_ns": 357600
+          },
+          "genmove": {
+            "n": 2781,
+            "mean_ns": 17454356.382596187,
+            "median_ns": 20439000,
+            "max_ns": 24872400,
+            "p95_ns": 20681800,
+            "p99_ns": 21038200
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 10330867,
+            "median_ns": 10261800.0,
+            "max_ns": 12948300,
+            "p95_ns": 11579600,
+            "p99_ns": 12650000
+          }
+        },
+        "B": {
+          "name": {
+            "n": 100,
+            "mean_ns": 56715182,
+            "median_ns": 55534000.0,
+            "max_ns": 79217800,
+            "p95_ns": 64533300,
+            "p99_ns": 70714600
+          },
+          "showboard": {
+            "n": 6344,
+            "mean_ns": 116522.69861286254,
+            "median_ns": 101300.0,
+            "max_ns": 5973000,
+            "p95_ns": 204100,
+            "p99_ns": 279000
+          },
+          "result": {
+            "n": 6344,
+            "mean_ns": 104358.68537200504,
+            "median_ns": 91800.0,
+            "max_ns": 4366000,
+            "p95_ns": 187800,
+            "p99_ns": 275100
+          },
+          "play": {
+            "n": 3477,
+            "mean_ns": 151146.79321253955,
+            "median_ns": 145200,
+            "max_ns": 2578000,
+            "p95_ns": 260700,
+            "p99_ns": 424300
+          },
+          "genmove": {
+            "n": 2763,
+            "mean_ns": 186306.8403908795,
+            "median_ns": 170500,
+            "max_ns": 4395100,
+            "p95_ns": 331400,
+            "p99_ns": 490500
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 6558642,
+            "median_ns": 6487350.0,
+            "max_ns": 9652700,
+            "p95_ns": 7879000,
+            "p99_ns": 8319000
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 100,
+        "planned_games": 100,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "descriptive",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "time",
+              "limit_ns": 100000000
+            },
+            "search": {
+              "algorithm": "iterative",
+              "ordered": true,
+              "max_depth": 4,
+              "deterministic": false,
+              "counting_definition_id": "minimax-call-v1"
+            }
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "a4b351a769e57c5ff082156b42ac425c65089725a1198c2fdc9e2e346a616fa2",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+        "opening_population_size": 1000,
+        "selection_manifest": {
+          "format_version": 1,
+          "population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+          "population_size": 1000,
+          "selection_algorithm": "python_random_sample_without_replacement_v1",
+          "selection_seed": 20261020,
+          "selected_case_ids": [
+            "e1a2fda0a7a34ce1a58cdabc198a07877d9f4119fa5b7bd1d83be5f25d34b8eb",
+            "a70ba9d21fd5128f417ec9473004c432b9a73f4e9fdd9f7f80dea53435aaa0c5",
+            "4975cac09fe6fe4630fc635f686083cdc5a629c71362f5e960564929bc69bda3",
+            "64615a5afcd280f54bd25c0a250b2e88a383cdb32cf3bb43b1e7bf75cc210ca6",
+            "8ec957b37c70b4abf672cd1fa32839a19484d826e1966db3f86fd498779e3c29",
+            "ed609e98987e78354bc58ea76e7103ccc83c999d2b83e3e6729c110336b06a02",
+            "b939907209dc80efe27389a73f1fbda24eff722619c019ae0994fdc37b6e0c99",
+            "172b68d5063d6a38d1ae90520b04f83ae6d17102f8547c844c3ba5311155067a",
+            "ebb4baf515158cc1d54913d35d730596f3ceb5677b03f3ba22b145a4ed6f2806",
+            "752ca1644b524c63ed80874d025b3bb14acac4ccc1ae65d901e7cacac256d359",
+            "fd13d57c5240456bc386f73b551de2fd0d1a5adefe04009adffb03b690e1e2df",
+            "616b375728500fafecec57337f4c0e9f141eb898688c072995428a5d6eb52966",
+            "335825ab550ea01bcff4684f1373273e1856d32503ab879e396b7da680686311",
+            "992384f7ab5e27c4745c52c8522d4b61fea033efc6b6db64532843b8264f8243",
+            "2403e23551f87838a6a86df99b5a99f9879138a8411d968a63c9cf81b036ad3d",
+            "3a4efbc3a53cd69494d05cb83fea0c246351486827884f5b37fc574d70136fb2",
+            "39c15d81a25f37d46cdebec2ff482b0f7898a05ea096eceb7c177a54ece82562",
+            "e293c1a23ed9ac5f43b42d8033c4a9e2d7872bb356e3bd2efcf62ff2ba45945e",
+            "1af6315ffe6e127f5d4a89c239a2f9deb735f9246740993dd9d1d36a3b28cebb",
+            "dcdab338c58818a4cf8e0f7f96393dab5534d7bc045429134cd26937d1cb6280",
+            "db7af923e9cf6227419f28897623559cbabc48b80f9fa2468572cec9b62e6871",
+            "26dcef507213a8550ef013b8c5b5c9fe9fb7c30df8ebc33b9dcafb2a57b4bd6e",
+            "b58a926654d180c3c38bcae657b1afda5c202211a5211be921cf143f304f6116",
+            "0044e342b5039980530fb7e47bd3f1c69b73792ea233dd860ac5c409f9075db6",
+            "e3a4280d5bda3c44173a46e5a88c2e3522487c49f9e9f599a043528e08be0179",
+            "38b23633890ad4cb783c44183f2567dd02ce87e06742b23a34f89f2d863b66d6",
+            "b1259bfdda33995ba61c453ddf12e0cdb908af2b479c36aabfaf4493ee91eb9b",
+            "ec96ed362851a2baff43472e3e7692cbf41dfd26e497919a21bdb80e46265a0d",
+            "6d09b459273459c64411ac55da6087ff29c90f0b1e2a1b33666966adeac5cacc",
+            "9a7f95989f1c34e910141df4640beb5ed7d02aec22013210aee6b53a1d742e1a",
+            "f5e913f030ccaa8e6d8eacb53b5417c9c63021ecb4a66e2c87e1337d07a8d7ae",
+            "a486b1e007527427295237d5a54e10fb5f2c75224336af2b4f056bf59f150a79",
+            "88fe91f9e8c26fc37f39f413c8249809fdd3d0d798e57a29632c3b9fef2ebb62",
+            "7cd1ebc0d0c03f6e3b6e6aa00b7d4bf2b51fcde8120ab2b18870c820190863d0",
+            "23a965255dfc1e1991cdcd9f7a89fbdfca7c7d7f7b6daaff518601ab7e302ce0",
+            "7fb14c5857970ab540e3882733c9e899fb3a1470804938d67f8b9e86558c0782",
+            "561dffeabf6f85c19cdd62b5890537058004f92d0a838fc724c349a1f1ef7a47",
+            "7348f720d350ac701da9b282135744a1899df3917c28efdc9515591edab3adff",
+            "778e43efea21b7a41345906d30e115548e2875450aea35113275dfbbd8c94bd2",
+            "caea5fc64c96f1e42661dea9f5d327eb72d370791c1942d0c24317c143749d25",
+            "828457e2669fbbb7501dd949543c411e7c525068ecbfa4b4cdef4e291cfbe336",
+            "e56d9378de30e2ee7f3f4c8406aa2441da7b923845f33c1955803134ca78c422",
+            "ccf8ee06373d4def299b80988cd97ecf590e4d26decac5ccebc4c5ba02386a35",
+            "788741aa55019f8f91cec822c00d6e106dd26b64d4e001ac5b0104934eb31046",
+            "7e60495fefa84c2bbbf0386e0c69bcb50be96ebdfac1d488e6d8b35f6e2764c9",
+            "5c62fea844fe43d1e1c37b8437c0a6bbca9987316d1ea932c3d28b8f1a3eda6e",
+            "5762852b58bf103d27f729b7a9fbe1d2a1f28d8537b7f792ff674b5f80c9d46a",
+            "e81424fa81ecdc79dce3710220a03d963b7c4f2c317bd9ce640e592b41368207",
+            "7a4ab13584050516bf6902fde6250562457d07c3ceac5e9f0549c1e06444a696",
+            "f2eb2f226f1daced2478a3e6f236cf2c4eccf9f99fba9d3a8064ceb0cd2aa7c0"
+          ],
+          "sample_size": 50,
+          "selection_hash": "55fd7ac70e927b22a114b897cd70fdaf8fc9feedea27e80ebb481d99eb08588f"
+        },
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    },
+    "reference-legacy-depth2-random-2": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-legacy-depth2-random-2.json",
+      "source_sha256": "b013f8d45b00dcdd7dc48d9c6d8830034aca7c301152fab90e2829346fc8c6d0",
+      "source_canonical_sha256": "196da525e8e28e745fcab844972d98b6eb099d23114c6e9df841507b43493629",
+      "fresh_file_sha256": "f15cff460bdd907e6ac19639e7992b1b5ad62d44e9963aabf1bc40c08654fcee",
+      "summary": {
+        "attempted": 2,
+        "completed": 2,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 2,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.010040398387096774,
+          "max_genmove_seconds": 0.0293843,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        },
+        "B": {
+          "wins": 0,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.00020564516129032258,
+          "max_genmove_seconds": 0.000581,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        },
+        "W": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 2,
+            "mean_ns": 89643150,
+            "median_ns": 89643150.0,
+            "max_ns": 92667200,
+            "p95_ns": 92667200,
+            "p99_ns": 92667200
+          },
+          "showboard": {
+            "n": 124,
+            "mean_ns": 148851.61290322582,
+            "median_ns": 109950.0,
+            "max_ns": 2308400,
+            "p95_ns": 249300,
+            "p99_ns": 719100
+          },
+          "result": {
+            "n": 124,
+            "mean_ns": 120783.06451612903,
+            "median_ns": 92750.0,
+            "max_ns": 1105300,
+            "p95_ns": 241400,
+            "p99_ns": 278500
+          },
+          "genmove": {
+            "n": 62,
+            "mean_ns": 10040398.387096774,
+            "median_ns": 8219150.0,
+            "max_ns": 29384300,
+            "p95_ns": 23292400,
+            "p99_ns": 29384300
+          },
+          "play": {
+            "n": 60,
+            "mean_ns": 93760,
+            "median_ns": 87150.0,
+            "max_ns": 223500,
+            "p95_ns": 160000,
+            "p99_ns": 223500
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 9947500,
+            "median_ns": 9947500.0,
+            "max_ns": 10738600,
+            "p95_ns": 10738600,
+            "p99_ns": 10738600
+          }
+        },
+        "B": {
+          "name": {
+            "n": 2,
+            "mean_ns": 56205000,
+            "median_ns": 56205000.0,
+            "max_ns": 57805200,
+            "p95_ns": 57805200,
+            "p99_ns": 57805200
+          },
+          "showboard": {
+            "n": 124,
+            "mean_ns": 122508.06451612903,
+            "median_ns": 89150.0,
+            "max_ns": 819400,
+            "p95_ns": 248600,
+            "p99_ns": 266300
+          },
+          "result": {
+            "n": 124,
+            "mean_ns": 103408.87096774194,
+            "median_ns": 80250.0,
+            "max_ns": 379400,
+            "p95_ns": 217100,
+            "p99_ns": 277500
+          },
+          "play": {
+            "n": 60,
+            "mean_ns": 176166.66666666666,
+            "median_ns": 130250.0,
+            "max_ns": 1722900,
+            "p95_ns": 301500,
+            "p99_ns": 1722900
+          },
+          "genmove": {
+            "n": 62,
+            "mean_ns": 205645.16129032258,
+            "median_ns": 173800.0,
+            "max_ns": 581000,
+            "p95_ns": 416500,
+            "p99_ns": 581000
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 9514800,
+            "median_ns": 9514800.0,
+            "max_ns": 12485500,
+            "p95_ns": 12485500,
+            "p99_ns": 12485500
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 2,
+        "planned_games": 2,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "smoke",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": null,
+        "opening_population_size": 0,
+        "selection_manifest": null,
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    },
+    "reference-legacy-depth2-random-100": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-legacy-depth2-random-100.json",
+      "source_sha256": "2010141193ff03fedc04bd7fdb89d91fe58ac37f4a7aba92f5c0e093f0a95f1e",
+      "source_canonical_sha256": "d8826b46541f2d2b0f4ef6e0a1f20ea8f44513577ab9d83ef582ff04a351be8c",
+      "fresh_file_sha256": "7003f5e419ef8fe1cb6c54e48fe5dfb51062059f5269df4b2979ca86382a622f",
+      "summary": {
+        "attempted": 100,
+        "completed": 100,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 100,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 2785,
+          "mean_genmove_seconds": 0.00900761303411131,
+          "max_genmove_seconds": 0.0404795,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "B": {
+          "wins": 0,
+          "losses": 100,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 2773,
+          "mean_genmove_seconds": 0.00017016945546339705,
+          "max_genmove_seconds": 0.0055519,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 50,
+          "wins": 50,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        },
+        "W": {
+          "n": 50,
+          "wins": 50,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 100,
+            "mean_ns": 86692776,
+            "median_ns": 85540950.0,
+            "max_ns": 107361600,
+            "p95_ns": 97377800,
+            "p99_ns": 99907700
+          },
+          "showboard": {
+            "n": 6358,
+            "mean_ns": 116262.17363950927,
+            "median_ns": 99850.0,
+            "max_ns": 6335900,
+            "p95_ns": 215900,
+            "p99_ns": 307200
+          },
+          "result": {
+            "n": 6358,
+            "mean_ns": 103591.89996854357,
+            "median_ns": 90650.0,
+            "max_ns": 1500600,
+            "p95_ns": 193100,
+            "p99_ns": 277200
+          },
+          "play": {
+            "n": 3264,
+            "mean_ns": 91798.4987745098,
+            "median_ns": 76300.0,
+            "max_ns": 3570200,
+            "p95_ns": 164300,
+            "p99_ns": 280500
+          },
+          "genmove": {
+            "n": 2785,
+            "mean_ns": 9007613.03411131,
+            "median_ns": 7527800,
+            "max_ns": 40479500,
+            "p95_ns": 22726800,
+            "p99_ns": 30601400
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 9394260,
+            "median_ns": 9192400.0,
+            "max_ns": 19958200,
+            "p95_ns": 10368300,
+            "p99_ns": 13165600
+          }
+        },
+        "B": {
+          "name": {
+            "n": 100,
+            "mean_ns": 53998675,
+            "median_ns": 52755700.0,
+            "max_ns": 78777300,
+            "p95_ns": 60861500,
+            "p99_ns": 66782100
+          },
+          "showboard": {
+            "n": 6358,
+            "mean_ns": 102619.50298836111,
+            "median_ns": 89500.0,
+            "max_ns": 1386800,
+            "p95_ns": 181900,
+            "p99_ns": 265000
+          },
+          "result": {
+            "n": 6358,
+            "mean_ns": 98494.58949355144,
+            "median_ns": 86500.0,
+            "max_ns": 2226300,
+            "p95_ns": 176100,
+            "p99_ns": 275200
+          },
+          "play": {
+            "n": 3482,
+            "mean_ns": 122871.59678345779,
+            "median_ns": 115400.0,
+            "max_ns": 1602600,
+            "p95_ns": 219700,
+            "p99_ns": 312000
+          },
+          "genmove": {
+            "n": 2773,
+            "mean_ns": 170169.45546339705,
+            "median_ns": 154800,
+            "max_ns": 5551900,
+            "p95_ns": 312200,
+            "p99_ns": 446900
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 6443741,
+            "median_ns": 6349300.0,
+            "max_ns": 10570500,
+            "p95_ns": 7373000,
+            "p99_ns": 8582500
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 100,
+        "planned_games": 100,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "descriptive",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+        "opening_population_size": 1000,
+        "selection_manifest": {
+          "format_version": 1,
+          "population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+          "population_size": 1000,
+          "selection_algorithm": "python_random_sample_without_replacement_v1",
+          "selection_seed": 20261020,
+          "selected_case_ids": [
+            "e1a2fda0a7a34ce1a58cdabc198a07877d9f4119fa5b7bd1d83be5f25d34b8eb",
+            "a70ba9d21fd5128f417ec9473004c432b9a73f4e9fdd9f7f80dea53435aaa0c5",
+            "4975cac09fe6fe4630fc635f686083cdc5a629c71362f5e960564929bc69bda3",
+            "64615a5afcd280f54bd25c0a250b2e88a383cdb32cf3bb43b1e7bf75cc210ca6",
+            "8ec957b37c70b4abf672cd1fa32839a19484d826e1966db3f86fd498779e3c29",
+            "ed609e98987e78354bc58ea76e7103ccc83c999d2b83e3e6729c110336b06a02",
+            "b939907209dc80efe27389a73f1fbda24eff722619c019ae0994fdc37b6e0c99",
+            "172b68d5063d6a38d1ae90520b04f83ae6d17102f8547c844c3ba5311155067a",
+            "ebb4baf515158cc1d54913d35d730596f3ceb5677b03f3ba22b145a4ed6f2806",
+            "752ca1644b524c63ed80874d025b3bb14acac4ccc1ae65d901e7cacac256d359",
+            "fd13d57c5240456bc386f73b551de2fd0d1a5adefe04009adffb03b690e1e2df",
+            "616b375728500fafecec57337f4c0e9f141eb898688c072995428a5d6eb52966",
+            "335825ab550ea01bcff4684f1373273e1856d32503ab879e396b7da680686311",
+            "992384f7ab5e27c4745c52c8522d4b61fea033efc6b6db64532843b8264f8243",
+            "2403e23551f87838a6a86df99b5a99f9879138a8411d968a63c9cf81b036ad3d",
+            "3a4efbc3a53cd69494d05cb83fea0c246351486827884f5b37fc574d70136fb2",
+            "39c15d81a25f37d46cdebec2ff482b0f7898a05ea096eceb7c177a54ece82562",
+            "e293c1a23ed9ac5f43b42d8033c4a9e2d7872bb356e3bd2efcf62ff2ba45945e",
+            "1af6315ffe6e127f5d4a89c239a2f9deb735f9246740993dd9d1d36a3b28cebb",
+            "dcdab338c58818a4cf8e0f7f96393dab5534d7bc045429134cd26937d1cb6280",
+            "db7af923e9cf6227419f28897623559cbabc48b80f9fa2468572cec9b62e6871",
+            "26dcef507213a8550ef013b8c5b5c9fe9fb7c30df8ebc33b9dcafb2a57b4bd6e",
+            "b58a926654d180c3c38bcae657b1afda5c202211a5211be921cf143f304f6116",
+            "0044e342b5039980530fb7e47bd3f1c69b73792ea233dd860ac5c409f9075db6",
+            "e3a4280d5bda3c44173a46e5a88c2e3522487c49f9e9f599a043528e08be0179",
+            "38b23633890ad4cb783c44183f2567dd02ce87e06742b23a34f89f2d863b66d6",
+            "b1259bfdda33995ba61c453ddf12e0cdb908af2b479c36aabfaf4493ee91eb9b",
+            "ec96ed362851a2baff43472e3e7692cbf41dfd26e497919a21bdb80e46265a0d",
+            "6d09b459273459c64411ac55da6087ff29c90f0b1e2a1b33666966adeac5cacc",
+            "9a7f95989f1c34e910141df4640beb5ed7d02aec22013210aee6b53a1d742e1a",
+            "f5e913f030ccaa8e6d8eacb53b5417c9c63021ecb4a66e2c87e1337d07a8d7ae",
+            "a486b1e007527427295237d5a54e10fb5f2c75224336af2b4f056bf59f150a79",
+            "88fe91f9e8c26fc37f39f413c8249809fdd3d0d798e57a29632c3b9fef2ebb62",
+            "7cd1ebc0d0c03f6e3b6e6aa00b7d4bf2b51fcde8120ab2b18870c820190863d0",
+            "23a965255dfc1e1991cdcd9f7a89fbdfca7c7d7f7b6daaff518601ab7e302ce0",
+            "7fb14c5857970ab540e3882733c9e899fb3a1470804938d67f8b9e86558c0782",
+            "561dffeabf6f85c19cdd62b5890537058004f92d0a838fc724c349a1f1ef7a47",
+            "7348f720d350ac701da9b282135744a1899df3917c28efdc9515591edab3adff",
+            "778e43efea21b7a41345906d30e115548e2875450aea35113275dfbbd8c94bd2",
+            "caea5fc64c96f1e42661dea9f5d327eb72d370791c1942d0c24317c143749d25",
+            "828457e2669fbbb7501dd949543c411e7c525068ecbfa4b4cdef4e291cfbe336",
+            "e56d9378de30e2ee7f3f4c8406aa2441da7b923845f33c1955803134ca78c422",
+            "ccf8ee06373d4def299b80988cd97ecf590e4d26decac5ccebc4c5ba02386a35",
+            "788741aa55019f8f91cec822c00d6e106dd26b64d4e001ac5b0104934eb31046",
+            "7e60495fefa84c2bbbf0386e0c69bcb50be96ebdfac1d488e6d8b35f6e2764c9",
+            "5c62fea844fe43d1e1c37b8437c0a6bbca9987316d1ea932c3d28b8f1a3eda6e",
+            "5762852b58bf103d27f729b7a9fbe1d2a1f28d8537b7f792ff674b5f80c9d46a",
+            "e81424fa81ecdc79dce3710220a03d963b7c4f2c317bd9ce640e592b41368207",
+            "7a4ab13584050516bf6902fde6250562457d07c3ceac5e9f0549c1e06444a696",
+            "f2eb2f226f1daced2478a3e6f236cf2c4eccf9f99fba9d3a8064ceb0cd2aa7c0"
+          ],
+          "sample_size": 50,
+          "selection_hash": "55fd7ac70e927b22a114b897cd70fdaf8fc9feedea27e80ebb481d99eb08588f"
+        },
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    },
+    "reference-legacy-depth2-positional-2": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-legacy-depth2-positional-2.json",
+      "source_sha256": "bead0dc5a534d5d05e1bd21f250fcd91a15186a9a0535e4e9c12baa3d81635aa",
+      "source_canonical_sha256": "e4a8368820557afd44c8001e637f19db366a5d4ee87ca2320c6fc6d3fe172609",
+      "fresh_file_sha256": "1db98b102ca6e4d6eadc26e89f24354f298cdf0e1d1552ea060501a6809079eb",
+      "summary": {
+        "attempted": 2,
+        "completed": 2,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 2,
+          "losses": 0,
+          "draws": 0,
+          "win_rate": 1.0,
+          "point_rate": 1.0,
+          "genmove_samples": 63,
+          "mean_genmove_seconds": 0.01006165873015873,
+          "max_genmove_seconds": 0.0282713,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        },
+        "B": {
+          "wins": 0,
+          "losses": 2,
+          "draws": 0,
+          "win_rate": 0.0,
+          "point_rate": 0.0,
+          "genmove_samples": 62,
+          "mean_genmove_seconds": 0.0001692241935483871,
+          "max_genmove_seconds": 0.0003598,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 1,
+          "white_games": 1
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        },
+        "W": {
+          "n": 1,
+          "wins": 1,
+          "losses": 0,
+          "draws": 0,
+          "point_rate": 1.0
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 2,
+            "mean_ns": 86175900,
+            "median_ns": 86175900.0,
+            "max_ns": 87423500,
+            "p95_ns": 87423500,
+            "p99_ns": 87423500
+          },
+          "showboard": {
+            "n": 125,
+            "mean_ns": 101751.2,
+            "median_ns": 90800,
+            "max_ns": 457400,
+            "p95_ns": 165800,
+            "p99_ns": 311900
+          },
+          "result": {
+            "n": 125,
+            "mean_ns": 93306.4,
+            "median_ns": 88300,
+            "max_ns": 222700,
+            "p95_ns": 147000,
+            "p99_ns": 199900
+          },
+          "genmove": {
+            "n": 63,
+            "mean_ns": 10061658.73015873,
+            "median_ns": 8352600,
+            "max_ns": 28271300,
+            "p95_ns": 24390800,
+            "p99_ns": 28271300
+          },
+          "play": {
+            "n": 55,
+            "mean_ns": 78083.63636363637,
+            "median_ns": 71200,
+            "max_ns": 175800,
+            "p95_ns": 149400,
+            "p99_ns": 175800
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 9680550,
+            "median_ns": 9680550.0,
+            "max_ns": 9797000,
+            "p95_ns": 9797000,
+            "p99_ns": 9797000
+          }
+        },
+        "B": {
+          "name": {
+            "n": 2,
+            "mean_ns": 55608750,
+            "median_ns": 55608750.0,
+            "max_ns": 56934300,
+            "p95_ns": 56934300,
+            "p99_ns": 56934300
+          },
+          "showboard": {
+            "n": 125,
+            "mean_ns": 86543.2,
+            "median_ns": 82300,
+            "max_ns": 187700,
+            "p95_ns": 117700,
+            "p99_ns": 140300
+          },
+          "result": {
+            "n": 125,
+            "mean_ns": 88797.6,
+            "median_ns": 84500,
+            "max_ns": 217400,
+            "p95_ns": 147200,
+            "p99_ns": 217000
+          },
+          "play": {
+            "n": 61,
+            "mean_ns": 155244.26229508198,
+            "median_ns": 116000,
+            "max_ns": 2541100,
+            "p95_ns": 194300,
+            "p99_ns": 2541100
+          },
+          "genmove": {
+            "n": 62,
+            "mean_ns": 169224.1935483871,
+            "median_ns": 160600.0,
+            "max_ns": 359800,
+            "p95_ns": 295900,
+            "p99_ns": 359800
+          },
+          "quit": {
+            "n": 2,
+            "mean_ns": 6440950,
+            "median_ns": 6440950.0,
+            "max_ns": 6467600,
+            "p95_ns": 6467600,
+            "p99_ns": 6467600
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 2,
+        "planned_games": 2,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "smoke",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": null,
+        "opening_population_size": 0,
+        "selection_manifest": null,
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    },
+    "reference-legacy-depth2-positional-100": {
+      "source_path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\reference-legacy-depth2-positional-100.json",
+      "source_sha256": "7e4a296679010e1ee069f590efc09f24ee2e57f107ee8487547bad003582b8d7",
+      "source_canonical_sha256": "1a75363fa9bfda551bb44c0912cc2ba9c7fb2b9b23c7191b9339db08e7bb6770",
+      "fresh_file_sha256": "f1ab1d5bb458c4582dac8fdabe3ec49030ba2f60f8cae2d921f1a6cf637bea47",
+      "summary": {
+        "attempted": 100,
+        "completed": 100,
+        "failed": 0,
+        "failures": {},
+        "A": {
+          "wins": 80,
+          "losses": 20,
+          "draws": 0,
+          "win_rate": 0.8,
+          "point_rate": 0.8,
+          "genmove_samples": 2797,
+          "mean_genmove_seconds": 0.008530775366464068,
+          "max_genmove_seconds": 0.0386481,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        },
+        "B": {
+          "wins": 20,
+          "losses": 80,
+          "draws": 0,
+          "win_rate": 0.2,
+          "point_rate": 0.2,
+          "genmove_samples": 2778,
+          "mean_genmove_seconds": 0.000166136249100072,
+          "max_genmove_seconds": 0.0009696,
+          "search_samples": 0,
+          "search_metric_status": "unknown",
+          "search_sum_ns": 0,
+          "search_max_ns": null,
+          "normal_search_sum_ns": 0,
+          "normal_search_max_ns": null,
+          "mean_search_seconds": null,
+          "max_search_seconds": null,
+          "normal_search_samples": 0,
+          "mean_normal_search_seconds": null,
+          "max_normal_search_seconds": null,
+          "black_games": 50,
+          "white_games": 50
+        }
+      },
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "unknown",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "by_color": {
+        "B": {
+          "n": 50,
+          "wins": 40,
+          "losses": 10,
+          "draws": 0,
+          "point_rate": 0.8
+        },
+        "W": {
+          "n": 50,
+          "wins": 40,
+          "losses": 10,
+          "draws": 0,
+          "point_rate": 0.8
+        }
+      },
+      "all_command_timing": {
+        "A": {
+          "name": {
+            "n": 100,
+            "mean_ns": 85567076,
+            "median_ns": 84008700.0,
+            "max_ns": 144812900,
+            "p95_ns": 90515000,
+            "p99_ns": 126363200
+          },
+          "showboard": {
+            "n": 6375,
+            "mean_ns": 106430.5568627451,
+            "median_ns": 91200,
+            "max_ns": 3886000,
+            "p95_ns": 193200,
+            "p99_ns": 294000
+          },
+          "result": {
+            "n": 6375,
+            "mean_ns": 94721.7725490196,
+            "median_ns": 83200,
+            "max_ns": 1112500,
+            "p95_ns": 173000,
+            "p99_ns": 254400
+          },
+          "play": {
+            "n": 3287,
+            "mean_ns": 81733.64770307271,
+            "median_ns": 69800,
+            "max_ns": 3597400,
+            "p95_ns": 140900,
+            "p99_ns": 227100
+          },
+          "genmove": {
+            "n": 2797,
+            "mean_ns": 8530775.36646407,
+            "median_ns": 7002600,
+            "max_ns": 38648100,
+            "p95_ns": 21716200,
+            "p99_ns": 28617600
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 9270397,
+            "median_ns": 9107900.0,
+            "max_ns": 15681000,
+            "p95_ns": 10380900,
+            "p99_ns": 11631000
+          }
+        },
+        "B": {
+          "name": {
+            "n": 100,
+            "mean_ns": 53703903,
+            "median_ns": 52910150.0,
+            "max_ns": 75789700,
+            "p95_ns": 59095200,
+            "p99_ns": 74767900
+          },
+          "showboard": {
+            "n": 6375,
+            "mean_ns": 93947.34117647058,
+            "median_ns": 82300,
+            "max_ns": 572000,
+            "p95_ns": 161100,
+            "p99_ns": 246400
+          },
+          "result": {
+            "n": 6375,
+            "mean_ns": 89548.28235294118,
+            "median_ns": 78500,
+            "max_ns": 830700,
+            "p95_ns": 161600,
+            "p99_ns": 240000
+          },
+          "play": {
+            "n": 3491,
+            "mean_ns": 108096.64852477801,
+            "median_ns": 98100,
+            "max_ns": 1397800,
+            "p95_ns": 194700,
+            "p99_ns": 275800
+          },
+          "genmove": {
+            "n": 2778,
+            "mean_ns": 166136.249100072,
+            "median_ns": 153050.0,
+            "max_ns": 969600,
+            "p95_ns": 312300,
+            "p99_ns": 430800
+          },
+          "quit": {
+            "n": 100,
+            "mean_ns": 6406360,
+            "median_ns": 6277800.0,
+            "max_ns": 8374000,
+            "p95_ns": 7706200,
+            "p99_ns": 8313300
+          }
+        }
+      },
+      "formal_strength_claim": false,
+      "configs": {
+        "games": 100,
+        "planned_games": 100,
+        "seed": 20261021,
+        "startup_timeout": 5.0,
+        "command_timeout": 1.0,
+        "genmove_timeout": 10.0,
+        "seed_scope": "sha256(case_id, role, master_seed); Python random and PYTHONHASHSEED",
+        "evaluation_profile": "descriptive",
+        "budget_policy": "descriptive",
+        "determinism_verified": false,
+        "budget_configs": {
+          "A": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          },
+          "B": {
+            "format_version": 2,
+            "budget": {
+              "kind": "unknown"
+            },
+            "search": {}
+          }
+        },
+        "budget_config_hashes": {
+          "A": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb",
+          "B": "19e0d72ed08e36572c5ffeadd9dac9aaeb28fae2c7f4cfbab04d312579fbe0fb"
+        },
+        "opening_population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+        "opening_population_size": 1000,
+        "selection_manifest": {
+          "format_version": 1,
+          "population_hash": "e191fbfed938edca93431ce9efd897a6bfd78dbbc5d68077bcf7f77e7a802d78",
+          "population_size": 1000,
+          "selection_algorithm": "python_random_sample_without_replacement_v1",
+          "selection_seed": 20261020,
+          "selected_case_ids": [
+            "e1a2fda0a7a34ce1a58cdabc198a07877d9f4119fa5b7bd1d83be5f25d34b8eb",
+            "a70ba9d21fd5128f417ec9473004c432b9a73f4e9fdd9f7f80dea53435aaa0c5",
+            "4975cac09fe6fe4630fc635f686083cdc5a629c71362f5e960564929bc69bda3",
+            "64615a5afcd280f54bd25c0a250b2e88a383cdb32cf3bb43b1e7bf75cc210ca6",
+            "8ec957b37c70b4abf672cd1fa32839a19484d826e1966db3f86fd498779e3c29",
+            "ed609e98987e78354bc58ea76e7103ccc83c999d2b83e3e6729c110336b06a02",
+            "b939907209dc80efe27389a73f1fbda24eff722619c019ae0994fdc37b6e0c99",
+            "172b68d5063d6a38d1ae90520b04f83ae6d17102f8547c844c3ba5311155067a",
+            "ebb4baf515158cc1d54913d35d730596f3ceb5677b03f3ba22b145a4ed6f2806",
+            "752ca1644b524c63ed80874d025b3bb14acac4ccc1ae65d901e7cacac256d359",
+            "fd13d57c5240456bc386f73b551de2fd0d1a5adefe04009adffb03b690e1e2df",
+            "616b375728500fafecec57337f4c0e9f141eb898688c072995428a5d6eb52966",
+            "335825ab550ea01bcff4684f1373273e1856d32503ab879e396b7da680686311",
+            "992384f7ab5e27c4745c52c8522d4b61fea033efc6b6db64532843b8264f8243",
+            "2403e23551f87838a6a86df99b5a99f9879138a8411d968a63c9cf81b036ad3d",
+            "3a4efbc3a53cd69494d05cb83fea0c246351486827884f5b37fc574d70136fb2",
+            "39c15d81a25f37d46cdebec2ff482b0f7898a05ea096eceb7c177a54ece82562",
+            "e293c1a23ed9ac5f43b42d8033c4a9e2d7872bb356e3bd2efcf62ff2ba45945e",
+            "1af6315ffe6e127f5d4a89c239a2f9deb735f9246740993dd9d1d36a3b28cebb",
+            "dcdab338c58818a4cf8e0f7f96393dab5534d7bc045429134cd26937d1cb6280",
+            "db7af923e9cf6227419f28897623559cbabc48b80f9fa2468572cec9b62e6871",
+            "26dcef507213a8550ef013b8c5b5c9fe9fb7c30df8ebc33b9dcafb2a57b4bd6e",
+            "b58a926654d180c3c38bcae657b1afda5c202211a5211be921cf143f304f6116",
+            "0044e342b5039980530fb7e47bd3f1c69b73792ea233dd860ac5c409f9075db6",
+            "e3a4280d5bda3c44173a46e5a88c2e3522487c49f9e9f599a043528e08be0179",
+            "38b23633890ad4cb783c44183f2567dd02ce87e06742b23a34f89f2d863b66d6",
+            "b1259bfdda33995ba61c453ddf12e0cdb908af2b479c36aabfaf4493ee91eb9b",
+            "ec96ed362851a2baff43472e3e7692cbf41dfd26e497919a21bdb80e46265a0d",
+            "6d09b459273459c64411ac55da6087ff29c90f0b1e2a1b33666966adeac5cacc",
+            "9a7f95989f1c34e910141df4640beb5ed7d02aec22013210aee6b53a1d742e1a",
+            "f5e913f030ccaa8e6d8eacb53b5417c9c63021ecb4a66e2c87e1337d07a8d7ae",
+            "a486b1e007527427295237d5a54e10fb5f2c75224336af2b4f056bf59f150a79",
+            "88fe91f9e8c26fc37f39f413c8249809fdd3d0d798e57a29632c3b9fef2ebb62",
+            "7cd1ebc0d0c03f6e3b6e6aa00b7d4bf2b51fcde8120ab2b18870c820190863d0",
+            "23a965255dfc1e1991cdcd9f7a89fbdfca7c7d7f7b6daaff518601ab7e302ce0",
+            "7fb14c5857970ab540e3882733c9e899fb3a1470804938d67f8b9e86558c0782",
+            "561dffeabf6f85c19cdd62b5890537058004f92d0a838fc724c349a1f1ef7a47",
+            "7348f720d350ac701da9b282135744a1899df3917c28efdc9515591edab3adff",
+            "778e43efea21b7a41345906d30e115548e2875450aea35113275dfbbd8c94bd2",
+            "caea5fc64c96f1e42661dea9f5d327eb72d370791c1942d0c24317c143749d25",
+            "828457e2669fbbb7501dd949543c411e7c525068ecbfa4b4cdef4e291cfbe336",
+            "e56d9378de30e2ee7f3f4c8406aa2441da7b923845f33c1955803134ca78c422",
+            "ccf8ee06373d4def299b80988cd97ecf590e4d26decac5ccebc4c5ba02386a35",
+            "788741aa55019f8f91cec822c00d6e106dd26b64d4e001ac5b0104934eb31046",
+            "7e60495fefa84c2bbbf0386e0c69bcb50be96ebdfac1d488e6d8b35f6e2764c9",
+            "5c62fea844fe43d1e1c37b8437c0a6bbca9987316d1ea932c3d28b8f1a3eda6e",
+            "5762852b58bf103d27f729b7a9fbe1d2a1f28d8537b7f792ff674b5f80c9d46a",
+            "e81424fa81ecdc79dce3710220a03d963b7c4f2c317bd9ce640e592b41368207",
+            "7a4ab13584050516bf6902fde6250562457d07c3ceac5e9f0549c1e06444a696",
+            "f2eb2f226f1daced2478a3e6f236cf2c4eccf9f99fba9d3a8064ceb0cd2aa7c0"
+          ],
+          "sample_size": 50,
+          "selection_hash": "55fd7ac70e927b22a114b897cd70fdaf8fc9feedea27e80ebb481d99eb08588f"
+        },
+        "timeout_policy": "startup=separate; command=1s; genmove=10s; measured with perf_counter",
+        "measurement_contract": "local_cpython313_perf_ns_lifecycle_v2"
+      },
+      "fresh_source_bound": true
+    }
+  },
+  "prior_current_code_reference_failure": {
+    "attempted": 102,
+    "completed": 101,
+    "failed": 1,
+    "kind": "fixed B normal command1sec timeout",
+    "error": {
+      "player": "B",
+      "kind": "timeout",
+      "command": "play W 7 2",
+      "message": "Response deadline exceeded",
+      "diagnostics": null
+    },
+    "report_sha256": "53debb256d343e6703f220545659bdf3e0c82ed7235e5c50c0ff83effe06fe51",
+    "fresh_failed_preserved": true,
+    "isolated_replay72_succeeded": true,
+    "cause": "unconfirmed",
+    "replacement": "entire408game cohort, unchanged code/config/cases/seeds/deadlines; not stitched"
+  },
+  "formal": {
+    "formal-depth": {
+      "report_file_sha256": "6b72b9a8f93fb4ae29cf68dc3df666f7b82c73c81c97d98b85b6696d4ecceaab",
+      "report_canonical_sha256": "db24f45dcab9be04186a222d11df26f13a8b5dd47bf5c8b402df17ab2b30ff42",
+      "fresh_file_sha256": "6f5b8e6739f40da307ca5d9e218df1daad2b0404c362d3b79c8431d861c72a2b",
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "verified",
+        "statistics": "available",
+        "performance_criterion": "not_met",
+        "decision": "undetermined"
+      },
+      "statistics_status": "available",
+      "assessment": {
+        "input_status": "valid",
+        "quality_status": "verified",
+        "formal_eligibility": "eligible",
+        "formal_reason": null,
+        "confidence": 0.95,
+        "reference_available": true,
+        "request_success": true,
+        "metrics_certified": true,
+        "requirements": {
+          "roles": [
+            "A",
+            "B"
+          ],
+          "budget_required": true,
+          "formal_requested": true,
+          "baseline_exemption_allowed": false
+        },
+        "reasons": [],
+        "validation_contract_version": 3,
+        "validator_fingerprint": "527096a88cfba9e7dcc5e697d4fc7fc2ffe140fb21c3c5de90a8cd6a1e7eef33",
+        "source_report_sha256": "db24f45dcab9be04186a222d11df26f13a8b5dd47bf5c8b402df17ab2b30ff42"
+      },
+      "scope": "measured Windows direct CPython3.13.5 cases/config only"
+    },
+    "formal-time": {
+      "report_file_sha256": "7c7cd0a40d882fc9e6eec9e9f30d2d3486903dafe27cbe65abaf227dded14843",
+      "report_canonical_sha256": "955a1a9dc59902d5e837a436d84e3ba5a222cd818d14e4918fbfde67110f1af6",
+      "fresh_file_sha256": "69696dabcd781ca9de21728f692f21ec14636b776fbfca46d425019dd942dea8",
+      "status": {
+        "execution": "complete",
+        "protocol": "verified",
+        "budget": "verified",
+        "statistics": "descriptive_only",
+        "performance_criterion": "not_requested",
+        "decision": "undetermined"
+      },
+      "statistics_status": "descriptive_only",
+      "assessment": {
+        "input_status": "valid",
+        "quality_status": "verified",
+        "formal_eligibility": "not_requested",
+        "formal_reason": "profile_not_confirmatory",
+        "confidence": 0.95,
+        "reference_available": true,
+        "request_success": true,
+        "metrics_certified": true,
+        "requirements": {
+          "roles": [
+            "A",
+            "B"
+          ],
+          "budget_required": true,
+          "formal_requested": false,
+          "baseline_exemption_allowed": false
+        },
+        "reasons": [],
+        "validation_contract_version": 3,
+        "validator_fingerprint": "527096a88cfba9e7dcc5e697d4fc7fc2ffe140fb21c3c5de90a8cd6a1e7eef33",
+        "source_report_sha256": "955a1a9dc59902d5e837a436d84e3ba5a222cd818d14e4918fbfde67110f1af6"
+      },
+      "scope": "measured Windows direct CPython3.13.5 cases/config only"
+    }
+  },
+  "formal_qualifications": {
+    "formal-depth": {
+      "budget": "verified",
+      "clock_and_intervals": "verified",
+      "host_lifecycle": "verified",
+      "child_lifecycle": "verified",
+      "causal_order": "verified",
+      "source_consistency": "verified",
+      "actual_asset_hashes": "verified separately in stage5 audit",
+      "population": "verified",
+      "selection": "verified",
+      "coverage": "verified",
+      "gameplay": "verified",
+      "protocol": "verified",
+      "determinism": "verified",
+      "models": "none/not_required; fallback=false",
+      "statistics": "available",
+      "metrics": "verified"
+    },
+    "formal-time": {
+      "budget": "verified",
+      "clock_and_intervals": "verified",
+      "host_lifecycle": "verified",
+      "child_lifecycle": "verified",
+      "causal_order": "verified",
+      "source_consistency": "verified",
+      "actual_asset_hashes": "verified separately in stage5 audit",
+      "population": "verified",
+      "selection": "verified",
+      "coverage": "verified",
+      "gameplay": "verified",
+      "protocol": "verified",
+      "determinism": "not_requested; time deterministic=false",
+      "models": "none/not_required; fallback=false",
+      "statistics": "descriptive_only",
+      "metrics": "verified"
+    }
+  },
+  "accepted_time_trace_summary": {
+    "scope": "accepted reference-retry1 timed204 games roleA plus formal-time4games rolesA/B;100ms only; initial failures retained separately",
+    "trace_files_hash_verified": 212,
+    "events": 5941,
+    "by_report": {
+      "reference-random-2.json": {
+        "events": 64,
+        "search": {
+          "n": 64,
+          "mean_ns": 17290365.625,
+          "median_ns": 20044650.0,
+          "max_ns": 20483400,
+          "p95_ns": 20129000,
+          "p99_ns": 20483400
+        },
+        "stop_delay": {
+          "n": 48,
+          "mean_ns": 44700,
+          "median_ns": 27800.0,
+          "max_ns": 441100,
+          "p95_ns": 126300,
+          "p99_ns": 441100
+        },
+        "reasons": {
+          "time_limit": 48,
+          "new_depth_deadline": 4,
+          "max_depth_completed": 10,
+          "no_legal_move": 2
+        },
+        "depths": {
+          "3": 4,
+          "2": 29,
+          "1": 19,
+          "4": 10,
+          "0": 2
+        }
+      },
+      "reference-random-100.json": {
+        "events": 2810,
+        "search": {
+          "n": 2810,
+          "mean_ns": 17193466.93950178,
+          "median_ns": 20047400.0,
+          "max_ns": 21948100,
+          "p95_ns": 20138000,
+          "p99_ns": 20267500
+        },
+        "stop_delay": {
+          "n": 2182,
+          "mean_ns": 45164.29880843263,
+          "median_ns": 29200.0,
+          "max_ns": 1917000,
+          "p95_ns": 107500,
+          "p99_ns": 251200
+        },
+        "reasons": {
+          "time_limit": 2182,
+          "max_depth_completed": 448,
+          "no_legal_move": 101,
+          "new_depth_deadline": 79
+        },
+        "depths": {
+          "1": 737,
+          "2": 1305,
+          "3": 219,
+          "4": 448,
+          "0": 101
+        }
+      },
+      "reference-positional-2.json": {
+        "events": 62,
+        "search": {
+          "n": 62,
+          "mean_ns": 17506204.83870968,
+          "median_ns": 20055200.0,
+          "max_ns": 20171300,
+          "p95_ns": 20112400,
+          "p99_ns": 20171300
+        },
+        "stop_delay": {
+          "n": 51,
+          "mean_ns": 39133.333333333336,
+          "median_ns": 32100,
+          "max_ns": 130600,
+          "p95_ns": 91000,
+          "p99_ns": 130600
+        },
+        "reasons": {
+          "time_limit": 51,
+          "max_depth_completed": 9,
+          "no_legal_move": 2
+        },
+        "depths": {
+          "3": 5,
+          "2": 33,
+          "1": 13,
+          "4": 9,
+          "0": 2
+        }
+      },
+      "reference-positional-100.json": {
+        "events": 2781,
+        "search": {
+          "n": 2781,
+          "mean_ns": 17061295.972671703,
+          "median_ns": 20046500,
+          "max_ns": 22022000,
+          "p95_ns": 20134900,
+          "p99_ns": 20284300
+        },
+        "stop_delay": {
+          "n": 2123,
+          "mean_ns": 45341.780499293454,
+          "median_ns": 29200,
+          "max_ns": 1985500,
+          "p95_ns": 105800,
+          "p99_ns": 267600
+        },
+        "reasons": {
+          "time_limit": 2123,
+          "new_depth_deadline": 92,
+          "max_depth_completed": 462,
+          "no_legal_move": 104
+        },
+        "depths": {
+          "1": 648,
+          "2": 1334,
+          "3": 233,
+          "4": 462,
+          "0": 104
+        }
+      },
+      "formal-time.json": {
+        "events": 224,
+        "search": {
+          "n": 224,
+          "mean_ns": 16500588.392857144,
+          "median_ns": 20053300.0,
+          "max_ns": 20988300,
+          "p95_ns": 20161500,
+          "p99_ns": 20292700
+        },
+        "stop_delay": {
+          "n": 169,
+          "mean_ns": 50339.05325443787,
+          "median_ns": 30200,
+          "max_ns": 960800,
+          "p95_ns": 140100,
+          "p99_ns": 272100
+        },
+        "reasons": {
+          "time_limit": 169,
+          "new_depth_deadline": 7,
+          "max_depth_completed": 30,
+          "no_legal_move": 18
+        },
+        "depths": {
+          "1": 80,
+          "2": 73,
+          "3": 23,
+          "4": 30,
+          "0": 18
+        }
+      }
+    },
+    "search": {
+      "n": 5941,
+      "mean_ns": 17109780.525164112,
+      "median_ns": 20047300,
+      "max_ns": 22022000,
+      "p95_ns": 20137100,
+      "p99_ns": 20276500
+    },
+    "stop_delay": {
+      "n": 4573,
+      "mean_ns": 45365.799256505576,
+      "median_ns": 29300,
+      "max_ns": 1985500,
+      "p95_ns": 107500,
+      "p99_ns": 257000
+    },
+    "unwind": {
+      "n": 4573,
+      "mean_ns": 13213.645309424885,
+      "median_ns": 11800,
+      "max_ns": 435700,
+      "p95_ns": 20400,
+      "p99_ns": 35800
+    },
+    "reasons": {
+      "time_limit": 4573,
+      "new_depth_deadline": 182,
+      "max_depth_completed": 959,
+      "no_legal_move": 227
+    },
+    "phases": {
+      "normal_move": 5714,
+      "terminal_probe": 212,
+      "pass_probe": 15
+    },
+    "completed_depths": {
+      "3": 484,
+      "2": 2774,
+      "1": 1497,
+      "4": 959,
+      "0": 227
+    },
+    "started_depths": {
+      "4": 1403,
+      "3": 2672,
+      "2": 1639,
+      "0": 227
+    },
+    "counts": {
+      "nodes": 511455,
+      "leaves": 361406,
+      "passes": 3753,
+      "cutoffs": 65238
+    },
+    "maximum_delay_example": {
+      "path": "evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\reference-retry1\\runs\\851134e42a0d496abe6c21f087138321\\dd314d88958d4660c158b79954def33aba94d3caa51c3a6678c8493a0804014f\\leg-0\\A.jsonl",
+      "sequence": 14,
+      "phase": "normal_move",
+      "search_ns": 22022000,
+      "stop_reason": "time_limit",
+      "completed_depth": 2,
+      "started_depth": 3,
+      "nodes": 97,
+      "leaves": 69,
+      "passes": 0,
+      "cutoffs": 13,
+      "stop_delay_ns": 1985500,
+      "unwind_ns": 14800
+    },
+    "quantile": "nearest-rank sorted[ceil(p*n)-1]"
+  },
+  "baseline": {
+    "baseline": "baselines/search_v1",
+    "baseline_manifest_sha256": "575b27da6e31df65b2ecb9ae329dc4747918d150340911c807249e2881ee030f",
+    "baseline_assets": {
+      "ai_engine.py": "9f5a5bffc3878fce9ec014b00ea5c9277844b252ab2f81854f1a4d86b1318f83",
+      "eval-depth2.json": "bb492c15eff07ab18b084a90d5252aee7f8666539d0fed9a9634bdbe3bf79722",
+      "eval-time100ms.json": "f045d4a83892bc02f69e107eec978648a4796c1b3ee010ed3c884d093f406442",
+      "README.md": "f63ecc24ef04f3683af971e906832370f0abd4259f2cae301472822eb71380b6",
+      "response_config.json": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef",
+      "reversi.py": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c",
+      "search_trace.py": "3936022226c1c0266dac2de5c5c9e350c5fd7344b7390436c8ccdd5c40151577",
+      "timed_search.py": "5fab16bf34869f72e9811cac96fb4777783d9fe29465ae4adf8a991325594843"
+    },
+    "fixed_independence": true,
+    "standalone_reproducibility": true,
+    "role_swap_smokes": {
+      "fixed_depth_reproducibility": 4,
+      "submission_default": 2
+    },
+    "packages": [
+      {
+        "path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\packages\\ranger-phase5-7s.zip",
+        "sha256": "a9570f18e9b912694e9e1a385e60cc4442ef01d94cf73c1b859303eb1a012f1d",
+        "assets": {
+          "ai_engine.py": "9f5a5bffc3878fce9ec014b00ea5c9277844b252ab2f81854f1a4d86b1318f83",
+          "response_config.json": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef",
+          "reversi.py": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c",
+          "search_trace.py": "3936022226c1c0266dac2de5c5c9e350c5fd7344b7390436c8ccdd5c40151577",
+          "timed_search.py": "5fab16bf34869f72e9811cac96fb4777783d9fe29465ae4adf8a991325594843"
+        },
+        "test_exit_code": 0,
+        "argv": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\packages\\ranger-phase5-7s-extracted\\reversi.py"
+        ],
+        "cwd": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\isolated-cwd",
+        "server_upload": false
+      },
+      {
+        "path": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\packages\\ranger-phase4-rollback.zip",
+        "sha256": "ad76a6aae9315f0b9759332c40987dbe18823afba98363c49db90b3d6c199da3",
+        "assets": {
+          "ai_engine.py": "9f5a5bffc3878fce9ec014b00ea5c9277844b252ab2f81854f1a4d86b1318f83",
+          "reversi.py": "50ac598a6efffd45c8d1c92ad9c0c0e87e3e764cb281bd6ec496833bb1e419b2",
+          "search_trace.py": "c856a8bbb61e260973bd66a18b7200c692ac8c2ee249e7d5fe76ca74d2072930"
+        },
+        "test_exit_code": 0,
+        "argv": [
+          "C:\\Users\\taaai\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+          "-B",
+          "-X",
+          "utf8",
+          "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\packages\\ranger-phase4-rollback-extracted\\reversi.py"
+        ],
+        "cwd": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\isolated-cwd",
+        "server_upload": false
+      }
+    ],
+    "server_test": "not_performed",
+    "external_upload": false,
+    "source_not_committed": true
+  },
+  "exact_zip_validation": {
+    "passed": true,
+    "archive_bytes_unchanged": true,
+    "extracted_only_games": [
+      {
+        "zip": "ranger-phase5-7s.zip",
+        "leg": 0,
+        "status": "complete",
+        "result": "B"
+      },
+      {
+        "zip": "ranger-phase5-7s.zip",
+        "leg": 1,
+        "status": "complete",
+        "result": "W"
+      },
+      {
+        "zip": "ranger-phase4-rollback.zip",
+        "leg": 0,
+        "status": "complete",
+        "result": "B"
+      },
+      {
+        "zip": "ranger-phase4-rollback.zip",
+        "leg": 1,
+        "status": "complete",
+        "result": "W"
+      }
+    ],
+    "git_byte_preservation": [
+      {
+        "path": "baselines/search_v1/ai_engine.py",
+        "autocrlf": "true",
+        "git_oid": "6f17d6850720856a9797466cd8fa3ee7e3f5c65e",
+        "sha256": "9f5a5bffc3878fce9ec014b00ea5c9277844b252ab2f81854f1a4d86b1318f83"
+      },
+      {
+        "path": "baselines/search_v1/ai_engine.py",
+        "autocrlf": "false",
+        "git_oid": "6f17d6850720856a9797466cd8fa3ee7e3f5c65e",
+        "sha256": "9f5a5bffc3878fce9ec014b00ea5c9277844b252ab2f81854f1a4d86b1318f83"
+      },
+      {
+        "path": "baselines/search_v1/ai_engine.py",
+        "autocrlf": "input",
+        "git_oid": "6f17d6850720856a9797466cd8fa3ee7e3f5c65e",
+        "sha256": "9f5a5bffc3878fce9ec014b00ea5c9277844b252ab2f81854f1a4d86b1318f83"
+      },
+      {
+        "path": "baselines/search_v1/eval-depth2.json",
+        "autocrlf": "true",
+        "git_oid": "56a49ea99f46f755d3e6fad32b8f0d071b12fd1d",
+        "sha256": "bb492c15eff07ab18b084a90d5252aee7f8666539d0fed9a9634bdbe3bf79722"
+      },
+      {
+        "path": "baselines/search_v1/eval-depth2.json",
+        "autocrlf": "false",
+        "git_oid": "56a49ea99f46f755d3e6fad32b8f0d071b12fd1d",
+        "sha256": "bb492c15eff07ab18b084a90d5252aee7f8666539d0fed9a9634bdbe3bf79722"
+      },
+      {
+        "path": "baselines/search_v1/eval-depth2.json",
+        "autocrlf": "input",
+        "git_oid": "56a49ea99f46f755d3e6fad32b8f0d071b12fd1d",
+        "sha256": "bb492c15eff07ab18b084a90d5252aee7f8666539d0fed9a9634bdbe3bf79722"
+      },
+      {
+        "path": "baselines/search_v1/eval-time100ms.json",
+        "autocrlf": "true",
+        "git_oid": "606f06fb175a6d6c021152148982c781bacf3c3c",
+        "sha256": "f045d4a83892bc02f69e107eec978648a4796c1b3ee010ed3c884d093f406442"
+      },
+      {
+        "path": "baselines/search_v1/eval-time100ms.json",
+        "autocrlf": "false",
+        "git_oid": "606f06fb175a6d6c021152148982c781bacf3c3c",
+        "sha256": "f045d4a83892bc02f69e107eec978648a4796c1b3ee010ed3c884d093f406442"
+      },
+      {
+        "path": "baselines/search_v1/eval-time100ms.json",
+        "autocrlf": "input",
+        "git_oid": "606f06fb175a6d6c021152148982c781bacf3c3c",
+        "sha256": "f045d4a83892bc02f69e107eec978648a4796c1b3ee010ed3c884d093f406442"
+      },
+      {
+        "path": "baselines/search_v1/manifest.json",
+        "autocrlf": "true",
+        "git_oid": "442e500eccc0eb66b678638dda0598cdb8a03bba",
+        "sha256": "575b27da6e31df65b2ecb9ae329dc4747918d150340911c807249e2881ee030f"
+      },
+      {
+        "path": "baselines/search_v1/manifest.json",
+        "autocrlf": "false",
+        "git_oid": "442e500eccc0eb66b678638dda0598cdb8a03bba",
+        "sha256": "575b27da6e31df65b2ecb9ae329dc4747918d150340911c807249e2881ee030f"
+      },
+      {
+        "path": "baselines/search_v1/manifest.json",
+        "autocrlf": "input",
+        "git_oid": "442e500eccc0eb66b678638dda0598cdb8a03bba",
+        "sha256": "575b27da6e31df65b2ecb9ae329dc4747918d150340911c807249e2881ee030f"
+      },
+      {
+        "path": "baselines/search_v1/README.md",
+        "autocrlf": "true",
+        "git_oid": "65aca25365e878dd5996e9ae40686913e7cccac4",
+        "sha256": "f63ecc24ef04f3683af971e906832370f0abd4259f2cae301472822eb71380b6"
+      },
+      {
+        "path": "baselines/search_v1/README.md",
+        "autocrlf": "false",
+        "git_oid": "65aca25365e878dd5996e9ae40686913e7cccac4",
+        "sha256": "f63ecc24ef04f3683af971e906832370f0abd4259f2cae301472822eb71380b6"
+      },
+      {
+        "path": "baselines/search_v1/README.md",
+        "autocrlf": "input",
+        "git_oid": "65aca25365e878dd5996e9ae40686913e7cccac4",
+        "sha256": "f63ecc24ef04f3683af971e906832370f0abd4259f2cae301472822eb71380b6"
+      },
+      {
+        "path": "baselines/search_v1/response_config.json",
+        "autocrlf": "true",
+        "git_oid": "1bfe1e5f3824b46ed6b0b3d9d2743fe8929aa804",
+        "sha256": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef"
+      },
+      {
+        "path": "baselines/search_v1/response_config.json",
+        "autocrlf": "false",
+        "git_oid": "1bfe1e5f3824b46ed6b0b3d9d2743fe8929aa804",
+        "sha256": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef"
+      },
+      {
+        "path": "baselines/search_v1/response_config.json",
+        "autocrlf": "input",
+        "git_oid": "1bfe1e5f3824b46ed6b0b3d9d2743fe8929aa804",
+        "sha256": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef"
+      },
+      {
+        "path": "baselines/search_v1/reversi.py",
+        "autocrlf": "true",
+        "git_oid": "085e5966ebf3051d92afd00565e41de4d2ce676d",
+        "sha256": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c"
+      },
+      {
+        "path": "baselines/search_v1/reversi.py",
+        "autocrlf": "false",
+        "git_oid": "085e5966ebf3051d92afd00565e41de4d2ce676d",
+        "sha256": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c"
+      },
+      {
+        "path": "baselines/search_v1/reversi.py",
+        "autocrlf": "input",
+        "git_oid": "085e5966ebf3051d92afd00565e41de4d2ce676d",
+        "sha256": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c"
+      },
+      {
+        "path": "baselines/search_v1/search_trace.py",
+        "autocrlf": "true",
+        "git_oid": "5e0085cd8e8541df144f5307e83c1062ec01a9b3",
+        "sha256": "3936022226c1c0266dac2de5c5c9e350c5fd7344b7390436c8ccdd5c40151577"
+      },
+      {
+        "path": "baselines/search_v1/search_trace.py",
+        "autocrlf": "false",
+        "git_oid": "5e0085cd8e8541df144f5307e83c1062ec01a9b3",
+        "sha256": "3936022226c1c0266dac2de5c5c9e350c5fd7344b7390436c8ccdd5c40151577"
+      },
+      {
+        "path": "baselines/search_v1/search_trace.py",
+        "autocrlf": "input",
+        "git_oid": "5e0085cd8e8541df144f5307e83c1062ec01a9b3",
+        "sha256": "3936022226c1c0266dac2de5c5c9e350c5fd7344b7390436c8ccdd5c40151577"
+      },
+      {
+        "path": "baselines/search_v1/timed_search.py",
+        "autocrlf": "true",
+        "git_oid": "55ab675857098909b64474c46870799feb7ef8bd",
+        "sha256": "5fab16bf34869f72e9811cac96fb4777783d9fe29465ae4adf8a991325594843"
+      },
+      {
+        "path": "baselines/search_v1/timed_search.py",
+        "autocrlf": "false",
+        "git_oid": "55ab675857098909b64474c46870799feb7ef8bd",
+        "sha256": "5fab16bf34869f72e9811cac96fb4777783d9fe29465ae4adf8a991325594843"
+      },
+      {
+        "path": "baselines/search_v1/timed_search.py",
+        "autocrlf": "input",
+        "git_oid": "55ab675857098909b64474c46870799feb7ef8bd",
+        "sha256": "5fab16bf34869f72e9811cac96fb4777783d9fe29465ae4adf8a991325594843"
+      }
+    ],
+    "cwd_for_whole_game": "extracted script directory (outside repository runtime module paths)",
+    "all_commands_empty_cwd": "stage6-stage7-verification.json",
+    "formal_budget_claim": false,
+    "submission_server": "not_performed"
+  },
+  "old_external_temp_missing": 9,
+  "server_upload": false,
+  "commit_push_merge_tag": false,
+  "prose_verification": {
+    "final_five": [
+      {
+        "file": "docs/開発計画.md",
+        "raw_sha256": "c5ab40983e4e45fda4c2cdd83fc113297587be7d75a793c012495051f348cc85",
+        "verified": true,
+        "status_line": "yomiyasu-check: executed via=verify run=20261108T110254Z-14df7227 attempt=1 final=sha256:c5ab40983e4e mode=rewrite doc_type=formal reader=expert checks=lint,diff,materials meaning_risk=5 replay=skipped",
+        "verification_record": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\yomi-final-0-verify.json"
+      },
+      {
+        "file": "docs/リバーシAI段階開発・評価設計書.md",
+        "raw_sha256": "bf79f48b6b8bd792394f8e1cdc3a8622772d39caafd1b64cd89fe479111ee877",
+        "verified": true,
+        "status_line": "yomiyasu-check: executed via=verify run=20261108T110255Z-551d61ef attempt=1 final=sha256:bf79f48b6b8b mode=rewrite doc_type=formal reader=expert checks=lint,diff,materials meaning_risk=16 replay=skipped",
+        "verification_record": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\yomi-final-1-verify.json"
+      },
+      {
+        "file": "docs/QUALITY_PROGRESS.md",
+        "raw_sha256": "a4978ca482ca35927e00376a88beb8d182750b89ac5bc5b5487882726cf6bd32",
+        "verified": true,
+        "status_line": "yomiyasu-check: executed via=verify run=20261108T110257Z-5f5fc6d4 attempt=1 final=sha256:a4978ca482ca mode=rewrite doc_type=formal reader=expert checks=lint,diff,materials meaning_risk=17 replay=skipped",
+        "verification_record": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\yomi-final-2-verify.json"
+      },
+      {
+        "file": "docs/phase5_design.md",
+        "raw_sha256": "568f7f6b31bdd7308a07bf1771f0abb7143fedf9153c7f2c623c46154ea3c065",
+        "verified": true,
+        "status_line": "yomiyasu-check: executed via=verify run=20261108T110259Z-de0abe1d attempt=1 final=sha256:568f7f6b31bd mode=rewrite doc_type=formal reader=expert checks=lint,diff,materials meaning_risk=6 replay=skipped",
+        "verification_record": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\yomi-final-3-verify.json"
+      },
+      {
+        "file": "docs/ハーネス.md",
+        "raw_sha256": "8757396fc9c1200229935a1456e1d053c9d1b5860b5c214211b0d236f36d6934",
+        "verified": true,
+        "status_line": "yomiyasu-check: executed via=verify run=20261108T110300Z-6ce588ba attempt=1 final=sha256:8757396fc9c1 mode=rewrite doc_type=formal reader=expert checks=lint,diff,materials meaning_risk=9 replay=skipped",
+        "verification_record": "C:\\School\\2026\\後期\\00_授業資料\\情報学演習Ｂ\\evaluation_results\\phase5\\run-0f94162b39214839bcff342fe327a2f0\\guard120\\yomi-final-4-verify.json"
+      }
+    ],
+    "boundary_two": "verified before Full and unchanged in quality source snapshot",
+    "review": "guard120/prose-final-review.json",
+    "not_a_semantic_correctness_proof_by_itself": true
+  }
+}

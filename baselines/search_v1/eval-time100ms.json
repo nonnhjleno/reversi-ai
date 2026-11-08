@@ -1,0 +1,14 @@
+{
+  "format_version": 2,
+  "budget": {
+    "kind": "time",
+    "limit_ns": 100000000
+  },
+  "search": {
+    "algorithm": "iterative",
+    "ordered": true,
+    "max_depth": 4,
+    "deterministic": false,
+    "counting_definition_id": "minimax-call-v1"
+  }
+}

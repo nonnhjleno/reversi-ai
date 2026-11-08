@@ -1,0 +1,53 @@
+{
+  "manifest_version": 1,
+  "baseline_id": "search_v1",
+  "entrypoint": "reversi.py",
+  "frozen_at": "2026-11-08",
+  "runtime": {
+    "implementation": "CPython",
+    "version": "3.13.5",
+    "platform": "win32",
+    "dependencies": "standard library only"
+  },
+  "assets": {
+    "ai_engine.py": "9f5a5bffc3878fce9ec014b00ea5c9277844b252ab2f81854f1a4d86b1318f83",
+    "eval-depth2.json": "bb492c15eff07ab18b084a90d5252aee7f8666539d0fed9a9634bdbe3bf79722",
+    "eval-time100ms.json": "f045d4a83892bc02f69e107eec978648a4796c1b3ee010ed3c884d093f406442",
+    "README.md": "f63ecc24ef04f3683af971e906832370f0abd4259f2cae301472822eb71380b6",
+    "response_config.json": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef",
+    "reversi.py": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c",
+    "search_trace.py": "3936022226c1c0266dac2de5c5c9e350c5fd7344b7390436c8ccdd5c40151577",
+    "timed_search.py": "5fab16bf34869f72e9811cac96fb4777783d9fe29465ae4adf8a991325594843"
+  },
+  "selection": {
+    "algorithm": "iterative Alpha-Beta",
+    "max_depth": 4,
+    "root_order": "ascending (y,x); strict improvement only",
+    "internal_order": "corner, POSITION_WEIGHTS descending, (y,x)",
+    "evaluation": "unchanged Phase2 ai_engine evaluation and terminal score",
+    "placement_pass": "pass does not consume placement ply"
+  },
+  "configurations": {
+    "fixed_work": "eval-depth2.json",
+    "reference_time": "eval-time100ms.json",
+    "submission": "response_config.json; 7s whole response target, 6s new-depth cutoff, 6.5s stop request; not a server guarantee"
+  },
+  "git": {
+    "start_commit": "518cd2aa263fbed869ed17ea9da64e126d78c1a3",
+    "source_worktree_was_dirty": true,
+    "source_status": " M .gitattributes\n M docs/harness_architecture.md\n M docs/harness_contracts.md\n M \"docs/\\343\\203\\217\\343\\203\\274\\343\\203\\215\\343\\202\\271.md\"\n M pyproject.toml\n M reversi_player/reversi.py\n M reversi_player/search_trace.py\n M tools/quality.py\n?? baselines/search_v1/\n?? docs/phase5_design.md\n?? reversi_player/response_config.json\n?? reversi_player/timed_search.py\n?? tests/test_ai_phase5.py\n",
+    "source_diff_scope": "tracked binary diff only; runtime asset hashes include untracked production files",
+    "source_diff_sha256": "a5c5b5dc57e264b0fc32ec2f0cd27927db59944571d447b8bd3e4b4e58302786"
+  },
+  "validation": {
+    "quality": "evaluation_results\\quality-8490738854b140f684bddfd6d9d24e4b",
+    "stage5": "evaluation_results/phase5/run-0f94162b39214839bcff342fe327a2f0/guard120/stage5-verification.json",
+    "independent": "evaluation_results/phase5/run-0f94162b39214839bcff342fe327a2f0/guard120/frozen-validation.json"
+  },
+  "limitations": [
+    "Time can interrupt at different completed depths; time is not a deterministic equal-work baseline.",
+    "Formal measurements only for measured Windows direct CPython3.13.5 conditions; no general strength superiority.",
+    "Server OS/Python/upload hierarchy/entrypoint not confirmed.",
+    "Future candidate or submission changes must not rewrite these frozen assets."
+  ]
+}

@@ -12,6 +12,8 @@
 | Phase 2の設計・実装契約 | [盤面評価・契約・テスト・比較条件](docs/phase2_design.md) |
 | Phase 3の探索契約と実行結果 | [Minimax設計](docs/phase3_design.md)・[実装・評価記録](docs/reports/20261106_phase3_implementation.md) |
 | Phase 4のAlpha-Beta・実AI計測 | [設計と計数契約](docs/phase4_design.md)・[実装・評価記録](docs/reports/20261107_phase4_implementation.md) |
+| Phase 5の時間制御・安全応答・固定探索相手 | [実装設計](docs/phase5_design.md)・[実装記録](docs/reports/20261108_phase5_implementation.md)・[search_v1](baselines/search_v1/README.md) |
+| 提出ZIP・復旧・後日の実機試行 | [準備と記録様式](docs/reports/20261108_phase5_server_trials.md) |
 | テスト・品質ゲート・対戦評価・GUIの操作 | [ハーネス](docs/ハーネス.md) |
 | 現行の責務・依存・データフロー・状態 | [アーキテクチャ](docs/harness_architecture.md) |
 | 現行の識別子・予算・時計・正式評価資格 | [データ契約](docs/harness_contracts.md) |
@@ -29,7 +31,7 @@ python -m pip install -r requirements-dev.txt
 python -B tools/quality.py
 ```
 
-品質ゲートはstrict対象17ファイル、全pytest、独立smoke、対象moduleの登録漏れ検査などのFull必須11工程を実行し、新しい`evaluation_results/quality-UUID/`へ検証証拠を保存します。正規のstrict一覧は`pyproject.toml`を参照してください。品質ゲートの成功は、AIの正式評価資格や棋力向上の証明ではありません。配布GUIの`web.py`は意図的なstrict対象外ですが、既存Lint・GUI関連テストは維持します。
+品質ゲートはstrict対象19ファイル、全pytest、独立smoke、対象moduleの登録漏れ検査などのFull必須11工程を実行し、新しい`evaluation_results/quality-UUID/`へ検証証拠を保存します。正規のstrict一覧は`pyproject.toml`を参照してください。品質ゲートの成功は、AIの正式評価資格や棋力向上の証明ではありません。配布GUIの`web.py`は意図的なstrict対象外ですが、既存Lint・GUI関連テストは維持します。
 
 GUIだけを起動する場合:
 
