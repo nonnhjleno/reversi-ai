@@ -19,7 +19,7 @@
 | contracts | decode、必要role/検証軸、母集合/全予定coverage/棋譜/両通信、原rawとcache/summaryのfresh照合、共通writer |
 | analysis | 公開原report wrapper、private共通Assessment、正式AND、単独/対応推定、再解析/比較serializer |
 | statistics | 得点・ペア・有限母集合区間の算術。computed/arithmetic_onlyであり正式資格の発行元ではない |
-| reversi_player | 対戦プログラムとGUI。実AIは既定で固定深度2のAlpha-Betaを使い、対応depth設定では原trace4を生成する。web.Processはharness.Playerとは別経路 |
+| reversi_player | 対戦プログラムとGUI。通常提出mainは時間対応の反復深化を使い、明示depth/time設定では原trace4を生成する。Board直接構築とunknown空searchは固定深度2を保つ。web.Processはharness.Playerとは別経路 |
 | tests/fixtures | budget_playerは計測契約の模擬producer、fault_playerは異常注入。実AIの強さ・counter真正性を証明しない |
 
 protocolからcontracts/analysis/evaluateへ逆importしない。contractsからstatisticsへ直接依存せず、検証と算術を分離する。現在のimport DAGに循環はない。canonical JSON等の小さな表現処理は複数箇所に残るが、正式判定・比較条件・集計を別々に再定義しない。
@@ -621,3 +621,40 @@ flowchart LR
 ## Phase 4の実AI接続
 
 実装前に実AI側の責務・依存・状態と計測区間を[Phase 4設計](phase4_design.md)に定義した。reversi.py→search_trace.py→ai_engine.pyの順に依存し、ルールはstateless callbackで渡す。harnessへの逆importは追加しない。ハーネス側のschema5・trace4・validation3と正式資格の状態遷移は変更しない。
+
+
+## Phase 5のAI内部構造
+
+[Phase 5設計](phase5_design.md)で責務・時刻・計数・失敗を先に確定した。この図を新規timed_search.pyとmain・trace接続へ反映した。専用201テストとdepth/time取得は成功したが、Full・実時間負荷・参考対局・固定資産は引き続き別に検証する。harness内部の依存・正式入口は変えない。
+
+```mermaid
+flowchart LR
+ H[外部harness / GUI] --> R[reversi.py CC / root合法手 / snapshot]
+ R --> T[search_trace.py 明示設定 / 原trace4]
+ R --> S[timed_search.py 通常提出]
+ T --> S
+ T --> A[ai_engine.py 固定探索]
+ S --> A
+ S -->|stateless callback| C[コピー盤面ルール]
+ S -->|完了結果 / 深度0合法候補| R
+ R -->|1回確定 / trace / stdout flush| O[応答]
+```
+
+反復間で共有するのはコマンド期限と最後の完全な結果である。未完了rootの値は返却しない。再帰入口・合法手生成・仮着手・評価の前後で停止を確認し、専用中断以外の例外は伝播する。原traceは取得時に記録し、後から補修しない。固定深度とtimeの探索仕事量は区別する。
+
+
+Phase 5のtime予約分を実測後に再設計した。search_traceからtimed_searchへ渡す要求上限と、内部の停止予約分を分け、SS基準のtime_stopとCC基準のコマンド停止の早い方で中断する。実測2回を受けた120msを含む予約分の式は[現行境界](harness_contracts.md#phase-5の時間対応境界)を参照する。上の依存図・状態遷移・時計端点・実着手の責務を照合し、変更が数値判定だけであることを確認した。
+
+
+## Phase 5最終レビュー：品質runnerの終了判定
+
+既存の所有子process待機・tree回収の後に、同じperf_counterの実経過を指定上限へ照合する。終了コード0とerrorなしだけではPASSにせず、実測上限超過をtimeout_elapsedとして失敗記録へ渡す。原ログ・実終了値を保存し、新しい常駐監視・独立process・品質上限の変更は導入しない。外部AIと正式評価の依存・通信は変えない。[品質step上限](harness_contracts.md#phase-5最終レビュー品質stepの経過上限)を参照する。
+
+```mermaid
+flowchart LR
+ S[step開始とperf_counter] --> W[既存process待機と回収]
+ W --> T[実経過と上限を終了後照合]
+ T -->|上限超過| F[timeout_elapsed / FAIL / 原ログ保持]
+ T -->|上限内かつexit0かつerrorなし| P[PASS候補 / 既存証拠検査へ]
+ T -->|終了値や回収に失敗| F
+```

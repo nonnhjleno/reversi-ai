@@ -1,5 +1,25 @@
 # 品質基盤導入の進捗と検証証拠
 
+## Phase 5最終レビュー（2026-11-09）
+
+品質stepの実経過が上限を超えても、Windowsのnative待機が終了値0なら成功にできた問題を修正した。終了後にperf_counter実経過を照合し、超過は実終了値・原ログを保持してtimeout_elapsed・FAILとする。1800秒上限、既存1604件、Quick/Standard分類、strict19本、正式評価条件は維持した。過去の約31749秒はfixture setupではなくcallで、電源ログの休止31736.280034秒とほぼ一致する。CPU/I/O内訳は未確認。今回初回Fullも1800秒で失敗したため、Phase4比較表の同じ入力に対する独立参照だけを共有し、候補の全実行・assert・件数を維持した。入力keyと候補実行の2回帰を追加し、変更前後の局所比較も実行した。
+
+修正後は最終関連12件が成功し、新規7件を含むFull全11工程PASS、pytest1611成功・失敗/error/skip0、独立smoke1成功。48sourceの開始・終了・現在hash一致、publicationと原証拠fresh収集が成功した。原証拠は `evaluation_results\quality-b5bab628186d4e089fcb3a086c31003c`、quality.json SHA-256は `e89b1f747408f6806542f93f42e0a862f65ce0029a1cfb79f71d5828937087e2`。Temp依存14件はreview領域へhash付きbytesを保管した。外部媒体へのバックアップとは区別する。
+
+AI本体、search_v1、提出・復旧ZIP、旧rawは変更していない。人工callback待機の実時計診断5条件、100ms先行失敗と最終受入の別集計、固定B timeoutの限定調査を実施した。自然負荷7秒、未知サーバー、固定B原因、外部バックアップは未確認。過去Temp9件欠損は未解決を維持する。詳細は[最終レビュー・引き継ぎ](reports/20261109_phase5_review.md)を参照する。
+
+
+## AI開発Phase 5（2026-11-08、ローカル最終）
+
+直接CPython 3.13.5 / WindowsのFull全11工程PASS。pytest1604成功・失敗/error/skip 0（1676.013秒）、独立smoke1成功、strict19本、47sourceの開始・終了・現在hash一致、publicationと原証拠fresh収集が成功した。timed_search.pyを明示登録し、response_config.jsonを品質hashへ加えた。新規213件はFull専用で、Quick/Standard分類と既存テストは不変。
+
+最終証拠は `evaluation_results\quality-8490738854b140f684bddfd6d9d24e4b`、原Temp依存14件は対応hashのbytesをguard120/full-artifactsへ保管した。quality.json SHA-256は `d5b7c28224f17de6f630d84cea4653f1d520bc95416cdf4841150fd3ff49c727`。固定参照・独立オラクル、偽時計の全中断境界、実Board一回適用、GUI/プロトコル回帰を含む。実ブラウザ手動対局と未知サーバーでの動作は未実施。
+
+初回Full1800秒中断、監視記録・収集import・応答記録の失敗、途中Fullの約9.2時間の経過異常、100ms参考予算超過2件と6件は別証拠に保存し、成功へ数えない。オラクルと不変参照結果だけのメモ化は候補探索・期待値・検査件数・品質上限を変えない。停止予約分の改訂は契約と独立境界を先に確定し、全品質・評価を取り直した。従前の外部Temp証拠9件欠損は未解決のままとする。
+
+現行678応答は全件正常、7/8/10秒超過0、最大1.0978042秒。参考time204局と旧経路204局はfresh再解析し、旧経路はPhase 4の全棋譜・盤面・結果に一致した。正式depth2 availableとtime100ms deployment認証は実AIから別途取得した範囲だけに与え、内部予算unknownの固定相手への正式優越性を主張しない。search_v1固定と提出・復旧ZIPの展開検証まで完了した。 先行102局では固定Bの通常play timeout1件を観測した。Bの同seed・同期限72コマンドの再生は一致したが、原因は未確定のまま保持する。408局はコード・設定・期限を変えず全件を取り直し、失敗を継ぎ足して成功へ変更していない。詳細は[Phase 5実装・評価記録](reports/20261108_phase5_implementation.md)、現行APIは[Phase 5設計](phase5_design.md)を参照する。
+
+
 ## AI開発Phase 4（2026-11-07最終照合）
 
 実装前に[設計・計数・API・予算範囲](phase4_design.md)と現行図・契約を更新した。参照Minimax・評価関数と固定資産を保全し、新規search_trace.pyをstrict対象へ明示登録した。lintは既存glob、formatも既存scopeで新規moduleを対象とする。strictは18本となった。

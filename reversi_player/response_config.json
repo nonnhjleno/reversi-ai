@@ -1,0 +1,6 @@
+{
+  "target_ns": 7000000000,
+  "new_depth_margin_ns": 1000000000,
+  "stop_margin_ns": 500000000,
+  "max_depth": 4
+}

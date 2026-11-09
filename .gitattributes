@@ -3,3 +3,6 @@
 /benchmark_sets/phase0/** -text
 # 複製元から保持したCRLFと末尾空行は、固定実体の一部として扱う。
 /baselines/random_v0/reversi.py whitespace=cr-at-eol,-blank-at-eof
+
+# Phase 5の独立固定版はmanifestと同じbytesをGitでも保持する。
+/baselines/search_v1/** -text

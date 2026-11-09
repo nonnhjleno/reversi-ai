@@ -363,11 +363,18 @@ def run_step(step: Step, root: Path, log: Path) -> StepResult:
             error = f'{type(failure).__name__}: {failure}'
         if error:
             stream.write(error + '\n')
+    seconds = time.perf_counter() - started
+    if error is None and seconds > step.timeout:
+        # Windowsの低電力状態ではnative waitがtimeoutを進めないため、実経過も照合する。
+        error = f'timeout_elapsed: {step.timeout}秒（実経過{seconds:.6f}秒）'
+        with log.open('a', encoding='utf-8') as stream:
+            stream.write(error + '\n')
+        seconds = time.perf_counter() - started
     return {
         'name': step.name,
         'command': list(step.command),
         'exit_code': exit_code,
-        'seconds': time.perf_counter() - started,
+        'seconds': seconds,
         'log': log.name,
         'error': error,
         'passed': exit_code == 0 and error is None,
@@ -459,6 +466,7 @@ def _source_hashes(root: Path) -> dict[str, str]:
         root / name
         for name in (
             'pyproject.toml',
+            'reversi_player/response_config.json',
             'requirements-dev.txt',
             'pytest.ini',
             'AGENTS.md',

@@ -1,7 +1,8 @@
-"""実AIの固定深度設定と、取得時に生成するtrace4。harnessへ依存しない。"""
+"""実AIのdepth/time設定と、取得時に生成するtrace4。harnessへ依存しない。"""
 
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import json
 import os
@@ -12,11 +13,12 @@ import time
 from typing import TYPE_CHECKING, TextIO, cast
 
 if TYPE_CHECKING:
-    from reversi_player import ai_engine
+    from reversi_player import ai_engine, timed_search
 elif __package__:
-    from . import ai_engine
+    from . import ai_engine, timed_search
 else:
     import ai_engine
+    import timed_search
 
 
 def _object(value: object) -> dict[str, object]:
@@ -83,26 +85,49 @@ def load(
     budget, search = _object(config['budget']), _object(config['search'])
     if budget == {'kind': 'unknown'} and not search:
         return None
+    kind = budget.get('kind')
     depth = budget.get('limit_depth')
-    if (
-        set(budget) != {'kind', 'limit_depth'}
-        or budget.get('kind') != 'depth'
-        or type(depth) is not int
-        or not 1 <= depth <= 4
-    ):
+    limit_ns = budget.get('limit_ns')
+    if kind == 'depth':
+        if set(budget) != {'kind', 'limit_depth'} or type(depth) is not int or not 1 <= depth <= 4:
+            raise ValueError('unsupported_search_budget')
+        time_limit = None
+    elif kind == 'time':
+        if (
+            set(budget) != {'kind', 'limit_ns'}
+            or type(limit_ns) is not int
+            or not timed_search.MIN_TIME_BUDGET_NS <= limit_ns <= timed_search.MAX_TIME_BUDGET_NS
+        ):
+            raise ValueError('unsupported_search_budget')
+        time_limit = limit_ns
+        depth = 0
+    else:
         raise ValueError('unsupported_search_budget')
-    if set(search) - {'algorithm', 'ordered', 'deterministic', 'counting_definition_id'}:
+    allowed = {'algorithm', 'ordered', 'deterministic', 'counting_definition_id'}
+    if kind == 'time':
+        allowed.add('max_depth')
+    if set(search) - allowed:
         raise ValueError('unsupported_search_setting')
-    algorithm = search.get('algorithm', 'alphabeta')
+    algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
     ordered = search.get('ordered', True)
+    maximum = search.get('max_depth', timed_search.MAX_TIMED_DEPTH)
     if (
-        algorithm not in ('alphabeta', 'minimax')
+        type(algorithm) is not str
         or type(ordered) is not bool
-        or (algorithm == 'minimax' and 'ordered' in search)
+        or (
+            kind == 'depth'
+            and (
+                algorithm not in ('alphabeta', 'minimax')
+                or (algorithm == 'minimax' and 'ordered' in search)
+            )
+        )
+        or (kind == 'time' and algorithm != 'iterative')
+        or type(maximum) is not int
+        or not 1 <= maximum <= timed_search.MAX_TIMED_DEPTH
     ):
         raise ValueError('unsupported_search_algorithm')
     if (
-        search.get('deterministic', True) is not True
+        search.get('deterministic', kind == 'depth') is not (kind == 'depth')
         or search.get('counting_definition_id', ai_engine.SEARCH_COUNTING_DEFINITION)
         != ai_engine.SEARCH_COUNTING_DEFINITION
     ):
@@ -138,6 +163,8 @@ def load(
         ordered,
         legal_moves_for,
         apply_move,
+        time_limit_ns=time_limit,
+        max_depth=maximum,
     )
 
 
@@ -155,16 +182,32 @@ class SearchTrace:
         ordered: bool,
         legal_moves_for: ai_engine.LegalMovesFor,
         apply_move: ai_engine.ApplyMove,
+        *,
+        time_limit_ns: int | None = None,
+        max_depth: int = timed_search.MAX_TIMED_DEPTH,
     ) -> None:
         """検証後の設定を保持し、原traceを排他作成する。"""
         self._config, self._context = config, context
         self._child_entry_ns, self._depth = child_entry_ns, depth
         self._algorithm, self._ordered = algorithm, ordered
         self._legal, self._apply = legal_moves_for, apply_move
+        self._timed = (
+            timed_search.TimedSelector(
+                legal_moves_for,
+                apply_move,
+                replace(timed_search.load_policy(), max_depth=max_depth),
+                limit_ns=time_limit_ns,
+                ordered=ordered,
+            )
+            if time_limit_ns is not None
+            else None
+        )
         self._stream: TextIO = path.open('x', encoding='utf-8', newline='\n')
         self._thread = threading.get_ident()
         self._sequence = 0
-        self._search: tuple[int, int, ai_engine.SearchResult] | None = None
+        self._search: tuple[int, int, ai_engine.SearchResult | timed_search.TimedResult] | None = (
+            None
+        )
 
     def _emit(self, event: dict[str, object]) -> None:
         """探索外で追記・flushする。失敗は呼出し元へ伝える。"""
@@ -195,12 +238,24 @@ class SearchTrace:
             }
         )
 
+    def begin(self, received_ns: int) -> None:
+        """time探索だけにコマンド受付時刻を渡す。固定depthには影響しない。"""
+        if self._timed is not None:
+            self._timed.begin(received_ns)
+
     def select(
         self, rows: ai_engine.BoardRows, color: str, moves: ai_engine.LegalMoves
     ) -> ai_engine.Move | None:
         """純粋探索を実測する。実Boardの確定は呼出し元が一度だけ行う。"""
         started = time.perf_counter_ns()
-        result = (
+        if self._timed is not None:
+            self._timed.select(rows, color, moves)
+            result = self._timed.result
+            assert result is not None
+            ended = time.perf_counter_ns()
+            self._search = started, ended, result
+            return result.move
+        result_fixed = (
             ai_engine.search_minimax(rows, color, self._depth, self._legal, self._apply)
             if self._algorithm == 'minimax'
             else ai_engine.search_alpha_beta(
@@ -208,8 +263,8 @@ class SearchTrace:
             )
         )
         ended = time.perf_counter_ns()
-        self._search = started, ended, result
-        return result.move
+        self._search = started, ended, result_fixed
+        return result_fixed.move
 
     def record(
         self, index: int, command: str, received: int, rows: ai_engine.BoardRows, response: str
@@ -247,10 +302,31 @@ class SearchTrace:
                 phase = 'pass_probe' if self._legal(rows, other) else 'terminal_probe'
                 nodes = completed = 0
                 reason = 'no_legal_move'
+                begun = 0
+                extra: dict[str, object] = {'value': None, 'leaves': 0, 'passes': 0, 'cutoffs': 0}
             else:
                 started, ended, result = self._search
-                nodes, completed = result.nodes, result.depth
-                phase, reason = 'normal_move', 'fixed_depth_completed'
+                nodes = result.nodes
+                phase = 'normal_move'
+                if isinstance(result, timed_search.TimedResult):
+                    completed, begun = result.completed_depth, result.max_depth_started
+                    reason = result.stop_reason
+                    extra = {
+                        'value': result.value,
+                        'leaves': result.leaves,
+                        'passes': result.passes,
+                        'cutoffs': result.cutoffs,
+                        'stop_deadline_ns': result.stop_deadline_ns,
+                        'stop_requested_ns': result.stop_requested_ns,
+                    }
+                else:
+                    completed = begun = result.depth
+                    reason = 'fixed_depth_completed'
+                    extra = {
+                        'value': result.value,
+                        'leaves': result.leaves,
+                        'passes': result.passes,
+                    }
             event.update(
                 {
                     'type': 'genmove',
@@ -266,7 +342,7 @@ class SearchTrace:
                     'search_end_ns': ended,
                     'search_elapsed_ns': ended - started,
                     'nodes': nodes,
-                    'max_depth_started': completed,
+                    'max_depth_started': begun,
                     'completed_depth': completed,
                     'stop_reason': reason,
                     'model_load_status': 'not_required',
@@ -274,6 +350,7 @@ class SearchTrace:
                     'model_load_end_ns': None,
                 }
             )
+            event.update(extra)
             self._sequence += 1
             self._search = None
         if words != ['quit']:

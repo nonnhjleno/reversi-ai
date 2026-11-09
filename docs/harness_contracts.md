@@ -434,3 +434,24 @@ Phase 2には実AIの正式producer追加を含めない。callbackの戻り値�
 ## Phase 4実AIの対応範囲
 
 実装前の[Phase 4設計](phase4_design.md)に、depth1〜4、minimax-call-v1、固定深度完了・パス問い合わせの計数、モデルなし、子時計・全コマンド・quit/終了の原trace生成を定義した。未対応予算は拒否する。unknown＋空searchの既存非計測経路はunknownのまま保持する。本章の限定対応は、ハーネスの既存契約・正式資格の要件を緩和しない。
+
+
+## Phase 5の時間対応境界
+
+[Phase 5設計](phase5_design.md)を実装前に確定した。参照Minimax・固定深度Alpha-Beta・評価・depth1〜4のtrace経路は維持する。時間対応の新規timed_search.pyは完了反復だけを返し、途中中断分を含むminimax-call-v1の実呼出し計数を保持する。開始深度と完了深度を分け、深度0候補のvalueはnullとする。合法な安全応答はモデル障害ではなくfallback=false。モデルなしはnull/not_requiredを維持する。
+
+対応timeは通常intのlimit_ns=1000000〜6500000000、algorithm=iterative、ordered=bool、max_depth=1〜4、deterministic=false、counting_definition_id=minimax-call-v1に限定する。未知キー・不正型・未対応budget・モデル指定は拒否する。要求configと実効configを一致させ、depthでの決定性trueをtimeへ流用しない。
+
+CCはstdin行取得直後、SS/SEは純粋探索の入口/返却、CRは応答準備。実着手・trace・stdout/flushはsearch_onlyの外で全応答に含める。全反復でCC起点の単一期限を共有し、time予算とコマンド停止期限の早い方で停止を要求する。6.0/6.5秒と0.5秒予約分は未検証の初期候補で、外部全応答で評価する。SS/SEの厳密time上限、時計・identity・全command/lifecycle・schema5/trace4/validation3・正式ANDは変更しない。
+
+環境設定なしの提出mainは時間対応を用い、unknown＋空searchは従来の固定深度2・非計測を維持する。Board直接構築の既定も既存import互換のため固定深度2を保持する。実装結果・資格・未達は報告で別判定する。
+
+
+Phase 5の初期time予約分5%では参考100局中2着手、次の25msを含む予約分でも別の100局中6着手が100msを超過した。後者の停止確認遅れは最大59.2659msで、巻戻しは最大28.4µsだった。現行の予約分はmax(100000,min(120000000,limit_ns*4//5),limit_ns//20)nsとする。120msは最大停止確認遅れの2倍118.5318msを10ms単位で切り上げた値。短予算では予約分を要求上限の80%までに制限し、100msでは20msに停止要求、新反復は19msより前だけ開始する。通常提出7秒目標、6秒開始限界、6.5秒停止要求、0.5秒後処理予約は変更しない。要求time上限・SS/SE・正式ANDは緩和せず、未知のOS停止に対する保証もしない。旧失敗は保持し、変更後の全品質・正式計測・参考対局・実応答をguard120へ新規取得する。
+
+
+## Phase 5最終レビュー：品質stepの経過上限
+
+品質stepのtimeoutは、run_step開始からのperf_counter実測を終了後にも照合する。Windowsのprocess.wait(timeout)は低電力状態の時間を待機上限に含めないため、それだけで外部経過の上限を判定しない。子の終了コードが0でも、実測経過が指定上限を超えた場合はtimeout_elapsedを記録してpassed=falseとする。実際の終了コード・経過・原ログは保持する。既存のTimeoutExpired時の所有process tree回収と、終了値・未実行・証拠の失敗判定を維持する。
+
+休止中にPythonが即時停止処理を実行できるとは保証しない。復帰後の超過を成功へ変えず、timeout値・必須検査件数・評価schema5/trace4/validation3・正式AND条件を変更しない。過去の品質reportは書き換えず、当時の結果と今回の修正後の結果を区別する。

@@ -1,9 +1,9 @@
 # リバーシAI 段階開発・評価設計書
 
 - **文書ID**：REVERSI-AI-PLAN-2026-10-16
-- **状態**：Phase 0統合済み。Phase 1A・1Bは実装、品質検証、固定random_v0とのdescriptive比較を完了。現状と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照。Phase 2は実装PASS・参考評価完了、棋力版の昇格は保留。[Phase 2実装記録](reports/20261030_phase2_implementation.md)を参照。Phase 3は実装PASS・参考評価完了。参考昇格条件達成・正式採用未達。[Phase 3設計](phase3_design.md)・[実装記録](reports/20261106_phase3_implementation.md)を参照。Phase 4以降は未着手。
+- **状態**：Phase 0統合済み。Phase 1A・1Bは実装、品質検証、固定random_v0とのdescriptive比較を完了。現状と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照。Phase 2は実装PASS・参考評価完了、棋力版の昇格は保留。[Phase 2実装記録](reports/20261030_phase2_implementation.md)を参照。Phase 3は実装PASS・参考評価完了。参考昇格条件達成・正式採用未達。[Phase 3設計](phase3_design.md)・[実装記録](reports/20261106_phase3_implementation.md)を参照。Phase 4はAlpha-Beta・depth計測を完了。Phase 5は反復深化・安全応答・search_v1固定・ローカルZIP準備を完了した。正式計測と応答安全性は測定範囲に限定し、サーバー実機確認は未実施。[Phase 5実装・評価記録](reports/20261108_phase5_implementation.md)を参照。Phase 6以降は未着手。
 - **作成日**：2026-10-16
-- **改訂日**：2026-11-06
+- **改訂日**：2026-11-08
 - **対象**：`reversi_player/reversi.py` を基点とする対戦AI、既存の検証・評価ハーネス
 - **目的**：固定した探索型の比較相手を作り、n-tuple価値モデルを自己対戦TD学習で改善し、学習済みモデルと探索を組み合わせる。各変更の正しさ・実行品質・棋力を分離して検証可能にする。
 
@@ -54,7 +54,7 @@ Phase 0の[実施報告](reports/20261016_phase0.md)と[manifest](../benchmark_s
 - GUIは `reversi_player/web.py` から起動。AI改修後も既存GUI連携を維持する。
 - ハーネスはAIを独立プロセスとして扱い、独立した `harness/referee.py` により盤面を検証する。
 - 現行ハーネスは evaluation/analysis/comparison schema5、trace4、validation3。正式時計照合の対応契約はWindows／直接インストールのCPython 3.13.5／QPCに限定される。
-- 既存の実AIは探索予算受領・trace4実測に未対応。fixtureの合格は実AIの適合証拠ではない。
+- 実AIはPhase 4でdepth1〜4、Phase 5でtime1,000,000〜6,500,000,000nsの受領とtrace4に対応した。実時計の正式資格は取得したdepth2/100msと対応環境の範囲だけに与える。fixtureの合格や入力値域への対応を、全設定の実測適合証拠とは扱わない。
 
 ### 2.2 保持すべき外部インターフェース
 
@@ -312,6 +312,12 @@ Phase 1Bの確定契約・実験条件・結果は[Phase 1引き継ぎ資料](ph
 **このPhaseで作る評価軸**：**固定相手の再現性＋時間余裕＋タイムアウト耐性**。同じ固定局面・予算・環境で深度／外部応答／内部探索／異常を測る。time評価には`deployment`を用い、正式固定得点CIと分離する。
 
 **固有完了条件**：中断後の合法応答・盤面不変・固定相手の独立起動／候補変更後の不変性・共通ゲートPASS。genmove10秒の課題期限を守り、**測定した全応答8秒以内**を暫定安全目標とする。内部探索の8秒上限案だけで外部8秒達成とはしない。参考比較を保存し、ランダムへの勝ち点率55%以上・95%下限50%超・90%等は未採用の目標案として扱う。正式採用基準にする場合は相手の適格性・母集合・予算・件数と共に事前登録する。実装PASSで学習基盤へ進める場合も、優越性未確認は残す。[R7]
+
+**2026-11-08実施結果**：Phase 5のローカル作業完了。反復深化・協調的中断・合法な安全応答を実装し、Full1604件・独立smoke1件、参考408局、678応答の検証を完了した。678件の応答測定は全件7秒以内で、正式計測はWindows直接CPython3.13.5のdepth2と100ms timeに限定する。
+
+search_v1を全依存・設定・hashごと独立固定し、提出用7秒ZIPと開始時Phase 4の復旧ZIPを展開物・別cwdで検証した。
+
+一般的な棋力向上とサーバー実機での安全性は未確認。先行runで固定Bの通常play timeout1件を観測し、原因未確定のまま別記録に保持した。全試行で異常0とは扱わない。Phase 6の別途設計へ進行可能とするが、学習・Phase 6以降・Git統合・外部提出は未実施。[Phase 5実装・評価記録](reports/20261108_phase5_implementation.md)を参照。 固定depthは0〜4の既存APIを保全し、時間対応側も最大4とした。初期100ms超過2件、25ms予約分での超過6件は失敗として保存し、現行予約分・red/green検証・再取得を[実装設計](phase5_design.md)へ記録した。nodes、TT、bitboard、学習は追加していない。
 
 ### Phase 6：n-tuple価値モデルの推論・保存・読込
 

@@ -1,0 +1,12 @@
+{
+  "format_version": 2,
+  "budget": {
+    "kind": "depth",
+    "limit_depth": 2
+  },
+  "search": {
+    "algorithm": "alphabeta",
+    "deterministic": true,
+    "counting_definition_id": "minimax-call-v1"
+  }
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import random as random
 import time
 from typing import TYPE_CHECKING
@@ -10,12 +11,13 @@ _CHILD_ENTRY_NS = time.perf_counter_ns()
 
 if TYPE_CHECKING:
     from typing import Any, Literal, TypeGuard
-    from reversi_player import ai_engine, search_trace
+    from reversi_player import ai_engine, search_trace, timed_search
 elif __package__:
-    from . import ai_engine, search_trace
+    from . import ai_engine, search_trace, timed_search
 else:
     import ai_engine
     import search_trace
+    import timed_search
 
 
 def _is_move(value: object) -> TypeGuard[ai_engine.Move]:
@@ -359,13 +361,25 @@ def _dispatch(board: Board, cmd: list[str]) -> bool:
 def main() -> None:
     """通常経路の入出力を維持し、対応設定では実計測を別JSONLへ保存する。"""
     trace = search_trace.load(_CHILD_ENTRY_NS, legal_moves_for, apply_move)
-    board = Board(selector=trace.select if trace is not None else None)
+    # unknown＋空searchは従来の固定深度・非計測を維持する。
+    controller = (
+        timed_search.TimedSelector(legal_moves_for, apply_move, timed_search.load_policy())
+        if trace is None and not os.environ.get('REVERSI_EVAL_CONFIG') else None
+    )
+    selector = trace.select if trace is not None else (
+        controller.select if controller is not None else None
+    )
+    board = Board(selector=selector)
     if trace is not None:
         trace.ready()
     index = 0
     while True:
         line = input()
         received = time.perf_counter_ns()
+        if trace is not None:
+            trace.begin(received)
+        elif controller is not None:
+            controller.begin(received)
         cmd = line.split()
         if trace is None:
             running = _dispatch(board, cmd)
