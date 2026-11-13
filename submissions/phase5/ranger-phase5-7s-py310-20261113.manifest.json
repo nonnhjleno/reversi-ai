@@ -1,0 +1,86 @@
+{
+  "manifest_version": 1,
+  "package_id": "ranger-phase5-7s-py310-20261113",
+  "created_client_date": "2026-11-13",
+  "source_commit": "b0d4f3ba46bcf9dfe887a498680a1104d83692e2",
+  "source_branch": "fix/server-python-compatibility",
+  "source_dirty": true,
+  "archive": {
+    "path": "submissions\\phase5\\ranger-phase5-7s-py310-20261113.zip",
+    "sha256": "7349b9c3b5b779460536815ebd001dfa0f0e026de798e57135b71c630bf0ff74",
+    "size": 18502,
+    "entrypoint": "reversi.py",
+    "layout": "exactly five files at ZIP root; no containing directory"
+  },
+  "assets": {
+    "reversi.py": {
+      "source": "reversi_player/reversi.py",
+      "sha256": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c",
+      "size": 14842
+    },
+    "ai_engine.py": {
+      "source": "reversi_player/ai_engine.py",
+      "sha256": "c37f54d1b60d15f5c8de67f11df10ef439cfdf880f0f9e744bed95bb9f1b2fbf",
+      "size": 16656
+    },
+    "search_trace.py": {
+      "source": "reversi_player/search_trace.py",
+      "sha256": "3936022226c1c0266dac2de5c5c9e350c5fd7344b7390436c8ccdd5c40151577",
+      "size": 14896
+    },
+    "timed_search.py": {
+      "source": "reversi_player/timed_search.py",
+      "sha256": "b00216df1db3e6e2fe4654eda1ae251e49af470e0ca3556370ed92d88d6bbad9",
+      "size": 11748
+    },
+    "response_config.json": {
+      "source": "reversi_player/response_config.json",
+      "sha256": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef",
+      "size": 122
+    }
+  },
+  "validation": {
+    "compatibility_evidence": "evaluation_results\\server-compat-5bb8abe313da4dcdb2b8d9e6bb2ed041/verification.json",
+    "tested_runtime_versions": [
+      "3.10.11",
+      "3.11.9",
+      "3.13.5"
+    ],
+    "platform": "Windows",
+    "seven_command_types_passed": true,
+    "descriptive_games_vs_random_v0": 6,
+    "protected_files": 16,
+    "protected_unchanged": true,
+    "algorithm_ast_unchanged": true,
+    "quality_root": "evaluation_results/quality-fbbc8f83f90a47fbb093d57e586d314f",
+    "quality_status": "PASS",
+    "server_verified": false,
+    "quality_sha256": "43216d6455a7f41b29106fa4b086bceffb62d06aed7d2d371da5315e2b8aec48",
+    "quality_steps": 11,
+    "source_start_end_current_match": true,
+    "publication_errors": 0,
+    "pytest_passed": 1621,
+    "independent_smoke_passed": 1,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "strict_files": 19,
+    "source_files": 48
+  },
+  "packaging": {
+    "compression": "DEFLATE",
+    "fixed_member_timestamp": [
+      2026,
+      11,
+      13,
+      0,
+      0,
+      0
+    ],
+    "file_mode": "0644",
+    "create_system": 3,
+    "compression_level": "per-member ZipInfo uses zlib default",
+    "timestamp_note": "reproducible metadata; not source modification times"
+  },
+  "scope": "Only type-alias syntax compatibility changed. Search algorithms, constants, response policy, fixed baselines and old ZIP are preserved. Local smoke games do not establish strength improvement. Server runtime and nan display mechanism are unknown."
+}

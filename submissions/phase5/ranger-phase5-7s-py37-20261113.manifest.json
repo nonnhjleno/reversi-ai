@@ -1,0 +1,92 @@
+{
+  "manifest_version": 1,
+  "package_id": "ranger-phase5-7s-py37-20261113",
+  "created_client_date": "2026-11-13",
+  "source_commit": "12a6d8baf9ca5000fd2df842b98e7ccbf3cde000",
+  "source_branch": "fix/server-python37-compatibility",
+  "source_dirty": true,
+  "archive": {
+    "path": "submissions\\phase5\\ranger-phase5-7s-py37-20261113.zip",
+    "sha256": "55d1bb68cd2ecc8bd140314cc7fde96e3a9a4e2b74453cab4202981a96486671",
+    "size": 18535,
+    "entrypoint": "reversi.py",
+    "layout": "exactly five files at ZIP root; no containing directory"
+  },
+  "assets": {
+    "reversi.py": {
+      "source": "reversi_player/reversi.py",
+      "sha256": "3d903221de2738c6fd3c7df6a6133370314a9bfff34740e202bc47c99228ea2c",
+      "size": 14842
+    },
+    "ai_engine.py": {
+      "source": "reversi_player/ai_engine.py",
+      "sha256": "93850b2a98e4f4c222be4895606c7e50ba9da725bca79e6349547c87463b1168",
+      "size": 16723
+    },
+    "search_trace.py": {
+      "source": "reversi_player/search_trace.py",
+      "sha256": "782d1683845a49ed7c8b36836c91fc714b6703fe2b4fe87fb330030f29c3c172",
+      "size": 14898
+    },
+    "timed_search.py": {
+      "source": "reversi_player/timed_search.py",
+      "sha256": "262af4ac41cabfe62dec34bbd611964bc839dffd8d225df2235b0ad8e6271aba",
+      "size": 11747
+    },
+    "response_config.json": {
+      "source": "reversi_player/response_config.json",
+      "sha256": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef",
+      "size": 122
+    }
+  },
+  "validation": {
+    "compatibility_evidence": "evaluation_results\\server-compat37-f1db579a9f8a48bc9b244406917e3ffc\\verification.json",
+    "tested_runtime_versions": [
+      "Python 3.7.9",
+      "Python 3.8.10",
+      "Python 3.9.13",
+      "Python 3.10.11",
+      "Python 3.11.9",
+      "Python 3.13.5"
+    ],
+    "platform": "Windows",
+    "seven_command_types_passed": true,
+    "descriptive_games_vs_random_v0": 12,
+    "protected_files": 18,
+    "protected_unchanged": true,
+    "algorithm_ast_unchanged": {
+      "ai_engine.py": true,
+      "timed_search.py": true,
+      "search_trace.py": true
+    },
+    "quality_status": "PASS",
+    "server_verified": false,
+    "quality_root": "evaluation_results\\quality-2c4e3d4eed0246379af3eace8e69bedc",
+    "quality_sha256": "b55e27a097e58567184563d2036e54e369fc435af89e1ac3a6bfd784fded1833",
+    "quality_steps": 11,
+    "pytest_passed": 1635,
+    "independent_smoke_passed": 1,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "strict_files": 19,
+    "source_files": 48,
+    "publication_errors": 0,
+    "source_start_end_current_match": true
+  },
+  "packaging": {
+    "compression": "DEFLATE",
+    "fixed_member_timestamp": [
+      2026,
+      11,
+      13,
+      0,
+      0,
+      0
+    ],
+    "file_mode": "0644",
+    "create_system": 3,
+    "compression_level": "per-member ZipInfo uses zlib default"
+  },
+  "scope": "Python 3.7+ startup compatibility only. Runtime type expressions changed; search/evaluation/configuration/name/protocol preserved. Server Python, launch method and nan display mechanism remain unknown."
+}

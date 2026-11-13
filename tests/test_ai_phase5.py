@@ -545,7 +545,8 @@ def test_production_dependencies_and_reference_hash_are_preserved():
         hashlib.sha256(
             Path('reversi_player/ai_engine.py').read_bytes().replace(b'\r\n', b'\n')
         ).hexdigest()
-        == 'e1f02768f8333394026000585e214a1280c368132b0e5b2cad1d3da6457732e2'
+        # Python互換性修正と、独立した角接続辺石評価候補を含む実験版。
+        == '4c261fce374c4c35c81ebab8117bd136bbcfbde5dd3a2d8ecfa0c0220b48eda5'
     )
 
     source = Path(timed_search.__file__).read_text(encoding='utf-8')
@@ -555,6 +556,55 @@ def test_production_dependencies_and_reference_hash_are_preserved():
     assert 'import reversi' not in source and 'import web' not in source
 
     assert search_trace.clock_descriptor() == protocol.clock_descriptor()
+
+
+@pytest.mark.parametrize('filename', ['ai_engine.py', 'timed_search.py', 'search_trace.py'])
+def test_compatibility_fix_preserves_frozen_search_implementation(filename):
+    """固定探索を維持し、評価候補で許可した関数以外が変わらないことを検査する。"""
+    import ast
+
+    class NormalizeCastTypes(ast.NodeTransformer):
+        """castの型引数だけを同じ型式へ戻し、型の変更も検出できる形で比較する。"""
+
+        def visit_Call(self, node):
+            """旧Python向けに文字列化した型式を解析し、他の呼出引数は保持する。"""
+            self.generic_visit(node)
+            if (
+                isinstance(node.func, ast.Name)
+                and node.func.id == 'cast'
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
+                node.args[0] = ast.parse(node.args[0].value, mode='eval').body
+            return node
+
+    implementations = []
+    for directory in ('baselines/search_v1', 'reversi_player'):
+        tree = ast.parse(Path(directory, filename).read_text(encoding='utf-8'))
+        tree = NormalizeCastTypes().visit(tree)
+        implementations.append(
+            {
+                node.name: ast.dump(node, include_attributes=False)
+                for node in tree.body
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef))
+            }
+        )
+    reference, current = implementations
+    allowed_edge_evaluation_changes = {
+        '_PositionFeatures',
+        '_corner_connected_edge_stones',
+        '_extract_features',
+        '_score_features',
+        'evaluate_position',
+    }
+    assert set(reference) <= set(current)
+    assert set(current) - set(reference) <= allowed_edge_evaluation_changes
+    assert all(
+        reference[name] == current[name]
+        for name in reference
+        if name not in allowed_edge_evaluation_changes
+    )
 
 
 @pytest.mark.parametrize(

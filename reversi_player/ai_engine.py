@@ -3,15 +3,19 @@
 from __future__ import annotations
 
 import random
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
-type BoardRows = tuple[str, ...]
-type Move = tuple[int, int]
-type LegalMoves = tuple[Move, ...]
-type MoveSelector = Callable[[BoardRows, str, LegalMoves], Move | None]
-type LegalMovesFor = Callable[[BoardRows, str], LegalMoves]
-type ApplyMove = Callable[[BoardRows, str, Move], BoardRows]
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+# 型エイリアスの右辺は実行されるため、Python 3.7でも評価できる表記を使う。
+BoardRows: TypeAlias = Tuple[str, ...]
+Move: TypeAlias = Tuple[int, int]
+LegalMoves: TypeAlias = Tuple[Move, ...]
+MoveSelector: TypeAlias = Callable[[BoardRows, str, LegalMoves], Optional[Move]]
+LegalMovesFor: TypeAlias = Callable[[BoardRows, str], LegalMoves]
+ApplyMove: TypeAlias = Callable[[BoardRows, str, Move], BoardRows]
 
 POSITION_WEIGHTS = (
     (120, -20, 20, 5, 5, 20, -20, 120),
@@ -55,6 +59,29 @@ def select_positional_move(rows: BoardRows, color: str, legal_moves: LegalMoves)
 
 
 _CORNERS = ((0, 0), (7, 0), (0, 7), (7, 7))
+_CORNER_EDGE_DIRECTIONS = (
+    ((0, 0), ((1, 0), (0, 1))),
+    ((7, 0), ((-1, 0), (0, 1))),
+    ((0, 7), ((1, 0), (0, -1))),
+    ((7, 7), ((-1, 0), (0, -1))),
+)
+EDGE_STABILITY_BLEND_PERCENT = 10
+
+
+def _corner_connected_edge_stones(rows: BoardRows) -> frozenset[Move]:
+    """角から辺上を同色で連続する非角石を、確定石の部分集合として返す。"""
+    stable: set[Move] = set()
+    for (cx, cy), steps in _CORNER_EDGE_DIRECTIONS:
+        color = rows[cy][cx]
+        if color == 'E':
+            continue
+        for dx, dy in steps:
+            x, y = cx + dx, cy + dy
+            while 0 <= x < 8 and 0 <= y < 8 and rows[y][x] == color:
+                if (x, y) not in _CORNERS:
+                    stable.add((x, y))
+                x, y = x + dx, y + dy
+    return frozenset(stable)
 
 
 def validate_position(rows: BoardRows, color: str) -> None:
@@ -85,6 +112,7 @@ class _PositionFeatures:
     position_difference: int
     disc_difference: int
     terminal: bool
+    corner_connected_edge_difference: int = 0
 
     @property
     def normalized(self) -> tuple[float, float, float]:
@@ -138,17 +166,27 @@ def _extract_features(
         for y, row in enumerate(rows)
         for x, cell in enumerate(row)
     )
+    stable_edge = _corner_connected_edge_stones(rows)
+    corner_connected_edge_difference = sum(
+        (rows[y][x] == viewpoint) - (rows[y][x] == opponent) for x, y in stable_edge
+    )
     return _PositionFeatures(
         corner_difference,
         len(own_moves) - len(opponent_moves),
         position_difference,
         sum(row.count(viewpoint) - row.count(opponent) for row in rows),
         not own_moves and not opponent_moves,
+        corner_connected_edge_difference,
     )
 
 
-def _score_features(features: _PositionFeatures) -> float:
+def _score_features(
+    features: _PositionFeatures,
+    stability_blend_percent: int = EDGE_STABILITY_BLEND_PERCENT,
+) -> float:
     """確定勝敗を優先し、非終局は整数分子を一度だけfloatへ変換する。"""
+    if type(stability_blend_percent) is not int or not 0 <= stability_blend_percent <= 100:
+        raise ValueError('invalid_stability_blend_percent')
     if features.terminal:
         difference = features.disc_difference
         if difference > 0:
@@ -163,17 +201,33 @@ def _score_features(features: _PositionFeatures) -> float:
         + 435 * features.mobility_difference
         + 20 * features.position_difference
     )
-    return numerator / 696
+    if stability_blend_percent == 0:
+        return numerator / 696
+    blended_numerator = (
+        numerator * (100 - stability_blend_percent)
+        + 2900 * features.corner_connected_edge_difference * stability_blend_percent
+    )
+    return blended_numerator / 69600
 
 
-def evaluate_position(rows: BoardRows, viewpoint: str, legal_moves_for: LegalMovesFor) -> float:
+def evaluate_position(
+    rows: BoardRows,
+    viewpoint: str,
+    legal_moves_for: LegalMovesFor,
+    stability_blend_percent: int = EDGE_STABILITY_BLEND_PERCENT,
+) -> float:
     """指定色の固定視点で盤面価値を返す。盤面・乱数・標準出力は変更しない。
 
     両色に合法手がなければ終局。一方だけのパスは非終局として採点する。
-    非終局の絶対値は100以下で、勝敗確定値はその範囲を超える。
+    非終局は既存評価と角接続辺石差の凸結合で、絶対値100以下を保つ。
+    stability_blend_percentを0にすると既存評価へ戻る。角そのものは別特徴で数える。
     この得点は勝率ではなく、人手で固定した候補比較用の値である。
     """
-    return _score_features(_extract_features(rows, viewpoint, legal_moves_for))
+    if type(stability_blend_percent) is not int or not 0 <= stability_blend_percent <= 100:
+        raise ValueError('invalid_stability_blend_percent')
+    return _score_features(
+        _extract_features(rows, viewpoint, legal_moves_for), stability_blend_percent
+    )
 
 
 def make_one_ply_selector(legal_moves_for: LegalMovesFor, apply_move: ApplyMove) -> MoveSelector:

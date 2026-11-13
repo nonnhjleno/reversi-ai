@@ -37,8 +37,33 @@ def _opponent(color):
     return 'W' if color == 'B' else 'B'
 
 
+def _edge_stability_difference(rows, color):
+    """独立辺走査で角接続石を数え、角の重複を避けて差を返す。"""
+    other = _opponent(color)
+    anchored = set()
+    edges = (
+        ((0, 0), ((1, 0), (0, 1))),
+        ((7, 0), ((-1, 0), (0, 1))),
+        ((0, 7), ((1, 0), (0, -1))),
+        ((7, 7), ((-1, 0), (0, -1))),
+    )
+    for (cx, cy), directions in edges:
+        owner = rows[cy][cx]
+        if owner not in ('B', 'W'):
+            continue
+        for dx, dy in directions:
+            x, y = cx + dx, cy + dy
+            while 0 <= x < 8 and 0 <= y < 8 and rows[y][x] == owner:
+                if (x, y) not in CORNERS:
+                    anchored.add((x, y, owner))
+                x, y = x + dx, y + dy
+    return sum(owner == color for _, _, owner in anchored) - sum(
+        owner == other for _, _, owner in anchored
+    )
+
+
 def _evaluate(rows, color):
-    """独立ルールと元の正規化式をFractionで計算する。"""
+    """独立ルールと候補の10%評価混合をFractionで計算する。"""
     other = _opponent(color)
     own, opposing = referee.legal_moves(rows, color), referee.legal_moves(rows, other)
     discs = sum(row.count(color) - row.count(other) for row in rows)
@@ -54,11 +79,13 @@ def _evaluate(rows, color):
             ):
                 weight = 0
             position += weight * ((cell == color) - (cell == other))
-    return (
+    base = (
         40 * Fraction(corner, 4)
         + 40 * Fraction(len(own) - len(opposing), 64)
         + 20 * Fraction(position, 696)
     )
+    stable = 100 * Fraction(_edge_stability_difference(rows, color), 24)
+    return Fraction(90, 100) * base + Fraction(10, 100) * stable
 
 
 def _oracle(rows, turn, depth):

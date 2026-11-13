@@ -2,21 +2,22 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 import json
 from pathlib import Path
 import time
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Callable, cast
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     from reversi_player import ai_engine
 elif __package__:
     from . import ai_engine
 else:
     import ai_engine
 
-type Clock = Callable[[], int]
+Clock: TypeAlias = Callable[[], int]
 _CORNERS = ((0, 0), (7, 0), (0, 7), (7, 7))
 MAX_TIMED_DEPTH = 4
 MIN_TIME_BUDGET_NS = 1_000_000
@@ -52,7 +53,7 @@ def load_policy() -> ResponsePolicy:
     keys = {'target_ns', 'new_depth_margin_ns', 'stop_margin_ns', 'max_depth'}
     if not isinstance(raw, dict) or set(raw) != keys:
         raise ValueError('invalid_response_config')
-    values = cast(dict[str, object], raw)
+    values = cast('dict[str, object]', raw)
     if any(type(v) is not int for v in values.values()):
         raise ValueError('invalid_response_config')
     return ResponsePolicy(
