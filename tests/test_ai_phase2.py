@@ -62,6 +62,38 @@ def _oracle(rows, color):
     return (corner, counts[0] - counts[1], position, discs, terminal), score
 
 
+def _edge_stability_oracle(rows, color):
+    """角を除く同色連続辺石を、探索や評価実装を使わず数える。"""
+    other = 'W' if color == 'B' else 'B'
+    anchored = set()
+    edges = (
+        ((0, 0), ((1, 0), (0, 1))),
+        ((7, 0), ((-1, 0), (0, 1))),
+        ((0, 7), ((1, 0), (0, -1))),
+        ((7, 7), ((-1, 0), (0, -1))),
+    )
+    for (cx, cy), directions in edges:
+        owner = rows[cy][cx]
+        if owner not in ('B', 'W'):
+            continue
+        for dx, dy in directions:
+            x, y = cx + dx, cy + dy
+            while 0 <= x < 8 and 0 <= y < 8 and rows[y][x] == owner:
+                if (x, y) not in CORNERS:
+                    anchored.add((x, y, owner))
+                x, y = x + dx, y + dy
+    return sum(owner == color for _, _, owner in anchored) - sum(
+        owner == other for _, _, owner in anchored
+    )
+
+
+def _blended_score(base_score, stable_difference):
+    """独立な有理数計算で、登録済み10%の確定石特徴を混ぜる。"""
+    return base_score * Fraction(90, 100) + Fraction(100 * stable_difference, 24) * Fraction(
+        10, 100
+    )
+
+
 def _replay(case):
     """固定棋譜の交互手番・パス・合法性から到達盤面を独立に復元する。"""
     rows = referee.INITIAL_ROWS
@@ -230,8 +262,11 @@ def test_features_evaluation_and_each_candidate_match_independent_oracle(label):
             features.disc_difference,
             features.terminal,
         ) == raw
+        stable_difference = _edge_stability_oracle(rows, color)
+        assert features.corner_connected_edge_difference == stable_difference
         value = ai_engine.evaluate_position(rows, color, reversi.legal_moves_for)
-        assert value == pytest.approx(float(score), abs=1e-12, rel=0)
+        expected_score = score if features.terminal else _blended_score(score, stable_difference)
+        assert value == pytest.approx(float(expected_score), abs=1e-12, rel=0)
         assert math.isfinite(value)
         if not features.terminal:
             assert abs(value) <= 100
@@ -239,13 +274,18 @@ def test_features_evaluation_and_each_candidate_match_independent_oracle(label):
     for candidate in case['candidates']:
         after = referee.apply_move(rows, case['color'], tuple(candidate['move']))
         value = ai_engine.evaluate_position(after, case['color'], reversi.legal_moves_for)
-        assert value == pytest.approx(
-            float(Fraction(candidate['features']['score_fraction'])), abs=1e-12, rel=0
+        _, base_score = _oracle(after, case['color'])
+        features = ai_engine._extract_features(after, case['color'], reversi.legal_moves_for)
+        expected_score = (
+            base_score
+            if features.terminal
+            else _blended_score(base_score, _edge_stability_oracle(after, case['color']))
         )
+        assert value == pytest.approx(float(expected_score), abs=1e-12, rel=0)
 
 
 def test_initial_features_and_hand_calculated_first_move():
-    """黒(3,2)後は角0・合法手数3対3・位置差9なので20*9/696=15/58。"""
+    """黒(3,2)後は角接続辺石0なので、既存値15/58の90%を返す。"""
     initial = ai_engine._extract_features(referee.INITIAL_ROWS, 'B', reversi.legal_moves_for)
     assert initial.normalized == (0, 0, 0)
     rows = referee.apply_move(referee.INITIAL_ROWS, 'B', (3, 2))
@@ -257,7 +297,7 @@ def test_initial_features_and_hand_calculated_first_move():
     ) == (0, 0, 9)
     assert features.normalized == (0, 0, 9 / 696)
     assert ai_engine.evaluate_position(rows, 'B', reversi.legal_moves_for) == float(
-        Fraction(15, 58)
+        Fraction(27, 116)
     )
     assert features.contributions == (0, 0, float(Fraction(15, 58)))
 
@@ -331,6 +371,24 @@ def test_integer_numerator_preserves_mathematical_ties():
     zero = ai_engine._PositionFeatures(0, 0, 0, 0, False)
     cancelled = ai_engine._PositionFeatures(0, 4, -87, 0, False)
     assert ai_engine._score_features(zero) == ai_engine._score_features(cancelled) == 0
+
+
+@pytest.mark.parametrize('label', CASES)
+def test_stability_candidate_toggle_matches_independent_blend(label):
+    """0%で既存評価へ戻り、10%で独立計算した特徴だけを混ぜる。"""
+    rows = tuple(CASES[label]['rows'])
+    for color in ('B', 'W'):
+        _, base = _oracle(rows, color)
+        difference = _edge_stability_oracle(rows, color)
+        terminal = ai_engine._extract_features(rows, color, reversi.legal_moves_for).terminal
+        current = ai_engine.evaluate_position(rows, color, reversi.legal_moves_for, 0)
+        assert current == float(base)
+        candidate = ai_engine.evaluate_position(rows, color, reversi.legal_moves_for, 10)
+        assert candidate == pytest.approx(
+            float(base if terminal else _blended_score(base, difference)),
+            abs=1e-12,
+            rel=0,
+        )
 
 
 @pytest.mark.parametrize('label', CASES)

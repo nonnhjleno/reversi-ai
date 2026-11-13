@@ -545,8 +545,8 @@ def test_production_dependencies_and_reference_hash_are_preserved():
         hashlib.sha256(
             Path('reversi_player/ai_engine.py').read_bytes().replace(b'\r\n', b'\n')
         ).hexdigest()
-        # Python 3.7対応のTypeAlias構文へ変更。探索本体の一致は別テストで検査する。
-        == '2291da912920b64c53c314d89a056e6499220c737d923d9c9e4cacba2d6023cb'
+        # Python互換性修正と、独立した角接続辺石評価候補を含む実験版。
+        == '4c261fce374c4c35c81ebab8117bd136bbcfbde5dd3a2d8ecfa0c0220b48eda5'
     )
 
     source = Path(timed_search.__file__).read_text(encoding='utf-8')
@@ -560,7 +560,7 @@ def test_production_dependencies_and_reference_hash_are_preserved():
 
 @pytest.mark.parametrize('filename', ['ai_engine.py', 'timed_search.py', 'search_trace.py'])
 def test_compatibility_fix_preserves_frozen_search_implementation(filename):
-    """互換性修正で評価・探索・期限処理の関数やクラスを変更していないことを検査する。"""
+    """固定探索を維持し、評価候補で許可した関数以外が変わらないことを検査する。"""
     import ast
 
     class NormalizeCastTypes(ast.NodeTransformer):
@@ -584,13 +584,27 @@ def test_compatibility_fix_preserves_frozen_search_implementation(filename):
         tree = ast.parse(Path(directory, filename).read_text(encoding='utf-8'))
         tree = NormalizeCastTypes().visit(tree)
         implementations.append(
-            [
-                ast.dump(node, include_attributes=False)
+            {
+                node.name: ast.dump(node, include_attributes=False)
                 for node in tree.body
                 if isinstance(node, (ast.FunctionDef, ast.ClassDef))
-            ]
+            }
         )
-    assert implementations[0] == implementations[1]
+    reference, current = implementations
+    allowed_edge_evaluation_changes = {
+        '_PositionFeatures',
+        '_corner_connected_edge_stones',
+        '_extract_features',
+        '_score_features',
+        'evaluate_position',
+    }
+    assert set(reference) <= set(current)
+    assert set(current) - set(reference) <= allowed_edge_evaluation_changes
+    assert all(
+        reference[name] == current[name]
+        for name in reference
+        if name not in allowed_edge_evaluation_changes
+    )
 
 
 @pytest.mark.parametrize(
