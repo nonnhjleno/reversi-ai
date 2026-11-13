@@ -545,8 +545,8 @@ def test_production_dependencies_and_reference_hash_are_preserved():
         hashlib.sha256(
             Path('reversi_player/ai_engine.py').read_bytes().replace(b'\r\n', b'\n')
         ).hexdigest()
-        # Python 3.10対応のTypeAlias構文へ変更。探索本体の一致は別テストで検査する。
-        == '23123b9ddb56a4da3d00cc639f1ca8e904e499fa677267e853e33c5d786d8ebc'
+        # Python 3.7対応のTypeAlias構文へ変更。探索本体の一致は別テストで検査する。
+        == '2291da912920b64c53c314d89a056e6499220c737d923d9c9e4cacba2d6023cb'
     )
 
     source = Path(timed_search.__file__).read_text(encoding='utf-8')
@@ -558,14 +558,31 @@ def test_production_dependencies_and_reference_hash_are_preserved():
     assert search_trace.clock_descriptor() == protocol.clock_descriptor()
 
 
-@pytest.mark.parametrize('filename', ['ai_engine.py', 'timed_search.py'])
+@pytest.mark.parametrize('filename', ['ai_engine.py', 'timed_search.py', 'search_trace.py'])
 def test_compatibility_fix_preserves_frozen_search_implementation(filename):
     """互換性修正で評価・探索・期限処理の関数やクラスを変更していないことを検査する。"""
     import ast
 
+    class NormalizeCastTypes(ast.NodeTransformer):
+        """castの型引数だけを同じ型式へ戻し、型の変更も検出できる形で比較する。"""
+
+        def visit_Call(self, node):
+            """旧Python向けに文字列化した型式を解析し、他の呼出引数は保持する。"""
+            self.generic_visit(node)
+            if (
+                isinstance(node.func, ast.Name)
+                and node.func.id == 'cast'
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
+                node.args[0] = ast.parse(node.args[0].value, mode='eval').body
+            return node
+
     implementations = []
     for directory in ('baselines/search_v1', 'reversi_player'):
         tree = ast.parse(Path(directory, filename).read_text(encoding='utf-8'))
+        tree = NormalizeCastTypes().visit(tree)
         implementations.append(
             [
                 ast.dump(node, include_attributes=False)

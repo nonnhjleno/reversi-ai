@@ -24,17 +24,41 @@ INITIAL_BOARD = [
 ]
 
 
-@pytest.mark.parametrize('minor', [10, 11])
+@pytest.mark.parametrize('minor', [7, 8, 9, 10, 11])
 @pytest.mark.parametrize('filename', [
     'reversi.py', 'ai_engine.py', 'search_trace.py', 'timed_search.py',
 ])
 def test_submission_modules_parse_with_older_python_grammar(minor, filename):
-    """name応答前に落ちたPython 3.12専用構文の再混入を検出する。
+    """提出対象のPython 3.7以降で解析できない構文の再混入を検出する。
 
     文法の互換性だけを検査し、旧Python実機でのimport・動作保証とは区別する。
     """
     path = SCRIPT.with_name(filename)
     ast.parse(path.read_text(encoding='utf-8'), filename=str(path), feature_version=(3, minor))
+
+
+def test_name_without_runtime_type_alias_import():
+    """TypeAliasのない旧Pythonでも名前応答まで到達できるimport境界を保つ。"""
+    code = '''
+import builtins, runpy, sys
+from pathlib import Path
+original_import = builtins.__import__
+def guarded_import(name, globals=None, locals=None, fromlist=(), level=0):
+    """旧Pythonに存在しないTypeAliasの実行時importだけを拒否する。"""
+    if name == 'typing' and 'TypeAlias' in (fromlist or ()):
+        raise ImportError('TypeAlias is not available in this runtime')
+    return original_import(name, globals, locals, fromlist, level)
+builtins.__import__ = guarded_import
+sys.path.insert(0, str(Path(sys.argv[1]).parent))
+runpy.run_path(sys.argv[1], run_name='__main__')
+'''
+    result = subprocess.run(
+        [sys.executable, '-B', '-c', code, str(SCRIPT)],
+        input=b'name\nquit\n', capture_output=True, timeout=5,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.replace(b'\r\n', b'\n') == b'ranger\n'
+    assert result.stderr == b''
 
 
 class StandardInputCommandTests(unittest.TestCase):

@@ -25,7 +25,7 @@ def _object(value: object) -> dict[str, object]:
     """JSON objectのキーを検査して型を確定する。"""
     if not isinstance(value, dict) or not all(type(key) is str for key in value):
         raise ValueError('expected_json_object')
-    return cast(dict[str, object], value)
+    return cast('dict[str, object]', value)
 
 
 def _canonical(value: object) -> str:
