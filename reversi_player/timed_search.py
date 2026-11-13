@@ -19,7 +19,8 @@ else:
 
 Clock: TypeAlias = Callable[[], int]
 _CORNERS = ((0, 0), (7, 0), (0, 7), (7, 7))
-MAX_TIMED_DEPTH = 4
+DEFAULT_TIMED_DEPTH = 4
+MAX_TIMED_DEPTH = 5
 MIN_TIME_BUDGET_NS = 1_000_000
 MAX_TIME_BUDGET_NS = 6_500_000_000
 
@@ -31,7 +32,7 @@ class ResponsePolicy:
     target_ns: int = 7_000_000_000
     new_depth_margin_ns: int = 1_000_000_000
     stop_margin_ns: int = 500_000_000
-    max_depth: int = MAX_TIMED_DEPTH
+    max_depth: int = DEFAULT_TIMED_DEPTH
 
     def __post_init__(self) -> None:
         """通常intだけを許し、開始限界・途中停止・外部期限の順序を検査する。"""
