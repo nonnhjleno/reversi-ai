@@ -1,3 +1,4 @@
+import ast
 import subprocess
 import sys
 import unittest
@@ -21,6 +22,19 @@ INITIAL_BOARD = [
     'EEEEEEEE',
     'EEEEEEEE',
 ]
+
+
+@pytest.mark.parametrize('minor', [10, 11])
+@pytest.mark.parametrize('filename', [
+    'reversi.py', 'ai_engine.py', 'search_trace.py', 'timed_search.py',
+])
+def test_submission_modules_parse_with_older_python_grammar(minor, filename):
+    """name応答前に落ちたPython 3.12専用構文の再混入を検出する。
+
+    文法の互換性だけを検査し、旧Python実機でのimport・動作保証とは区別する。
+    """
+    path = SCRIPT.with_name(filename)
+    ast.parse(path.read_text(encoding='utf-8'), filename=str(path), feature_version=(3, minor))
 
 
 class StandardInputCommandTests(unittest.TestCase):

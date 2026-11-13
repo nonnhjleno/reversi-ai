@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import time
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeAlias, cast
 
 if TYPE_CHECKING:
     from reversi_player import ai_engine
@@ -16,7 +16,7 @@ elif __package__:
 else:
     import ai_engine
 
-type Clock = Callable[[], int]
+Clock: TypeAlias = Callable[[], int]
 _CORNERS = ((0, 0), (7, 0), (0, 7), (7, 7))
 MAX_TIMED_DEPTH = 4
 MIN_TIME_BUDGET_NS = 1_000_000
