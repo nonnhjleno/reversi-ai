@@ -545,7 +545,8 @@ def test_production_dependencies_and_reference_hash_are_preserved():
         hashlib.sha256(
             Path('reversi_player/ai_engine.py').read_bytes().replace(b'\r\n', b'\n')
         ).hexdigest()
-        == 'e1f02768f8333394026000585e214a1280c368132b0e5b2cad1d3da6457732e2'
+        # Python 3.10対応のTypeAlias構文へ変更。探索本体の一致は別テストで検査する。
+        == '23123b9ddb56a4da3d00cc639f1ca8e904e499fa677267e853e33c5d786d8ebc'
     )
 
     source = Path(timed_search.__file__).read_text(encoding='utf-8')
@@ -555,6 +556,24 @@ def test_production_dependencies_and_reference_hash_are_preserved():
     assert 'import reversi' not in source and 'import web' not in source
 
     assert search_trace.clock_descriptor() == protocol.clock_descriptor()
+
+
+@pytest.mark.parametrize('filename', ['ai_engine.py', 'timed_search.py'])
+def test_compatibility_fix_preserves_frozen_search_implementation(filename):
+    """互換性修正で評価・探索・期限処理の関数やクラスを変更していないことを検査する。"""
+    import ast
+
+    implementations = []
+    for directory in ('baselines/search_v1', 'reversi_player'):
+        tree = ast.parse(Path(directory, filename).read_text(encoding='utf-8'))
+        implementations.append(
+            [
+                ast.dump(node, include_attributes=False)
+                for node in tree.body
+                if isinstance(node, (ast.FunctionDef, ast.ClassDef))
+            ]
+        )
+    assert implementations[0] == implementations[1]
 
 
 @pytest.mark.parametrize(

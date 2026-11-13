@@ -5,13 +5,15 @@ from __future__ import annotations
 import random
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TypeAlias
 
-type BoardRows = tuple[str, ...]
-type Move = tuple[int, int]
-type LegalMoves = tuple[Move, ...]
-type MoveSelector = Callable[[BoardRows, str, LegalMoves], Move | None]
-type LegalMovesFor = Callable[[BoardRows, str], LegalMoves]
-type ApplyMove = Callable[[BoardRows, str, Move], BoardRows]
+# 提出先のPython 3.10・3.11でも起動できる型エイリアス構文を使う。
+BoardRows: TypeAlias = tuple[str, ...]
+Move: TypeAlias = tuple[int, int]
+LegalMoves: TypeAlias = tuple[Move, ...]
+MoveSelector: TypeAlias = Callable[[BoardRows, str, LegalMoves], Move | None]
+LegalMovesFor: TypeAlias = Callable[[BoardRows, str], LegalMoves]
+ApplyMove: TypeAlias = Callable[[BoardRows, str, Move], BoardRows]
 
 POSITION_WEIGHTS = (
     (120, -20, 20, 5, 5, 20, -20, 120),
