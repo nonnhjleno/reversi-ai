@@ -374,7 +374,11 @@ def main() -> None:
         trace.ready()
     index = 0
     while True:
-        line = input()
+        try:
+            line = input()
+        except EOFError:
+            # name単独の取得など、呼び出し元が入力を閉じた場合も正常終了する。
+            return
         received = time.perf_counter_ns()
         if trace is not None:
             trace.begin(received)

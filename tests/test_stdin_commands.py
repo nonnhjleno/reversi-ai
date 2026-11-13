@@ -61,6 +61,18 @@ runpy.run_path(sys.argv[1], run_name='__main__')
     assert result.stderr == b''
 
 
+@pytest.mark.parametrize('stdin', [b'name\n', b'name\r\n', b'name', b''])
+def test_end_of_input_exits_cleanly_without_quit(stdin):
+    """名前の単独取得後にstdinを閉じても、正常終了と名前応答を維持する。"""
+    result = subprocess.run(
+        [sys.executable, '-B', str(SCRIPT)],
+        input=stdin, capture_output=True, timeout=5,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.replace(b'\r\n', b'\n') == (b'ranger\n' if stdin else b'')
+    assert result.stderr == b''
+
+
 class StandardInputCommandTests(unittest.TestCase):
     def run_commands(self, commands):
         process = subprocess.run(

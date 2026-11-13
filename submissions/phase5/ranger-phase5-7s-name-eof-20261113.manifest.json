@@ -1,0 +1,47 @@
+{
+  "manifest_version": 1,
+  "package_id": "ranger-phase5-7s-name-eof-20261113",
+  "created_client_date": "2026-11-13",
+  "source_commit": "dda8556f07bd6ec65ebb29597d7dd7c25045c197",
+  "source_branch": "fix/server-python-compatibility",
+  "source_dirty": true,
+  "archive": {
+    "package": "submissions\\phase5\\ranger-phase5-7s-name-eof-20261113.zip",
+    "sha256": "18ba263c97341cfb220c32fdec702bbb66b138799ecf39c2e096a55d1b7a57a8",
+    "size": 18611
+  },
+  "entrypoint": "reversi.py",
+  "assets": {
+    "reversi.py": {
+      "sha256": "908e79f62b7ae8496fe2ce4fb18af8b669e0f6201cd48be309d538a5dfef34e0",
+      "size": 15016
+    },
+    "ai_engine.py": {
+      "sha256": "93850b2a98e4f4c222be4895606c7e50ba9da725bca79e6349547c87463b1168",
+      "size": 16723
+    },
+    "search_trace.py": {
+      "sha256": "782d1683845a49ed7c8b36836c91fc714b6703fe2b4fe87fb330030f29c3c172",
+      "size": 14898
+    },
+    "timed_search.py": {
+      "sha256": "262af4ac41cabfe62dec34bbd611964bc839dffd8d225df2235b0ad8e6271aba",
+      "size": 11747
+    },
+    "response_config.json": {
+      "sha256": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef",
+      "size": 122
+    }
+  },
+  "validation": {
+    "verification": "evaluation_results/server-name-eof-20261113/verification.json",
+    "protected_unchanged": true,
+    "related_tests_passed": 38,
+    "quality_status": "PASS",
+    "server_verified": false,
+    "quality_root": "evaluation_results\\quality-2d5ad5e6b9d542bbbfa4b3db8078532f",
+    "quality_sha256": "69144659a7985c898edc7eeb9340e46d16253ab24b534cf4c05400d255071b4a",
+    "quality_steps": 11
+  },
+  "scope": "Handle stdin EOF as normal termination after a standalone name request. Name remains ranger. Evaluation, search, time policy and old packages unchanged."
+}
