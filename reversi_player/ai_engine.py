@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import random
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import TYPE_CHECKING, Callable, Optional, Tuple
 
-# 提出先のPython 3.10・3.11でも起動できる型エイリアス構文を使う。
-BoardRows: TypeAlias = tuple[str, ...]
-Move: TypeAlias = tuple[int, int]
-LegalMoves: TypeAlias = tuple[Move, ...]
-MoveSelector: TypeAlias = Callable[[BoardRows, str, LegalMoves], Move | None]
+if TYPE_CHECKING:
+    from typing import TypeAlias
+
+# 型エイリアスの右辺は実行されるため、Python 3.7でも評価できる表記を使う。
+BoardRows: TypeAlias = Tuple[str, ...]
+Move: TypeAlias = Tuple[int, int]
+LegalMoves: TypeAlias = Tuple[Move, ...]
+MoveSelector: TypeAlias = Callable[[BoardRows, str, LegalMoves], Optional[Move]]
 LegalMovesFor: TypeAlias = Callable[[BoardRows, str], LegalMoves]
 ApplyMove: TypeAlias = Callable[[BoardRows, str, Move], BoardRows]
 
