@@ -16,7 +16,7 @@ Python公式の[type文の仕様](https://docs.python.org/3.12/reference/simple_
 
 評価・探索・期限処理の関数とクラスは固定`search_v1`とASTで照合した。さらに旧ZIPと新ZIPを比較し、importと型定義以外のモジュールAST（探索定数も含む）が一致することを確認した。探索アルゴリズム、評価、7秒設定、上限深度、盤面規則、標準入出力仕様、正式評価契約は変更していない。責務・依存・通信・状態・データの意味が変わらないため、アーキテクチャ図と契約の更新は不要と判断した。既存のstrict範囲と品質条件も維持した。
 
-旧ZIP・旧manifestと固定baselineの計16ファイルは開始時hashから不変。旧ZIPを差し替えず、修正版を[別名ZIP](../../submissions/phase5/ranger-phase5-7s-py310-20261113.zip)と[別manifest](../../submissions/phase5/ranger-phase5-7s-py310-20261113.manifest.json)で保存した。
+旧ZIP・旧manifestと固定baselineの計16ファイルは開始時hashから不変。旧ZIPを差し替えず、修正版を[別名ZIP](../../submissions/archive/phase5/ranger-phase5-7s-py310-20261113.zip)と[別manifest](../../submissions/archive/phase5/ranger-phase5-7s-py310-20261113.manifest.json)で保存した。
 
 - ZIP直下: `reversi.py`、`ai_engine.py`、`search_trace.py`、`timed_search.py`、`response_config.json`
 - ZIP SHA-256: `7349b9c3b5b779460536815ebd001dfa0f0e026de798e57135b71c630bf0ff74`

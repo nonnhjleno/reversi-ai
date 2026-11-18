@@ -19,7 +19,7 @@
 
 ## ZIPと実行検証
 
-新しい提出物は `submissions/phase5/ranger-phase5-7s-py37-20261113.zip`。ZIP直下の5ファイル、CRC、全memberの実bytesと現行ソースの一致を確認した。SHA-256は `55d1bb68cd2ecc8bd140314cc7fde96e3a9a4e2b74453cab4202981a96486671`、サイズは18535 bytes。
+新しい提出物は [Python 3.7対応ZIP](../../submissions/archive/phase5/ranger-phase5-7s-py37-20261113.zip)。ZIP直下の5ファイル、CRC、全memberの実bytesと現行ソースの一致を確認した。SHA-256は `55d1bb68cd2ecc8bd140314cc7fde96e3a9a4e2b74453cab4202981a96486671`、サイズは18535 bytes。
 
 Windows CPython 3.7.9・3.8.10・3.9.13・3.10.11・3.11.9・3.13.5の各環境で、全7コマンドの応答と固定random_v0との先後交換2局、計12局を確認した。全局で名前はranger、合法手・showboard・resultは独立refereeと一致し、パス・終局後のgenmove・正常quit、終了0・stderrなしを確認した。seedは20261113、候補の評価用環境変数は除去し、通常の提出経路を使った。既存Playerのstartup・通常1秒・genmove10秒・quitの期限は緩めていない。
 

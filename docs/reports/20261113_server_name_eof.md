@@ -14,7 +14,7 @@
 
 ## 提出物と証拠
 
-新ZIPは[EOF修正版](../../submissions/phase5/ranger-phase5-7s-name-eof-20261113.zip)、manifestは[こちら](../../submissions/phase5/ranger-phase5-7s-name-eof-20261113.manifest.json)。ZIP直下に従来と同じ5ファイルを収録した。旧ZIP内と比較して`reversi.py`以外の4ファイルは実bytesが一致する。旧ZIP・manifest・固定baselineは上書きしていない。
+新ZIPは[EOF修正版](../../submissions/archive/phase5/ranger-phase5-7s-name-eof-20261113.zip)、manifestは[こちら](../../submissions/archive/phase5/ranger-phase5-7s-name-eof-20261113.manifest.json)。ZIP直下に従来と同じ5ファイルを収録した。旧ZIP内と比較して`reversi.py`以外の4ファイルは実bytesが一致する。旧ZIP・manifest・固定baselineは上書きしていない。
 
 ZIPのSHA-256は`18ba263c97341cfb220c32fdec702bbb66b138799ecf39c2e096a55d1b7a57a8`、サイズは18,611 bytes。Windows直接CPython 3.13.5で、別の空cwdから新旧の展開物を起動し、旧ZIPの名前取得後終了1、新ZIPの終了0を確認した。新ZIPでは全7種類のコマンドも実行し、名前`ranger`・正常終了・stderrなしを確認した。環境変数`REVERSI_*`と`PYTHONPATH`を除去した。旧Python実機での今回の再検証や、棋力比較は行っていない。
 
