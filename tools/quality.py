@@ -74,6 +74,7 @@ REFERENCE_SCRIPTS = frozenset(
         '102400-games/data.py',
         'experiments/depth5_budget_stability.py',
         'experiments/analyze_depth5_budget_stability.py',
+        'experiments/phase6_ntuple.py',
     }
 )
 NON_PRODUCTION_DIRS = frozenset(

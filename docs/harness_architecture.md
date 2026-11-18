@@ -19,7 +19,7 @@
 | contracts | decode、必要role/検証軸、母集合/全予定coverage/棋譜/両通信、原rawとcache/summaryのfresh照合、共通writer |
 | analysis | 公開原report wrapper、private共通Assessment、正式AND、単独/対応推定、再解析/比較serializer |
 | statistics | 得点・ペア・有限母集合区間の算術。computed/arithmetic_onlyであり正式資格の発行元ではない |
-| reversi_player | 対戦プログラムとGUI。通常提出mainは時間対応の反復深化を使い、明示depth/time設定では原trace4を生成する。Board直接構築とunknown空searchは固定深度2を保つ。web.Processはharness.Playerとは別経路 |
+| reversi_player | 対戦プログラムとGUI。通常提出mainは時間対応の反復深化を使い、明示depth/time設定では原trace4を生成する。Board直接構築とunknown空searchは固定深度2を保つ。web.Processはharness.Playerとは別経路。明示指定時はPhase 6の子プロセスを使う。[実験用プロセスの依存図](phase6_design.md#実験用の選択とプロセス)を参照 |
 | tests/fixtures | budget_playerは計測契約の模擬producer、fault_playerは異常注入。実AIの強さ・counter真正性を証明しない |
 
 protocolからcontracts/analysis/evaluateへ逆importしない。contractsからstatisticsへ直接依存せず、検証と算術を分離する。現在のimport DAGに循環はない。canonical JSON等の小さな表現処理は複数箇所に残るが、正式判定・比較条件・集計を別々に再定義しない。
