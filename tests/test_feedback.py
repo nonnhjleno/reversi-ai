@@ -299,6 +299,7 @@ def test_production_scope_is_explicit_and_strict():
         'stub',
         'alias',
         'unknown',
+        'unknown_experiment',
         'exception',
         'initializer',
         'lint',
@@ -316,6 +317,10 @@ def test_scope_rejects_unregistered_or_suppressed_production(tmp_path, mutation)
         (tmp_path / 'tools/quality.pyi').write_text('', encoding='utf-8')
     elif mutation == 'unknown':
         (tmp_path / 'unknown.py').write_text('', encoding='utf-8')
+    elif mutation == 'unknown_experiment':
+        path = tmp_path / 'experiments/unregistered.py'
+        path.parent.mkdir()
+        path.write_text('', encoding='utf-8')
     elif mutation == 'initializer':
         (tmp_path / 'tools/__init__.py').unlink()
     else:

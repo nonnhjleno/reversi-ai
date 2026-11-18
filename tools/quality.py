@@ -67,7 +67,15 @@ STRICT_BASELINE = frozenset(
         'tools/quality.py tools/evidence.py tools/evidence_plugin.py'
     ).split()
 )
-REFERENCE_SCRIPTS = frozenset({'reversi_01.py', '102400-games/data.py'})
+# 本番から独立した参考コードは、ディレクトリ単位でなくファイルごとに登録する。
+REFERENCE_SCRIPTS = frozenset(
+    {
+        'reversi_01.py',
+        '102400-games/data.py',
+        'experiments/depth5_budget_stability.py',
+        'experiments/analyze_depth5_budget_stability.py',
+    }
+)
 NON_PRODUCTION_DIRS = frozenset(
     {
         '.git',

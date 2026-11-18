@@ -65,7 +65,11 @@ A1の通常着手264件はすべて深度5を開始し、208件（78.8%）で完
 
 ## 品質と証拠
 
-Windowsの直接CPython 3.13.5で、深度5の独立オラクル照合・深度5中断時の深度4結果保持・正式traceの深度上限・パス・終局・GUI連携を含む既存の関連テスト16件が通過した。pytestの実終了コードは0。製品コードと正式契約に差分がないため、今回の実験ではFullを再実行していない。
+Windowsの直接CPython 3.13.5で、深度5の独立オラクル照合・深度5中断時の深度4結果保持・正式traceの深度上限・パス・終局・GUI連携を含む既存の関連テスト16件が通過した。pytestの実終了コードは0。初回提出前は関連テストと実験コードの個別Ruff検査まで実施した。
+
+[PR #22の初回Quality](https://github.com/nonnhjleno/reversi-ai/actions/runs/44225418819) はpytestで12件失敗、1632件成功。今回追加した実験・集計スクリプト2本を参照スクリプト一覧に登録しておらず、ファイル分類検査と、それを内部で実行する品質ゲートのテストが失敗した。2本のパスを既存の参照分類へ個別に登録し、同じディレクトリに未登録Pythonを追加すると拒否される回帰を追加した。初回CIのJUnitとpytest原ログはローカルの `evaluation_results/ci-44225418819-quality/pytest-diagnostics.zip` に保存した。
+
+修正後は品質関連269件が成功し、直接CPython 3.13.5での `python -B tools/quality.py` が終了コード0で全11工程を通過した。Fullのpytestは1645件成功、失敗・エラー・skipはすべて0件、独立smokeも成功。原証拠は `evaluation_results/quality-55f7161692984487997857c687e5ec5f/quality.json` と同じ領域のJUnitに保存した。
 
 原証拠はローカルの `evaluation_results/depth5-budget-stability-20261118/` に保存した。旧540局と今回の試行は別領域で管理する。
 
