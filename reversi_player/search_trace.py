@@ -21,6 +21,9 @@ else:
     import timed_search
 
 
+MAX_TRACE_DEPTH = 4
+
+
 def _object(value: object) -> dict[str, object]:
     """JSON objectのキーを検査して型を確定する。"""
     if not isinstance(value, dict) or not all(type(key) is str for key in value):
@@ -110,7 +113,7 @@ def load(
         raise ValueError('unsupported_search_setting')
     algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
     ordered = search.get('ordered', True)
-    maximum = search.get('max_depth', timed_search.MAX_TIMED_DEPTH)
+    maximum = search.get('max_depth', MAX_TRACE_DEPTH)
     if (
         type(algorithm) is not str
         or type(ordered) is not bool
@@ -123,7 +126,7 @@ def load(
         )
         or (kind == 'time' and algorithm != 'iterative')
         or type(maximum) is not int
-        or not 1 <= maximum <= timed_search.MAX_TIMED_DEPTH
+        or not 1 <= maximum <= MAX_TRACE_DEPTH
     ):
         raise ValueError('unsupported_search_algorithm')
     if (
@@ -184,7 +187,7 @@ class SearchTrace:
         apply_move: ai_engine.ApplyMove,
         *,
         time_limit_ns: int | None = None,
-        max_depth: int = timed_search.MAX_TIMED_DEPTH,
+        max_depth: int = MAX_TRACE_DEPTH,
     ) -> None:
         """検証後の設定を保持し、原traceを排他作成する。"""
         self._config, self._context = config, context

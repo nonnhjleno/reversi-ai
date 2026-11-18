@@ -113,6 +113,66 @@ def test_completed_iterations_match_independent_oracle_and_preserved_reference(
         result.value = 0
 
 
+@pytest.mark.parametrize('label,color', [('after_first', 'B'), ('late', 'B'), ('late', 'W')])
+def test_depth_five_matches_independent_fraction_oracle(label, color):
+    """実験深度5の値と同点手をPhase 3由来の独立Negamaxへ照合する。"""
+    rows = tuple(CASES[label]['rows'])
+    result = _run(rows, color, depth=5)
+    value, best, _ = _expected(rows, color, 5)
+    assert result.completed_depth == result.max_depth_started == 5
+    assert result.value == float(value)
+    assert result.move == min(best, key=lambda m: (m[1], m[0]))
+    assert result.stop_reason == 'max_depth_completed'
+
+
+def test_interrupt_inside_depth_five_keeps_only_completed_depth_four():
+    """深度5の最初のroot子で中断し、深度4の完了値と合法手だけを返す。"""
+    rows, color = tuple(CASES['late']['rows']), 'B'
+    previous_applies = 0
+
+    def count_depth_four(snapshot, turn, move):
+        nonlocal previous_applies
+        previous_applies += 1
+        return referee.apply_move(snapshot, turn, move)
+
+    depth_four = timed_search.search_iterative(
+        rows,
+        color,
+        _legal(rows, color),
+        _legal,
+        count_depth_four,
+        command_received_ns=0,
+        policy=timed_search.ResponsePolicy(max_depth=4),
+        clock=lambda: 0,
+    )
+    assert depth_four.completed_depth == 4
+
+    applies = 0
+
+    def interrupting_clock():
+        return 7_000_000_000 if applies >= previous_applies + 1 else 0
+
+    def interrupt_in_depth_five(snapshot, turn, move):
+        nonlocal applies
+        applies += 1
+        return referee.apply_move(snapshot, turn, move)
+
+    interrupted = timed_search.search_iterative(
+        rows,
+        color,
+        _legal(rows, color),
+        _legal,
+        interrupt_in_depth_five,
+        command_received_ns=0,
+        policy=timed_search.ResponsePolicy(max_depth=5),
+        clock=interrupting_clock,
+    )
+    assert (interrupted.completed_depth, interrupted.max_depth_started) == (4, 5)
+    assert interrupted.stop_reason == 'time_limit'
+    assert (interrupted.move, interrupted.value) == (depth_four.move, depth_four.value)
+    assert interrupted.move in _legal(rows, color)
+
+
 class TripClock:
     """指定した確認回数から期限到達を返す決定的な単調時計。"""
 
@@ -320,7 +380,7 @@ def test_invalid_time_budgets_are_rejected(value):
     'field,value',
     [
         ('max_depth', 0),
-        ('max_depth', 5),
+        ('max_depth', 6),
         ('max_depth', True),
         ('target_ns', 10000000000),
         ('stop_margin_ns', 0),
@@ -334,6 +394,27 @@ def test_invalid_response_policy_is_rejected(field, value):
 
     with pytest.raises(ValueError):
         timed_search.ResponsePolicy(**{field: value})
+
+
+def test_depth_five_is_experimental_only_and_existing_trace_range_stays_four(tmp_path):
+    """時間対応のみ深度5を許し、既定と正式trace受理範囲は深度4を保つ。"""
+    assert timed_search.ResponsePolicy().max_depth == 4
+    assert timed_search.ResponsePolicy(max_depth=5).max_depth == 5
+    with pytest.raises(ValueError):
+        timed_search.ResponsePolicy(max_depth=6)
+    assert search_trace.MAX_TRACE_DEPTH == 4
+
+    config = _time_config()
+    config['search']['max_depth'] = 5
+    path, raw = tmp_path / 'config.json', tmp_path / 'trace.jsonl'
+    path.write_text(json.dumps(config), encoding='utf-8')
+    with pytest.raises(protocol.HarnessError):
+        protocol.Player(
+            'reversi_player/reversi.py',
+            evaluation_config=path,
+            evaluation_trace=raw,
+            evaluation_context=_context(config),
+        )
 
 
 def test_bad_callbacks_clock_and_rule_exceptions_are_not_normal_interruptions():
@@ -579,10 +660,31 @@ def test_compatibility_fix_preserves_frozen_search_implementation(filename):
                 node.args[0] = ast.parse(node.args[0].value, mode='eval').body
             return node
 
+    class NormalizeExperimentalDepth(ast.NodeTransformer):
+        """時間設定だけを実験前の名前へ正規化し、他の探索ASTは完全一致させる。"""
+
+        def __init__(self, module):
+            self.module = module
+
+        def visit_Name(self, node):
+            if self.module == 'timed_search.py' and node.id == 'DEFAULT_TIMED_DEPTH':
+                return ast.copy_location(ast.Name(id='MAX_TIMED_DEPTH', ctx=node.ctx), node)
+            if self.module == 'search_trace.py' and node.id == 'MAX_TRACE_DEPTH':
+                return ast.copy_location(
+                    ast.Attribute(
+                        value=ast.Name(id='timed_search', ctx=ast.Load()),
+                        attr='MAX_TIMED_DEPTH',
+                        ctx=node.ctx,
+                    ),
+                    node,
+                )
+            return node
+
     implementations = []
     for directory in ('baselines/search_v1', 'reversi_player'):
         tree = ast.parse(Path(directory, filename).read_text(encoding='utf-8'))
         tree = NormalizeCastTypes().visit(tree)
+        tree = NormalizeExperimentalDepth(filename).visit(tree)
         implementations.append(
             [
                 ast.dump(node, include_attributes=False)
