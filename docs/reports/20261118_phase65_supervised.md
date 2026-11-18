@@ -70,15 +70,17 @@ Phase 6の1手選択器を使い、Phase 0のdevelopment序盤、master seed・s
 
 Full再取得は2回目 `quality-2fc0ca0bc0214c4d9667ac5d4b3edf48/`、3回目 `quality-b458c3427dc84ca9820264fc2c8235e0/`。いずれもpytestが1,800秒上限に達し、終端JUnitを生成しなかった。2回目は1,626件、3回目は1,644件のcall成功まで記録した。3回目は起動したプロセスのアフィニティだけを高性能側の論理CPU 8個に限定した。同じ回帰の最初567件は513秒から436秒に短縮した。既存コマンドと上限のまま、いずれもFull未完了。OS全体の設定は操作していない。[プロセスアフィニティの継承](https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask)
 
+2026年11月19日、同じCPU割り当てで7回測定した。合法手列挙の中央値は前回の0.19935秒から0.08244秒に、CPython子プロセス3回の連続起動の中央値は1.27148秒から0.43194秒に短縮した。検証コマンド、テスト、1,800秒上限を維持して4回目のFull `quality-1a206d21a0e242c385b2c610e1de47b4` を実行した。Windowsの直接CPython 3.13.5でFullが終了コード0。必須11工程とpytest 1,796件、独立smoke 1件が成功し、失敗・エラー・スキップは各0件。Fullの実行は1,214.9秒、pytest工程は1,164.2秒。63対象の開始・終了・現在のSHA-256と原証拠の整合を確認した。実測値は `phase65-resumed-environment-probe.json`、外側の終了記録は `full-recovered-step.json` に保存した。
+
 ## ゲート判定
 
 | ゲート | 判定 | 根拠 |
 |---|---|---|
 | G0 設計 | PASS | データ、視点、分割、更新、拡大条件とtest保護を事前に定義 |
 | G1 正しさ | PASS | 全件独立再生、専用26件、既存Phase 6の125件、人工棋譜・有限差分・保存・凍結 |
-| G2 品質 | **未達** | Windowsの直接CPython 3.13.5でFullを実行したが、3回ともpytestが1,800秒で未完了 |
+| G2 品質 | PASS | 4回目のFullが終了0、11工程PASS。pytest 1,796件、独立smoke 1件、strict 26ファイル |
 | G3 実験健全性 | PASS | 最大81,919局、凍結・再読込、CPython 6版、先後26局 |
 | G4 比較可能性 | PASS | 固定分割・定義・seed・baselineと共通開発序盤の記録、対局をまたぐ重複0件 |
 | G5 証拠と判断 | PASS | 原本・分割・モデル・試行・異常・不確かさ・次フェーズ条件を保管 |
 
-提出ZIP・manifest、通常Ranger、独立referee、固定baseline、Phase 0の2集合、Phase 6モデルと原証拠は開始前のSHA-256と一致した。データ監査と学習・予測改善の判定は上記の範囲で成立。参考棋力は少数の対局で改善の兆候があり、提出採用判定は保留。後半の補足回帰は別実行で290件成功し、失敗・error・skipは各0件。3回目の中断前1,644件との重複は138件で、別実行を合わせたテストIDは1,796件。単一Fullとしての正常終了と原証拠publicationが得られていないため、G2は未達のまま。集約は `verification-summary.json`、ID照合は `separate-test-coverage.json` を参照する。
+提出ZIP・manifest、通常Ranger、独立referee、固定baseline、Phase 0の2集合、Phase 6モデルと原証拠は開始前のSHA-256と一致した。データ監査と学習・予測改善の判定は上記の範囲で成立。参考棋力は少数の対局で改善の兆候があり、提出採用判定は保留。後半の補足回帰は別実行で290件成功し、失敗・error・skipは各0件。3回目の中断前1,644件との重複は138件で、別実行を合わせたテストIDは1,796件。先行3回と補足実行の集約は `verification-summary.json`、ID照合は `separate-test-coverage.json` に保存した。単一Fullの正常終了とG0〜G5の最終照合は `verification-summary-complete.json` に記録した。
