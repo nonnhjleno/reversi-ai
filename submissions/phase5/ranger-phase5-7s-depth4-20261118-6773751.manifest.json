@@ -1,0 +1,77 @@
+{
+  "manifest_version": 1,
+  "package_id": "ranger-phase5-7s-depth4-20261118-6773751",
+  "created_client_date": "2026-11-18",
+  "source_commit": "6773751b483bf6754225a0710778ee7479e24af9",
+  "source_ref": "refs/remotes/origin/main",
+  "working_tree_head": "b78541d665120a7d8d353e7d77655a9a667c3e48",
+  "working_tree_branch": "fix/server-python-compatibility",
+  "source_dirty": false,
+  "archive": {
+    "path": "submissions/phase5/ranger-phase5-7s-depth4-20261118-6773751.zip",
+    "sha256": "34dd1283b844928f12862d8791a1a4cccf1f67864a7a87c8da8d1f2d1869f050",
+    "size": 18563,
+    "entrypoint": "reversi.py",
+    "layout": "exactly five runtime files at ZIP root"
+  },
+  "assets": {
+    "reversi.py": {
+      "source": "reversi_player/reversi.py",
+      "sha256": "908e79f62b7ae8496fe2ce4fb18af8b669e0f6201cd48be309d538a5dfef34e0",
+      "size": 15016
+    },
+    "ai_engine.py": {
+      "source": "reversi_player/ai_engine.py",
+      "sha256": "93850b2a98e4f4c222be4895606c7e50ba9da725bca79e6349547c87463b1168",
+      "size": 16723
+    },
+    "search_trace.py": {
+      "source": "reversi_player/search_trace.py",
+      "sha256": "4a038d2af58119358219e1de5d2834cd09faf54e6aca8b14aae4eabd01d6e6be",
+      "size": 14884
+    },
+    "timed_search.py": {
+      "source": "reversi_player/timed_search.py",
+      "sha256": "a866c8405feea25f7924dac76acf720a4b9d9454e45d40b0be20d6abf8fb1e69",
+      "size": 11776
+    },
+    "response_config.json": {
+      "source": "reversi_player/response_config.json",
+      "sha256": "092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef",
+      "size": 122
+    }
+  },
+  "response_config": {
+    "target_ns": 7000000000,
+    "new_depth_margin_ns": 1000000000,
+    "stop_margin_ns": 500000000,
+    "max_depth": 4
+  },
+  "packaging": {
+    "compression": "DEFLATE",
+    "compresslevel": 9,
+    "fixed_member_timestamp": [
+      2026,
+      11,
+      18,
+      0,
+      0,
+      0
+    ],
+    "file_mode": "0644",
+    "python": "3.13.5",
+    "zlib_runtime": "1.3.1"
+  },
+  "validation": {
+    "checks": [
+      "Python 3.13.5 name_eof exit 0",
+      "Python 3.13.5 all_commands exit 0",
+      "Python 3.7.9 name_eof exit 0",
+      "Python 3.7.9 all_commands exit 0"
+    ],
+    "independent_referee_board_and_legal_move": true,
+    "server_verified": false,
+    "full_rerun": false,
+    "evidence": "evaluation_results/submission_packages/ranger-phase5-7s-depth4-20261118-6773751/verification.json"
+  }
+}
