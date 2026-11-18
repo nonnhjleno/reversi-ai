@@ -1,9 +1,9 @@
 # リバーシAI 段階開発・評価設計書
 
 - **文書ID**：REVERSI-AI-PLAN-2026-10-16
-- **状態**：Phase 0統合済み。Phase 1A・1Bは実装、品質検証、固定random_v0とのdescriptive比較を完了。現状と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照。Phase 2は実装PASS・参考評価完了、棋力版の昇格は保留。[Phase 2実装記録](reports/20261030_phase2_implementation.md)を参照。Phase 3は実装PASS・参考評価完了。参考昇格条件達成・正式採用未達。[Phase 3設計](phase3_design.md)・[実装記録](reports/20261106_phase3_implementation.md)を参照。Phase 4はAlpha-Beta・depth計測を完了。Phase 5は反復深化・安全応答・search_v1固定・ローカルZIP準備を完了した。正式計測と応答安全性は測定範囲に限定し、サーバー実機確認は未実施。[Phase 5実装・評価記録](reports/20261108_phase5_implementation.md)を参照。Phase 6以降は未着手。
+- **状態**：Phase 0統合済み。Phase 1A・1Bは実装、品質検証、固定random_v0とのdescriptive比較を完了。現状と証拠は[Phase 1引き継ぎ資料](phase1_handoff.md)を参照。Phase 2は実装PASS・参考評価完了、棋力版の昇格は保留。[Phase 2実装記録](reports/20261030_phase2_implementation.md)を参照。Phase 3は実装PASS・参考評価完了。参考昇格条件達成・正式採用未達。[Phase 3設計](phase3_design.md)・[実装記録](reports/20261106_phase3_implementation.md)を参照。Phase 4はAlpha-Beta・depth計測を完了。Phase 5は反復深化・安全応答・search_v1固定・ローカルZIP準備を完了した。正式計測と応答安全性は測定範囲に限定し、サーバー実機確認は未実施。[Phase 5実装・評価記録](reports/20261108_phase5_implementation.md)を参照。Phase 6の現行契約は[n-tuple推論設計](phase6_design.md)を参照。
 - **作成日**：2026-10-16
-- **改訂日**：2026-11-10
+- **改訂日**：2026-11-18
 - **対象**：`reversi_player/reversi.py` を基点とする対戦AI、既存の検証・評価ハーネス
 - **目的**：大学の提出サーバーの課題制約下で、実戦棋力をできるだけ高める。Phase・学習・探索・正式評価は手段とし、正しさ・実行品質・棋力を分けて検証できるようにする。
 
@@ -345,6 +345,10 @@ search_v1を全依存・設定・hashごと独立固定し、提出用7秒ZIPと
 **このPhaseで作る評価軸**：**LUTの独立計算・対称共有・手番・重複参照・モデル資産とI/O**。色交換のテストでは盤面・手番・目標符号の対応を検証する。数値の反対称性を必須にする場合は、別にその構造制約を設計する。
 
 **固有完了条件**：手計算LUT・対称性・手番・I/O・推論不変性の必須テストと共通ゲートPASS、独立プロセスとGUI接続で合法応答、未学習モデルと固定探索相手の参考結果を保存。**未学習モデルに強さを要求しない**。内部予算・時計・load証拠の資格は別に報告する。
+
+### Phase 6.5：配布棋譜による教師あり学習実験
+
+Phase 6の後に独立した実験として実施する。はじめに原データの出所・合法性・重複と偏りを監査し、同一対局やD4同値棋譜を同じデータ分割に置く。黒視点の観測最終結果を、共通の特徴量とモデル形式で学ぶ。実験条件とPhase 7へ引き継ぐ候補の採否は別途定める。[Phase 6の学習用契約](phase6_design.md#検証とphase-65への引き継ぎ)を参照。
 
 ### Phase 7：自己対戦TD(0)学習と学習効果の検証
 

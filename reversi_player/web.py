@@ -2,16 +2,21 @@ import http.server
 import json
 import os
 import subprocess
+import sys
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'web')
 SCRIPT = os.path.join(os.path.dirname(__file__), 'reversi.py')
+PHASE6_SCRIPT = os.path.join(os.path.dirname(__file__), 'phase6_player.py')
 
 
 class Process(object):
 
     def __init__(self):
+        """明示指定時はPhase 6の子プロセスを起動する。"""
+        script = PHASE6_SCRIPT if 'REVERSI_NTUPLE_MODEL' in os.environ else SCRIPT
         self.proc = subprocess.Popen(
-            ['python', SCRIPT], stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+            [sys.executable, script], stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, universal_newlines=True)
 
     def command(self, command, lines=1):
         print('[ in] {}'.format(command))
@@ -21,7 +26,10 @@ class Process(object):
         response = []
 
         for _ in range(lines):
-            res = self.proc.stdout.readline().strip()
+            line = self.proc.stdout.readline()
+            if not line:
+                raise RuntimeError('reversi_child_closed_stdout')
+            res = line.strip()
             print('[out] {}'.format(res))
             response.append(res)
 
@@ -31,13 +39,24 @@ class Process(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.proc.stdin.write('quit\n')
-        self.proc.stdin.flush()
-
+        """終了した子に対する書き込みで、元の要求エラーを覆わない。"""
         try:
-            self.proc.wait(timeout=5)
-        except BaseException:
-            self.proc.kill()
+            try:
+                self.proc.stdin.write('quit\n')
+                self.proc.stdin.flush()
+            except BrokenPipeError:
+                pass
+            try:
+                self.proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                self.proc.wait()
+        finally:
+            try:
+                self.proc.stdin.close()
+            except BrokenPipeError:
+                pass
+            self.proc.stdout.close()
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):

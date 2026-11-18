@@ -61,6 +61,8 @@ hashは内容照合であって署名ではない。hashを更新した不正raw
 
 これらは開発計画上の保全・識別契約であり、evaluation/analysis/comparison schema5、trace4、validation3、正式適格条件、品質ゲートの判定を変更しない。固定資産のbytesをGit保存・復元でも保つため、`.gitattributes`で`baselines/random_v0/`と`benchmark_sets/phase0/`の自動改行変換を無効にする。既存図のbyte一致・hash照合を保つための保存規則であり、新しい正式評価経路は追加しない。ファイル配置やseedを変えた場合はmanifestとPhase 0報告を一緒に更新し、保存済み評価JSONを編集して整合させない。具体的な固定値・実ファイルhash・実行IDは[`benchmark_sets/phase0/manifest.json`](../benchmark_sets/phase0/manifest.json)と[Phase 0報告](reports/20261016_phase0.md)に記録し、契約定義と実験インスタンスを分離する。
 
+Phase 6の実験選択器を参考対局に使うときは、version 2の `unknown` 予算・空の `search` を渡し、モデルJSONと実行時依存を書き出す資産一覧へ登録する。選択器側は正式traceを生成せず、通信と独立refereeで正常性を判定する。モデルの実bytesのhash・意味上のID・読込計測は[Phase 6の契約](phase6_design.md)に従って保存する。
+
 ## 3. 母集合・抽出・coverage
 
 - Nは検証済み母集合archiveのentries件数から導出する。report.population.sizeだけを統計へ渡さない。

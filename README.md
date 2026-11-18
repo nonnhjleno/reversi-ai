@@ -14,6 +14,7 @@
 | Phase 4のAlpha-Beta・実AI計測 | [設計と計数契約](docs/phase4_design.md)・[実装・評価記録](docs/reports/20261107_phase4_implementation.md) |
 | Phase 5の時間制御・安全応答・固定探索相手 | [実装設計](docs/phase5_design.md)・[実装記録](docs/reports/20261108_phase5_implementation.md)・[search_v1](baselines/search_v1/README.md) |
 | Phase 5最終レビュー・Phase 6への引き継ぎ | [調査・最小修正・検証結果](docs/reports/20261109_phase5_review.md) |
+| Phase 6のn-tuple推論と学習用契約 | [推論設計](docs/phase6_design.md)・[実装・検証報告](docs/reports/20261118_phase6_ntuple.md) |
 | 提出ZIP・復旧・後日の実機試行 | [ZIP形式・提出物](docs/提出パッケージ.md)・[実機試行と復旧](docs/reports/20261108_phase5_server_trials.md) |
 | テスト・品質ゲート・対戦評価・GUIの操作 | [ハーネス](docs/ハーネス.md) |
 | 現行の責務・依存・データフロー・状態 | [アーキテクチャ](docs/harness_architecture.md) |
@@ -32,7 +33,7 @@ python -m pip install -r requirements-dev.txt
 python -B tools/quality.py
 ```
 
-品質ゲートはstrict対象19ファイル、全pytest、独立smoke、対象moduleの登録漏れ検査などのFull必須11工程を実行し、新しい`evaluation_results/quality-UUID/`へ検証証拠を保存します。正規のstrict一覧は`pyproject.toml`を参照してください。品質ゲートの成功は、AIの正式評価資格や棋力向上の証明ではありません。配布GUIの`web.py`は意図的なstrict対象外ですが、既存Lint・GUI関連テストは維持します。
+品質ゲートはstrict対象22ファイル、全pytest、独立smoke、対象moduleの登録漏れ検査などのFull必須11工程を実行し、新しい`evaluation_results/quality-UUID/`へ検証証拠を保存します。正規のstrict一覧は`pyproject.toml`を参照してください。品質ゲートの成功は、AIの正式評価資格や棋力向上の証明ではありません。配布GUIの`web.py`は意図的なstrict対象外ですが、既存Lint・GUI関連テストは維持します。
 
 GUIだけを起動する場合:
 
@@ -41,6 +42,16 @@ python reversi_player/web.py
 ```
 
 起動後にブラウザで`http://localhost:8888/`を開きます。
+
+Phase 6を試す場合は、Windowsでモデルを新規生成し、その絶対パスを指定します。
+
+```powershell
+python -B -m experiments.phase6_ntuple evaluation_results/phase6-local
+$env:REVERSI_NTUPLE_MODEL = (Resolve-Path evaluation_results/phase6-local/untrained-zero.json).Path
+python -B reversi_player/phase6_player.py
+```
+
+同じ設定で `python -B reversi_player/web.py` を起動すると、GUIでPhase 6を使用できます。通常のGUIへ戻すには環境変数を削除します。
 
 ## 資料の配置
 
