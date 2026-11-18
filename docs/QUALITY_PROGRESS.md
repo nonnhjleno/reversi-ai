@@ -1,5 +1,9 @@
 # 品質基盤導入の進捗と検証証拠
 
+## AI開発Phase 6.5（2026-11-18開始、2026-11-19更新）
+
+新規4モジュールをstrictへ登録し、分離起動用のシェルスクリプトを品質hashに加えた。Phase 6.5とPhase 6の専用回帰は151件成功。最終コードのFullは既存pytest上限1,800秒で3回未完了となり、G2は未達。独立smokeと他の成功工程は実行ごとの原証拠に残した。[Phase 6.5の監査・実験報告](reports/20261118_phase65_supervised.md)
+
 ## AI開発Phase 6（2026-11-18）
 
 Windowsの直接CPython 3.13.5で最終Fullは終了0、必須11工程PASS。pytestは1,770成功、独立smokeは1成功。失敗・error・skipは各0。strict対象は22ファイル、57対象の開始・終了・現在SHA-256と原証拠publicationを照合した。新しい125件はFullで実行し、Quick／Standardの登録を維持した。実験スクリプトは参照用途としてファイル単位で登録し、別にlintを実行した。

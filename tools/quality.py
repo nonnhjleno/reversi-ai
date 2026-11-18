@@ -476,6 +476,7 @@ def _source_hashes(root: Path) -> dict[str, str]:
         for name in (
             'pyproject.toml',
             'reversi_player/response_config.json',
+            'tools/phase65_isolate.sh',
             'requirements-dev.txt',
             'pytest.ini',
             'AGENTS.md',
