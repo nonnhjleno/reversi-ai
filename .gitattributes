@@ -10,3 +10,8 @@
 # WSL起動と学習の来歴照合でPhase 6.5ソースのbytesを再現する。
 /tools/phase65_isolate.sh text eol=lf
 /tools/phase65_*.py text eol=lf
+
+# Preserve the archived positional_v1 file bytes across checkout configurations.
+/baselines/positional_v1/ai_engine.py text eol=lf
+/baselines/positional_v1/reversi.py text eol=crlf
+/baselines/positional_v1/manifest.json text eol=crlf
