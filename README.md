@@ -16,6 +16,7 @@
 | Phase 5最終レビュー・Phase 6への引き継ぎ | [調査・最小修正・検証結果](docs/reports/20261109_phase5_review.md) |
 | Phase 6のn-tuple推論と学習用契約 | [推論設計](docs/phase6_design.md)・[実装・検証報告](docs/reports/20261118_phase6_ntuple.md) |
 | Phase 6.5の棋譜監査と教師あり学習 | [設計](docs/phase6_5_design.md)・[監査・実験報告](docs/reports/20261118_phase65_supervised.md) |
+| Phase 7の自己対戦TD(0)と固定相手比較 | [設計](docs/phase7_design.md)・[実装・比較報告](docs/reports/20261120_phase7_td0.md) |
 | 提出ZIP・復旧・後日の実機試行 | [ZIP形式・提出物](docs/提出パッケージ.md)・[実機試行と復旧](docs/reports/20261108_phase5_server_trials.md) |
 | テスト・品質ゲート・対戦評価・GUIの操作 | [ハーネス](docs/ハーネス.md) |
 | 現行の責務・依存・データフロー・状態 | [アーキテクチャ](docs/harness_architecture.md) |
