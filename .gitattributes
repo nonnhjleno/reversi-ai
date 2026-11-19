@@ -6,3 +6,7 @@
 
 # Phase 5の独立固定版はmanifestと同じbytesをGitでも保持する。
 /baselines/search_v1/** -text
+
+# WSL起動と学習の来歴照合でPhase 6.5ソースのbytesを再現する。
+/tools/phase65_isolate.sh text eol=lf
+/tools/phase65_*.py text eol=lf

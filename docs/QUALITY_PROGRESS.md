@@ -1,5 +1,9 @@
 # 品質基盤導入の進捗と検証証拠
 
+## AI開発Phase 6.5（2026-11-18開始、2026-11-19更新）
+
+新規4モジュールをstrictへ登録し、分離起動用のシェルスクリプトを品質hashに加えた。Phase 6.5とPhase 6の専用回帰は151件成功。最初の3回はpytestが既存の1,800秒上限で中断した。計測速度の回復後、同じコードと条件で4回目のFullを実行した（`quality-1a206d21a0e242c385b2c610e1de47b4`）。Windowsの直接CPython 3.13.5でFullが終了コード0。必須11工程とpytest 1,796件、独立smoke 1件が成功し、失敗・エラー・スキップは各0件。Fullの実行は1,214.9秒、pytest工程は1,164.2秒。strict mypyは26ファイル。63対象の開始・終了・現在のSHA-256と原証拠の整合を確認し、G2はPASS。先行3回の原証拠も保管した。[Phase 6.5の監査・実験報告](reports/20261118_phase65_supervised.md)
+
 ## AI開発Phase 6（2026-11-18）
 
 Windowsの直接CPython 3.13.5で最終Fullは終了0、必須11工程PASS。pytestは1,770成功、独立smokeは1成功。失敗・error・skipは各0。strict対象は22ファイル、57対象の開始・終了・現在SHA-256と原証拠publicationを照合した。新しい125件はFullで実行し、Quick／Standardの登録を維持した。実験スクリプトは参照用途としてファイル単位で登録し、別にlintを実行した。
