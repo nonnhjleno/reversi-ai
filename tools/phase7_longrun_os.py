@@ -25,6 +25,49 @@ class Busy(RuntimeError):
     """既に別の実行が同じ資源を使用している。"""
 
 
+class DisplayBusy(OSError):
+    """再試行しても、表示ファイルの置換だけが共有競合で完了しなかった。"""
+
+
+class LaunchBusy(OSError):
+    """ファイル共有競合のため、子プロセスが起動しなかった。"""
+
+
+def sharing_error(failure: OSError) -> bool:
+    """Windowsのアクセス拒否・共有違反・ロック違反を識別する。"""
+    return getattr(failure, 'winerror', None) in (5, 32, 33)
+
+
+def shared_bytes(path: Path) -> bytes:
+    """削除共有を許可して、開いた世代の内容を読む。"""
+    if os.name != 'nt':
+        return path.read_bytes()
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateFileW.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPVOID,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    ]
+    kernel.CreateFileW.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel.CloseHandle.restype = wintypes.BOOL
+    # GENERIC_READ, FILE_SHARE_READ | WRITE | DELETE, OPEN_EXISTING
+    handle = kernel.CreateFileW(str(path), 0x80000000, 7, None, 3, 0x80, None)
+    if handle == ctypes.c_void_p(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        descriptor = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+    except OSError:
+        kernel.CloseHandle(handle)
+        raise
+    with os.fdopen(descriptor, 'rb') as stream:
+        return stream.read()
+
+
 class Identity(TypedDict):
     """PIDとWindowsが与えた生成時刻の組。"""
 
@@ -118,15 +161,18 @@ def replace_json(path: Path, payload: object) -> None:
             stream.write(encoded_json(payload))
             stream.flush()
             os.fsync(stream.fileno())
-        for _ in range(10):
+        delays = (0.03, 0.06, 0.12, 0.24, 0.48, 0.60)
+        for delay in (*delays, None):
             try:
                 temporary.replace(path)
-            except PermissionError:
-                # Windowsで読み手が共有削除を許可していない間だけ待つ。
-                time.sleep(0.03)
+            except OSError as failure:
+                if not sharing_error(failure):
+                    raise
+                if delay is None:
+                    raise DisplayBusy(f'{path.name}: {failure}') from failure
+                time.sleep(delay)
             else:
                 return
-        temporary.replace(path)
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
@@ -141,12 +187,17 @@ def child(
     with log.open('xb') as stream:
         output: IO[bytes] = stream
         env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
-        return subprocess.Popen(
-            arguments,
-            cwd=cwd,
-            stdin=subprocess.DEVNULL,
-            stdout=output,
-            stderr=subprocess.STDOUT,
-            env=env,
-            creationflags=flags,
-        )
+        try:
+            return subprocess.Popen(
+                arguments,
+                cwd=cwd,
+                stdin=subprocess.DEVNULL,
+                stdout=output,
+                stderr=subprocess.STDOUT,
+                env=env,
+                creationflags=flags,
+            )
+        except OSError as failure:
+            if sharing_error(failure):
+                raise LaunchBusy(str(failure)) from failure
+            raise

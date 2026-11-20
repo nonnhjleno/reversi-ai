@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from collections import namedtuple
 from dataclasses import replace
 import pytest
@@ -21,6 +22,127 @@ from tools import phase7_td, phase7_train as train
 def _state(path):
     """チェックポイントから比較対象を読む。"""
     return data.read(path / 'state.json')['payload']
+
+
+def test_zero500_plan_and_fingerprint(tmp_path, monkeypatch):
+    """開始・保存・評価の節目を固定し、再開時に変更を拒否する。"""
+    plan = data.Plan(tmp_path, tmp_path, 'test', None, 40, '', data.ZERO500)
+    plan.population.write_bytes(b'[]')
+    plan = replace(plan, population_sha=data.sha_file(plan.population))
+    assert plan.labels == ('zero-701', 'zero-702', 'zero-703')
+    assert plan.stages == (100_000, 150_000, 200_000, 300_000, 400_000, 500_000)
+    assert plan.next_stop(149_999) == 150_000
+    assert plan.next_stop(150_000) == 151_000
+    assert plan.max_workers == 3
+    assert len(reporting.matches(plan, plan.start)) == 6
+    assert len(reporting.matches(plan, plan.target)) == 9
+    assert all(job.label.startswith('zero-') for job in reporting.matches(plan, plan.target))
+    args = cli.parser().parse_args(['init', '--profile', 'zero-500k', '--smoke', 'all'])
+    assert args.profile == data.ZERO500 and args.smoke == 'all'
+
+    monkeypatch.setattr(data, 'fingerprint', lambda: {'test-source': 'aaa'})
+    data.seal(plan.root / 'config.json', data.payload(plan))
+    assert data.load(plan.root)[0] == plan
+    monkeypatch.setattr(data, 'fingerprint', lambda: {'test-source': 'bbb'})
+    with pytest.raises(data.RunError, match='ソース'):
+        data.load(plan.root)
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='Windowsのファイル共有モードを検証する')
+def test_display_sharing_conflict_is_bounded(tmp_path):
+    """別プロセスが削除共有なしで保持すると、旧世代を残して処理が戻る。"""
+    path = tmp_path / '進捗 live.json'
+    windows.replace_json(path, {'games': 3})
+    ready = tmp_path / 'ready'
+    cmd = (
+        'import sys; from pathlib import Path; '
+        'f=open(sys.argv[1], "rb"); Path(sys.argv[2]).touch(); sys.stdin.read(); f.close()'
+    )
+    with subprocess.Popen(
+        [sys.executable, '-B', '-c', cmd, str(path), str(ready)], stdin=subprocess.PIPE
+    ) as blocker:
+        try:
+            deadline = time.monotonic() + 10
+            while not ready.is_file():
+                assert blocker.poll() is None and time.monotonic() < deadline
+                time.sleep(0.025)
+            start = time.monotonic()
+            with pytest.raises(windows.DisplayBusy):
+                windows.replace_json(path, {'games': 4})
+            assert time.monotonic() - start < 8
+            assert data.read(path, changing=True) == {'games': 3}
+        finally:
+            blocker.communicate(timeout=5)
+    windows.replace_json(path, {'games': 5})
+    assert data.read(path, changing=True) == {'games': 5}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ['ready', path.name]
+
+
+def test_zero500_checkpoint_corruption_is_not_rollback(tmp_path, short_checkpoint):
+    """確定ファイルの破損が欠落扱いされないことを確認する。"""
+    plan = data.Plan(tmp_path, tmp_path, 'test', 'zero', 20, '', data.ZERO500)
+    origin = short_checkpoint
+    attempt = tmp_path / 'checkpoints' / origin.label / 'attempt-broken'
+    folder = attempt / 'checkpoint'
+    folder.mkdir(parents=True)
+    data.seal(
+        attempt / 'job.json',
+        {
+            'label': origin.label,
+            'from': origin.checkpoint.counts.games,
+            'parent': origin.checkpoint.sha,
+            'until': plan.next_stop(origin.checkpoint.counts.games),
+        },
+    )
+    chain, issues = data.scan(plan, origin)
+    assert chain == [origin.checkpoint] and len(issues) == 1
+    (folder / 'state.json').write_text('{}', encoding='utf-8')
+    with pytest.raises(data.RunError, match='確定保存点'):
+        data.scan(plan, origin)
+
+
+def test_zero500_retries_only_a_child_that_never_started(tmp_path, short_checkpoint, monkeypatch):
+    """既知の起動競合は復元を再照合し、子が起動するまで同じ区間を一度だけ投入する。"""
+    origin = short_checkpoint
+    plan = data.Plan(tmp_path, tmp_path, 'test', 'zero', 20, '', data.ZERO500)
+    owner = {'pid': 123, 'created': 456}
+    manager = cli.Manager(plan, 'config', tmp_path, owner, {origin.label: origin}, 1)
+    attempt = tmp_path / 'attempt-1'
+    attempt.mkdir()
+    calls = []
+    restored = []
+    fake_process = namedtuple('Process', 'pid')(1234)
+
+    def child(_args, _cwd, log):
+        calls.append(log.name)
+        if len(calls) == 1:
+            raise windows.LaunchBusy('test sharing violation')
+        return fake_process
+
+    def checkpoint(path, compatibility):
+        restored.append((path, compatibility))
+        return origin.checkpoint
+
+    monkeypatch.setattr(windows, 'child', child)
+    monkeypatch.setattr(windows, 'identity', lambda _pid: None)
+    monkeypatch.setattr(data, 'disk_check', lambda *_args: 0)
+    monkeypatch.setattr(data, 'load', lambda _root: (plan, 'config'))
+    monkeypatch.setattr(data, 'checkpoint', checkpoint)
+    monkeypatch.setattr(cli.time, 'sleep', lambda _seconds: None)
+    launched = manager.spawn(attempt, origin.label, {'kind': 'train'})
+    assert launched.process == fake_process
+    assert len(manager.active) == 1
+    assert calls == ['process.log', 'process-retry-1.log']
+    assert restored == [(origin.checkpoint.path, origin.compatible)]
+    assert data.runtime_issues(attempt)[0]['recovery'] == 'launch_retry'
+
+    attempt2 = tmp_path / 'attempt-2'
+    attempt2.mkdir()
+    monkeypatch.setattr(windows, 'child', lambda *_args: (_ for _ in ()).throw(OSError('disk')))
+    with pytest.raises(OSError, match='disk'):
+        manager.spawn(attempt2, origin.label, {'kind': 'train'})
+    assert len(manager.active) == 1
+    assert not list(attempt2.glob('launch-failure-*'))
 
 
 def _variant(path, edit):

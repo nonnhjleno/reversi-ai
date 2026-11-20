@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import signal
+import statistics
 import subprocess
 import sys
 import time
@@ -42,47 +43,60 @@ def _argument(command: str, root: Path, location: Path, *args: str) -> list[str]
 
 
 def _prepare(
-    root: Path, assets: Path, smoke: str | None, limit: int
+    root: Path, assets: Path, smoke: str | None, limit: int, profile: str = 'phase71'
 ) -> tuple[dict[str, data.Origin], dict[str, str]]:
     """初期化前に起点、評価の固定資産、出力先を検査する。"""
     if root in (windows.extended(data.ROOT), assets) or any(
         root.is_relative_to(assets / name) or (assets / name).is_relative_to(root)
-        for name in (data.PHASE7, 'phase6-ntuple-20261118', 'phase6-5-supervised-20261118')
+        for name in (
+            data.PHASE7,
+            data.PHASE71,
+            'phase6-ntuple-20261118',
+            'phase6-5-supervised-20261118',
+        )
     ):
         raise data.RunError('出力はPhase 6・6.5・7の原証拠とは別の新しいフォルダにしてください。')
     if smoke and root == windows.extended(data.DEFAULT_ROOT):
         raise data.RunError('試験は --root で本番とは別の出力先を指定してください。')
-    needed = (3 * 2**30) if smoke is None else (64 * 2**20)
+    if profile == data.ZERO500:
+        if root.is_relative_to(windows.extended(data.DEFAULT_ROOT)):
+            raise data.RunError('50万局用に別の --root を指定してください。')
+        if root.exists():
+            raise data.RunError('実験先は既に存在します。既存実験は verify で確認してください。')
+    needed = ((8 if profile == data.ZERO500 else 3) * 2**30) if smoke is None else (64 * 2**20)
     free = data.disk_check(root, needed, probe=True)
-    origins = data.origins(assets)
+    probe = data.Plan(root, assets, 'preflight', smoke, limit, data.POP_SHA, profile)
+    origins = data.plan_origins(probe, audit=True)
     source = assets / data.PHASE7 / 'opening-registration' / 'comparison.json'
     if sha_file(source) != data.POP_SHA:
         raise data.RunError('Phase 7の開発序盤とハッシュが一致しません。')
     if len(openings.load_population(source)['entries']) != 12:
         raise data.RunError('Phase 7の開発序盤12対が必要です。')
-    probe = data.Plan(root, assets, 'preflight', smoke, limit, data.POP_SHA)
     for name in phase7_eval.BASELINES:
         phase7_eval._fixed(name)
     reference: dict[str, str] = {}
     if smoke is None:
         marks = {n: o.checkpoint for n, o in origins.items()}
-        for job in reporting.matches(probe, data.START):
+        for job in reporting.matches(probe, probe.start):
             reporting.find_result(probe, job, marks)
-            summary = probe.phase7 / 'compare-10000' / job.key / 'summary.json'
+            summary = reporting.reference_path(probe, job) / 'summary.json'
             reference[job.key] = sha_file(summary)
     print(f'空き容量 {free / 2**30:.2f} GiB。直接CPython 3.13.5。')
     for name, origin in origins.items():
-        print(f'{name} 10,000局 照合済み {origin.checkpoint.model_sha}')
+        mark = origin.checkpoint
+        print(
+            f'{name} {mark.counts.games:,}局 照合済み model={mark.model_sha} state={mark.sha} ID={mark.model_id}'
+        )
     return origins, reference
 
 
-def init(root: Path, assets: Path, smoke: str | None, limit: int) -> None:
+def init(root: Path, assets: Path, smoke: str | None, limit: int, profile: str = 'phase71') -> None:
     """新しい実験領域を発行する。"""
     if root.exists():
         raise data.RunError(
             f'出力先が既にあります（{root}）。その実験は status または resume を使ってください。'
         )
-    origins, reference = _prepare(root, assets, smoke, limit)
+    origins, reference = _prepare(root, assets, smoke, limit, profile)
     root.mkdir(parents=True)
     for name in ('sessions', 'locks', 'checkpoints', 'evaluations', 'reports'):
         (root / name).mkdir()
@@ -98,7 +112,7 @@ def init(root: Path, assets: Path, smoke: str | None, limit: int) -> None:
         population.pop('population_hash', None)
         population['population_hash'] = openings.digest(population)
         evidence.save_new(opening, evidence.encoded_json(openings.validate_population(population)))
-    plan = data.Plan(root, assets, uuid4().hex, smoke, limit, sha_file(opening))
+    plan = data.Plan(root, assets, uuid4().hex, smoke, limit, sha_file(opening), profile)
     for label in plan.labels:
         (root / 'checkpoints' / label).mkdir()
     config = data.payload(plan)
@@ -121,6 +135,7 @@ def init(root: Path, assets: Path, smoke: str | None, limit: int) -> None:
             'state': 'READY',
             'updated_at': _timestamp(),
             'target': plan.target,
+            'start': plan.start,
             'mode': 'test' if smoke else 'production',
             'series': {label: origins[label].checkpoint.as_status() for label in plan.labels},
         },
@@ -131,7 +146,7 @@ def init(root: Path, assets: Path, smoke: str | None, limit: int) -> None:
 
 def _snapshot(root: Path) -> dict[str, object]:
     """状態表示のハッシュを初期化済みの計画と照合する。"""
-    snap = data.read(root / 'status.json')
+    snap = data.read(root / 'status.json', changing=True)
     config, digest = data.unseal(root / 'config.json')
     if snap.get('config_sha256') != digest or snap.get('run_id') != config.get('run_id'):
         raise data.RunError('status.jsonと実験の設定が一致しません。')
@@ -171,6 +186,9 @@ def _session(root: Path, name: object) -> Path:
 def _simple_status(snap: dict[str, object], state: str) -> None:
     """状態表示から必要な進捗と操作だけを選んで表示する。"""
     target = cast(int, snap['target'])
+    start = cast(int, snap.get('start', data.START))
+    if start == data.ZERO_START:
+        print('Ranger Zero-TD 50万局実験')
     rows = data.obj(snap['series'])
     completed = 0
     active = []
@@ -185,28 +203,43 @@ def _simple_status(snap: dict[str, object], state: str) -> None:
         row = data.obj(item)
         saved = cast(int, row['games'])
         current = cast(int, row.get('live_games', saved))
-        completed += saved - data.START
+        completed += current - start if start == data.ZERO_START else saved - start
         row_state = str(row.get('state', 'WAITING'))
         if row_state in ('RUNNING', 'STOPPING'):
             active.append(name)
+        if start == data.ZERO_START:
+            ratio = (current - start) / (target - start)
+            print(
+                f'{name:<15} {current:>7,} / {target:,}局  保存 {saved:,}局  {ratio:>5.1%}  {labels.get(row_state, row_state)}'
+            )
+            continue
         print(
             f'{name:<15} 現在 {current:,}局  保存 {saved:,}局  {labels.get(row_state, row_state)}'
         )
 
-    fraction = completed / (len(rows) * (target - data.START))
+    fraction = completed / (len(rows) * (target - start))
     filled = max(0, min(24, round(fraction * 24)))
     print(f'全体進捗  [{"#" * filled}{"-" * (24 - filled)}] {fraction:.1%}')
     print(f'同時稼働  {", ".join(active) if active else "なし"}')
     if snap.get('evaluation'):
         print(f'評価中  {snap["evaluation"]}')
     speed = snap.get('games_per_second')
+    if start == data.ZERO_START and isinstance(stage := snap.get('latest_evaluation'), int):
+        means = data.obj(snap.get('latest_scores', {}))
+        scores = ' / '.join(f'{name} {cast(float, rate):.1%}' for name, rate in means.items())
+        print(f'最後に完了した評価  {stage:,}局  {scores}')
     eta = snap.get('estimated_remaining_seconds')
     if isinstance(speed, (int, float)) and isinstance(eta, (int, float)):
         print(f'全体速度  {speed:.2f}局/秒')
         print(f'残り時間  約{eta / 3600:.1f}時間（学習分の推定。評価時間を含みません）')
     else:
         print('残り時間  学習速度を実測後に表示します。評価時間は別途かかります。')
-    issues = cast(list[object], snap.get('issues', []))
+    issues = cast(list[dict[str, object]], snap.get('issues', []))
+    if start == data.ZERO_START:
+        recovered = sum(bool(issue.get('recovery')) for issue in issues)
+        if recovered:
+            print(f'復旧済み  {recovered}件（詳細は status --verbose）')
+        issues = [issue for issue in issues if not issue.get('recovery')]
     error = snap.get('error')
     if issues or error:
         print(f'エラー  あり（要確認 {len(issues)}件）')
@@ -241,7 +274,7 @@ def status(root: Path, *, verbose: bool = False) -> None:
     for name, item in rows.items():
         row = data.obj(item)
         games = cast(int, row['games'])
-        complete += games - data.START
+        complete += games - cast(int, snap.get('start', data.START))
         observed = cast(int, row.get('live_games', games))
         print(
             f'{name} 完局 {observed:,}  保存 {games:,}/{target:,} ({games / target:.1%})  更新 {row["updates"]:,}'
@@ -352,7 +385,7 @@ def _worker(root: Path, folder: Path) -> None:
             data.record_skipped(folder)
             return
         data.disk_check(root, plan.minimum_free)
-        checked = data.origins(plan.assets)
+        checked = data.plan_origins(plan)
         if kind == 'train':
             origin = checked[label]
             begin = data.checkpoint(Path(str(request['begin'])), origin.compatible)
@@ -371,7 +404,14 @@ def _worker(root: Path, folder: Path) -> None:
                 nonlocal last
                 if time.monotonic() - last >= 1:
                     data.disk_check(root, plan.minimum_free)
-                    windows.replace_json(folder / 'live.json', count._asdict())
+                    try:
+                        windows.replace_json(folder / 'live.json', count._asdict())
+                    except windows.DisplayBusy as failure:
+                        print(
+                            f'{data.DISPLAY_DEFERRED} {count.games:,}局 {failure}',
+                            file=sys.stderr,
+                            flush=True,
+                        )
                     last = time.monotonic()
 
             try:
@@ -394,9 +434,16 @@ def _worker(root: Path, folder: Path) -> None:
                 raise data.RunError('登録されていない評価です。')
             source = data.obj(request['marks'])
             marks = {
-                name: data.checkpoint(Path(str(path)), checked[name].compatible)
+                name: data.checkpoint(
+                    Path(str(path)), checked[name.removesuffix('@origin')].compatible
+                )
                 for name, path in source.items()
             }
+            if (
+                match.opponent == 'origin100k'
+                and marks[f'{label}@origin'] != checked[label].checkpoint
+            ):
+                raise data.RunError(f'{label} の評価相手が登録済みの10万局モデルと異なります。')
             a, b = reporting.match_inputs(match, marks)
             if requested():
                 data.record_skipped(folder)
@@ -431,8 +478,12 @@ class Manager:
         self.chains, self.issues = _chains(plan, origins)
         self.active: list[Child] = []
         self.started = time.monotonic()
+        self.evaluation_seconds = 0.0
+        self.evaluation_started: float | None = None
         self.initial_games = sum(c[-1].counts.games for c in self.chains.values())
         self.evaluating: str | None = None
+        self.latest_evaluation: int | None = None
+        self.latest_scores: dict[str, float] = {}
         self.error: str | None = None
 
     @property
@@ -455,10 +506,19 @@ class Manager:
                 live = child.folder / 'live.json'
                 rows[child.label]['state'] = 'STOPPING' if self.stopping else 'RUNNING'
                 if live.is_file():
-                    rows[child.label]['live_games'] = data.read(live)['games']
+                    try:
+                        rows[child.label]['live_games'] = data.read(live, changing=True)['games']
+                    except data.RunError as failure:
+                        cause = failure.__cause__
+                        if not isinstance(cause, OSError) or not windows.sharing_error(cause):
+                            raise
         games = sum(cast(int, row.get('live_games', row['games'])) for row in rows.values())
         elapsed = time.monotonic() - self.started
-        speed = (games - self.initial_games) / elapsed if elapsed > 1 else 0.0
+        evaluating = self.evaluation_started
+        training_seconds = elapsed - self.evaluation_seconds
+        if evaluating is not None:
+            training_seconds -= time.monotonic() - evaluating
+        speed = (games - self.initial_games) / training_seconds if training_seconds > 1 else 0.0
         remaining = self.plan.target * len(rows) - games
         windows.replace_json(
             self.plan.root / 'status.json',
@@ -468,6 +528,7 @@ class Manager:
                 'updated_at': _timestamp(),
                 'state': state,
                 'target': self.plan.target,
+                'start': self.plan.start,
                 'owner': self.owner,
                 'session': self.session.name,
                 'mode': 'test' if self.plan.smoke else 'production',
@@ -477,6 +538,8 @@ class Manager:
                 'games_per_second': speed if speed > 0 else None,
                 'estimated_remaining_seconds': remaining / speed if speed > 0 else None,
                 'evaluation': self.evaluating,
+                'latest_evaluation': self.latest_evaluation,
+                'latest_scores': self.latest_scores,
                 'issues': self.issues,
                 'error': self.error,
             },
@@ -497,7 +560,42 @@ class Manager:
                 'argv': args,
             },
         )
-        proc = windows.child(args, data.ROOT, folder / 'process.log')
+        retries: list[str] = []
+        for seconds in (0.25, 0.75, None):
+            name = 'process.log' if not retries else f'process-retry-{len(retries)}.log'
+            try:
+                proc = windows.child(args, data.ROOT, folder / name)
+            except windows.LaunchBusy as failure:
+                if not self.plan.zero500:
+                    raise
+                retries.append(str(failure))
+                data.seal(
+                    folder / f'launch-failure-{len(retries)}.json',
+                    {'failure': str(failure), 'at': _timestamp()},
+                )
+                if seconds is None or self.stopping:
+                    raise
+                # 再試行前に全設定と、次に読む確定保存点を照合する。
+                if data.load(self.plan.root)[1] != self.digest:
+                    raise data.RunError('子プロセスの起動再試行前に実験設定が変化しました。')
+                if request['kind'] == 'train':
+                    begin = self.chains[label][-1]
+                    if data.checkpoint(begin.path, self.origins[label].compatible) != begin:
+                        raise data.RunError(f'{label} の保存点が子プロセス再起動前に変化しました。')
+                else:
+                    for key, path in data.obj(request['marks']).items():
+                        series = key.removesuffix('@origin')
+                        expected = next(c for c in self.chains[series] if str(c.path) == path)
+                        if (
+                            data.checkpoint(expected.path, self.origins[series].compatible)
+                            != expected
+                        ):
+                            raise data.RunError(
+                                f'{series} の評価モデルが子プロセス再起動前に変化しました。'
+                            )
+                time.sleep(seconds)
+            else:
+                break
         item = Child(folder, proc, label)
         self.active.append(item)
         data.seal(
@@ -514,6 +612,9 @@ class Manager:
         data.seal(
             child.folder / 'process-exit.json', {'exit_code': rc, 'finished_at': _timestamp()}
         )
+        if self.plan.zero500:
+            for issue in data.runtime_issues(child.folder):
+                self.issues.append(dict(issue))
         return rc
 
     def train_to(self, target: int) -> None:
@@ -566,18 +667,16 @@ class Manager:
 
     def evaluate(self, stage: int) -> None:
         """1つの評価だけを起動し、未完了試行は新しい出力で再取得する。"""
-        marks = {
-            label: c
-            for label, chain in self.chains.items()
-            for c in chain
-            if c.counts.games == stage
-        }
+        self.evaluation_started = time.monotonic()
+        marks = reporting.stage_marks(self.plan, self.chains, stage)
+        scores: dict[str, list[float]] = {}
         for job in reporting.matches(self.plan, stage):
             if self.stopping:
                 break
             existing, issues = reporting.find_result(self.plan, job, marks)
             self.issues.extend({'evaluation': job.key, **item} for item in issues)
             if existing is not None:
+                scores.setdefault(job.opponent, []).append(cast(float, existing['point_rate']))
                 continue
             self.evaluating = f'{stage} {job.key}'
             folder = (
@@ -585,8 +684,7 @@ class Manager:
             )
             folder.mkdir(parents=True)
             paths = {job.label: str(marks[job.label].path)}
-            if job.opponent == 'zero':
-                name = 'zero-' + job.label[-3:]
+            if (name := job.opponent_mark) is not None:
                 paths[name] = str(marks[name].path)
             child = self.spawn(
                 folder,
@@ -606,8 +704,14 @@ class Manager:
                 raise data.RunError(f'評価 {job.key} が異常終了しました（終了値 {rc}、{folder}）。')
             if not (folder / 'match' / 'summary.json').is_file() and self.stopping:
                 break
-            reporting.verified_match(job, marks, folder / 'match', self.plan.population)
+            verified = reporting.verified_match(job, marks, folder / 'match', self.plan.population)
+            scores.setdefault(job.opponent, []).append(cast(float, verified['point_rate']))
         self.evaluating = None
+        self.evaluation_seconds += time.monotonic() - self.evaluation_started
+        self.evaluation_started = None
+        if not self.stopping:
+            self.latest_evaluation = stage
+            self.latest_scores = {name: statistics.mean(values) for name, values in scores.items()}
 
     def drain(self) -> None:
         """異常時に新しい仕事を止め、起動済み処理の解放を待つ。"""
@@ -625,11 +729,11 @@ def _validate_manifest(plan: data.Plan, digest: str, origins: dict[str, data.Ori
         raise data.RunError('manifest.jsonの起点または設定ハッシュが一致しません。')
     reference = {}
     if plan.smoke is None:
-        for match in reporting.matches(plan, data.START):
-            path = plan.phase7 / 'compare-10000' / match.key / 'summary.json'
+        for match in reporting.matches(plan, plan.start):
+            path = reporting.reference_path(plan, match) / 'summary.json'
             reference[match.key] = sha_file(path)
     if manifest['reference_summary_sha256'] != reference:
-        raise data.RunError('Phase 7の10,000局の評価が初期化時と違います。')
+        raise data.RunError(f'{plan.start:,}局の基準評価が初期化時と違います。')
 
 
 def _manage(root: Path, session: Path, workers: int, intent: str) -> None:
@@ -648,14 +752,26 @@ def _manage(root: Path, session: Path, workers: int, intent: str) -> None:
         if owner is None:
             raise data.RunError('現在の管理プロセスを識別できません。')
         data.seal(session / 'owner.json', owner)
-        origins = data.origins(plan.assets)
+        origins = data.plan_origins(plan)
         _validate_manifest(plan, digest, origins)
         manager = Manager(plan, digest, session, owner, origins, workers)
-        manager.issues.extend(_rollback_notices(previous, manager.chains))
+        notices = _rollback_notices(previous, manager.chains)
+        if plan.zero500 and notices:
+            raise data.RunError(
+                '以前の進捗に対応する確定保存点が欠けています。verify で確認してください。'
+            )
+        manager.issues.extend(notices)
+        if plan.zero500:
+            for label, chain in manager.chains.items():
+                observed = data.obj(data.obj(previous['series'])[label])
+                if not any(
+                    all(observed.get(k) == v for k, v in c.as_status().items()) for c in chain
+                ):
+                    raise data.RunError(f'{label} の保存済み進捗が確定連鎖と一致しません。')
         for issue in manager.issues:
             start = issue.get('from')
             end = issue.get('until')
-            span = f'{start}局→{end}局を再取得可能' if start is not None else '未採用'
+            span = f'{start}局→{end}局' if start is not None else '履歴'
             print(f'過去の試行 {span} {issue["path"]} {issue["problem"]}', flush=True)
 
         def interrupt(signum: int, frame: object) -> None:
@@ -674,6 +790,8 @@ def _manage(root: Path, session: Path, workers: int, intent: str) -> None:
                     'root': str(root),
                 },
             )
+            if plan.zero500 and plan.smoke is None:
+                manager.evaluate(plan.start)
             for stage in plan.milestones:
                 manager.train_to(stage)
                 if manager.stopping:
@@ -681,6 +799,8 @@ def _manage(root: Path, session: Path, workers: int, intent: str) -> None:
                 manager.evaluate(stage)
                 if manager.stopping:
                     break
+                if plan.zero500 and stage != plan.target:
+                    reporting.reports(plan, manager.chains, manager.issues)
             manager.evaluating = None
             if not manager.stopping:
                 reporting.reports(plan, manager.chains, manager.issues)
@@ -689,8 +809,11 @@ def _manage(root: Path, session: Path, workers: int, intent: str) -> None:
             manager.error = f'{type(failure).__name__} {failure}'
             manager.drain()
             # 失敗時も保存まで到達した子の確定状態を見せる。
-            manager.chains, more = _chains(plan, origins)
-            manager.issues.extend(more)
+            try:
+                manager.chains, more = _chains(plan, origins)
+                manager.issues.extend(more)
+            except _PROBLEM as scan_failure:
+                manager.error += f' / 保存状態の再確認にも失敗 {scan_failure}'
             manager.publish('FAILED')
             raise
         finally:
@@ -746,7 +869,7 @@ def verify(root: Path) -> int:
     """確定連鎖、進捗、評価の整合性を照合して問題の範囲を示す。"""
     snap = _snapshot(root)
     plan, digest = data.load(root)
-    origins = data.origins(plan.assets)
+    origins = data.plan_origins(plan)
     _validate_manifest(plan, digest, origins)
     chains, errors = _chains(plan, origins)
     all_current = True
@@ -760,13 +883,10 @@ def verify(root: Path) -> int:
         elif row['state_sha256'] != chain[-1].sha:
             all_current = False
         print(f'{name} 最終確定 {chain[-1].counts.games:,}局 SHA-256 {chain[-1].model_sha}')
-    stages = plan.milestones if plan.smoke is not None else (data.START, *plan.milestones)
     incomplete = 0
-    for stage in stages:
-        marks = {
-            label: c for label, chain in chains.items() for c in chain if c.counts.games == stage
-        }
-        if len(marks) != len(plan.labels):
+    for stage in plan.stages:
+        marks = reporting.stage_marks(plan, chains, stage)
+        if not all(label in marks for label in plan.labels):
             incomplete += len(reporting.matches(plan, stage))
             continue
         for job in reporting.matches(plan, stage):
@@ -782,14 +902,17 @@ def verify(root: Path) -> int:
         errors.append({'problem': 'COMPLETEDの表示に対応する学習または評価が欠けています。'})
     for issue in errors:
         print(evidence.encoded_json(issue).strip())
-    print(f'確定状態を検証しました。未評価 {incomplete}件、要確認 {len(errors)}件。')
-    return int(bool(errors))
+    unresolved = [issue for issue in errors if not (plan.zero500 and issue.get('recovery'))]
+    if plan.zero500:
+        print(f'過去の復旧済み記録 {len(errors) - len(unresolved)}件。')
+    print(f'確定状態を検証しました。未評価 {incomplete}件、要確認 {len(unresolved)}件。')
+    return int(bool(unresolved))
 
 
 def report(root: Path) -> None:
     """学習を行わず、保存状態から新しい集計を作る。"""
     plan, digest = data.load(root)
-    origins = data.origins(plan.assets)
+    origins = data.plan_origins(plan)
     _validate_manifest(plan, digest, origins)
     chains, errors = _chains(plan, origins)
     folder = reporting.reports(plan, chains, errors)
@@ -832,9 +955,12 @@ def parser() -> argparse.ArgumentParser:
         if name in ('doctor', 'init'):
             command.add_argument('--assets', type=Path, help='元の evaluation_results フォルダ。')
             command.add_argument(
-                '--smoke', choices=['zero', 'pretrained'], help='1系列の短い試験。'
+                '--smoke',
+                choices=['zero', 'pretrained', 'all'],
+                help='短い試験。all は50万局計画専用。',
             )
             command.add_argument('--smoke-games', type=lambda s: _range(s, 20, 100), default=40)
+            command.add_argument('--profile', choices=['phase71', data.ZERO500], default='phase71')
         if name in ('doctor', 'start', 'resume', 'run'):
             command.add_argument('--max-workers', type=lambda s: _range(s, 1, 6), default=2)
         if name == 'status':
@@ -860,15 +986,25 @@ def main() -> int:
         command = args.command
         if command in ('doctor', 'init'):
             assets = windows.extended(args.assets or data.asset_directory())
+            zero500 = args.profile == data.ZERO500
+            if (zero500 and args.smoke == 'pretrained') or (not zero500 and args.smoke == 'all'):
+                raise data.RunError('指定された試験系列はこの実験計画では使えません。')
+            args.max_workers = getattr(args, 'max_workers', 2)
+            if zero500 and args.max_workers > 3:
+                raise data.RunError('50万局計画の並列数は1〜3です。')
             if command == 'doctor':
-                _prepare(root, assets, args.smoke, args.smoke_games)
+                _prepare(root, assets, args.smoke, args.smoke_games, args.profile)
                 print(
                     f'同時実行上限 {args.max_workers}。論理CPU {os.cpu_count()}。確認完了。実験先 {root}'
                 )
             else:
-                init(root, assets, args.smoke, args.smoke_games)
+                init(root, assets, args.smoke, args.smoke_games, args.profile)
         elif command in ('start', 'resume', 'run'):
-            _launch(root, args.max_workers, command)
+            plan, _ = data.load(root)
+            workers = args.max_workers
+            if workers > plan.max_workers:
+                raise data.RunError(f'この実験の並列数は1〜{plan.max_workers}です。')
+            _launch(root, workers, command)
         elif command == 'verify':
             return verify(root)
         elif command == 'status':
