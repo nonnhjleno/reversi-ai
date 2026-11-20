@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +36,11 @@ _SOURCES = (
     'harness/referee.py',
 )
 _ALGORITHM = 'ranger-black-online-semi-gradient-td0-v1'
+_PHASE7_TRAIN_SHA256 = 'd6ab6c31dd3c051b09eaf599d1e11cb670b250035535da705754d16e8cc01bd5'
+
+
+class StoppedBeforeGame(InterruptedError):
+    """新しい局を開始する前に停止を受け取った。"""
 
 
 class Counts(NamedTuple):
@@ -171,8 +177,16 @@ def _restore(directory: Path, compatibility: dict[str, object]) -> Progress:
         or state['complete'] is not True
     ):
         raise ValueError('invalid_td_checkpoint')
-    if _canonical(state['compatibility']) != _canonical(compatibility):
-        raise ValueError('incompatible_td_checkpoint')
+    expected = _canonical(compatibility)
+    if _canonical(state['compatibility']) != expected:
+        # Phase 7は同じ手順で完局を保存している。互換変更は旧トレーナー1版に限る。
+        source = cast(dict[str, str], compatibility['sources'])
+        legacy = {
+            **compatibility,
+            'sources': {**source, 'tools/phase7_train.py': _PHASE7_TRAIN_SHA256},
+        }
+        if _canonical(state['compatibility']) != _canonical(legacy):
+            raise ValueError('incompatible_td_checkpoint')
     count = _counts(state['counts'])
     before = _counts(state['from_counts'])
     if count.games <= before.games or any(new < old for new, old in zip(count, before)):
@@ -218,9 +232,11 @@ def run(
     until: int,
     *,
     resume: Path | None = None,
+    stop_requested: Callable[[], bool] | None = None,
+    on_game: Callable[[Counts], None] | None = None,
 ) -> dict[str, object]:
     """既存資産を保護して自己対戦し、新しい完局checkpointを発行する。"""
-    if type(until) is not int or not 0 < until <= 50000:
+    if type(until) is not int or not 0 < until <= 100000:
         raise ValueError('invalid_td_game_limit')
     if not initial.is_absolute():
         raise ValueError('td_requires_absolute_initial_path')
@@ -247,6 +263,8 @@ def run(
     code_commit = subprocess.check_output(
         ['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True, timeout=10
     ).strip()
+    if stop_requested is not None and stop_requested():
+        raise StoppedBeforeGame('td_stopped_before_game')
     output.mkdir()
     start = time.perf_counter()
     weights = list(progress.model.weights)
@@ -279,9 +297,14 @@ def run(
                 )
                 + b'\n'
             )
+            if on_game is not None:
+                on_game(Counts(game_index, placements + passes, placements, passes))
+            if stop_requested is not None and stop_requested():
+                break
         stream.flush()
         os.fsync(stream.fileno())
     elapsed = time.perf_counter() - start
+    until = game_index
     count = Counts(until, placements + passes, placements, passes)
     if diagnostic.observations != count.updates - before.updates:
         raise ValueError('td_segment_update_count_mismatch')

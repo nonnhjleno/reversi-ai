@@ -15,3 +15,14 @@
 /baselines/positional_v1/ai_engine.py text eol=lf
 /baselines/positional_v1/reversi.py text eol=crlf
 /baselines/positional_v1/manifest.json text eol=crlf
+
+# Keep the exact Phase 7 checkpoint source fingerprint on fresh checkouts.
+/tools/phase7_td.py text eol=lf
+/tools/phase7_train.py text eol=lf
+/harness/referee.py text eol=lf
+/tools/evidence.py text eol=crlf
+/reversi_player/ai_engine.py text eol=crlf
+/reversi_player/ntuple.py text eol=crlf
+/reversi_player/ntuple_io.py text eol=crlf
+/reversi_player/reversi.py text eol=crlf
+/tools/phase7_longrun*.py text eol=lf
