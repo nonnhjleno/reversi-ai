@@ -68,11 +68,73 @@ def test_cli_commands_and_worker_limit(tmp_path):
         assert args.root == tmp_path
         if command in ('doctor', 'start', 'resume', 'run'):
             assert args.max_workers == 2
+    assert not parser.parse_args(['status']).verbose
+    assert parser.parse_args(['status', '--verbose']).verbose
     for workers in ('0', '7', 'two'):
         with pytest.raises(SystemExit):
             parser.parse_args(['start', '--max-workers', workers])
     with pytest.raises(SystemExit):
         parser.parse_args(['init', '--smoke', 'zero', '--smoke-games', '1000'])
+
+
+def test_status_default_is_compact_and_verbose_keeps_details(tmp_path, monkeypatch, capsys):
+    """既定statusを読みやすくし、verboseに保存先とPIDを残す。"""
+    snap = {
+        'run_id': 'test-run',
+        'state': 'RUNNING',
+        'updated_at': '2026-11-20T00:00:00Z',
+        'owner': {'pid': 123, 'created': 456},
+        'session': 'a' * 32,
+        'target': 100_000,
+        'max_workers': 2,
+        'games_per_second': 5.0,
+        'estimated_remaining_seconds': 3600.0,
+        'evaluation': '20,000局 701-zero-vs-search',
+        'issues': [],
+        'series': {
+            'zero-701': {
+                'games': 20_000,
+                'live_games': 20_100,
+                'updates': 12_345,
+                'state': 'RUNNING',
+                'checkpoint': r'C:\long\checkpoint\state.json',
+                'segment_games_per_second': 4.0,
+            },
+            'pretrained-701': {
+                'games': 10_000,
+                'updates': 0,
+                'state': 'WAITING',
+                'checkpoint': r'C:\long\checkpoint\state.json',
+                'segment_games_per_second': 0.0,
+            },
+        },
+    }
+    monkeypatch.setattr(cli, '_snapshot', lambda _root: snap)
+    monkeypatch.setattr(cli, '_live', lambda _owner: True)
+    monkeypatch.setattr(cli, '_session', lambda _root, _name: tmp_path)
+    monkeypatch.setattr(cli.data, 'available', lambda: None)
+    monkeypatch.setattr(cli.windows, 'extended', lambda path: path)
+    monkeypatch.setattr(sys, 'argv', ['phase7_longrun.py', 'status', '--root', str(tmp_path)])
+
+    assert cli.main() == 0
+    compact = capsys.readouterr().out
+    assert '[#-----------------------] 5.6%' in compact
+    assert 'zero-701' in compact and 'pretrained-701' in compact
+    assert '実行中' in compact and '待機中' in compact
+    assert '同時稼働  zero-701' in compact
+    assert '評価中  20,000局 701-zero-vs-search' in compact
+    assert '評価時間を含みません' in compact
+    assert 'エラー  なし' in compact
+    assert 'state.json' not in compact and '123' not in compact and '12,345' not in compact
+
+    monkeypatch.setattr(
+        sys,
+        'argv',
+        ['phase7_longrun.py', 'status', '--root', str(tmp_path), '--verbose'],
+    )
+    assert cli.main() == 0
+    verbose = capsys.readouterr().out
+    assert 'state.json' in verbose and '管理PID 123' in verbose and '12,345' in verbose
 
 
 def test_stop_before_first_game_creates_nothing(tmp_path, short_checkpoint):
