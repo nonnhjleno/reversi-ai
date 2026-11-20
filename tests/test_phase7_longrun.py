@@ -101,6 +101,30 @@ def test_zero500_checkpoint_corruption_is_not_rollback(tmp_path, short_checkpoin
         data.scan(plan, origin)
 
 
+def test_zero500_requires_explicit_longrun_resume(tmp_path, short_checkpoint):
+    """既存の上限を保ち、明示的に保存点から続ける経路だけを拡張する。"""
+    origin = short_checkpoint
+    output = tmp_path / 'must-not-start'
+    for until, longrun, resume in (
+        (100_001, False, origin.checkpoint.path),
+        (100_001, True, None),
+        (500_001, True, origin.checkpoint.path),
+    ):
+        with pytest.raises(ValueError, match='invalid_td_game_limit'):
+            train.run(origin.initial, output, origin.config, until, longrun=longrun, resume=resume)
+    with pytest.raises(train.StoppedBeforeGame):
+        train.run(
+            origin.initial,
+            output,
+            origin.config,
+            500_000,
+            longrun=True,
+            resume=origin.checkpoint.path,
+            stop_requested=lambda: True,
+        )
+    assert not output.exists()
+
+
 def test_zero500_retries_only_a_child_that_never_started(tmp_path, short_checkpoint, monkeypatch):
     """既知の起動競合は復元を再照合し、子が起動するまで同じ区間を一度だけ投入する。"""
     origin = short_checkpoint

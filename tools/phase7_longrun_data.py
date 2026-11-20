@@ -49,6 +49,7 @@ ZERO_ORIGINS = {
     ),
 }
 _PHASE71_MANAGER = {
+    'tools/phase7_train.py': train._PHASE71_TRAIN_SHA256,
     'tools/phase7_longrun.py': '5693a1a4a75516e7c810c79a6ca47a17210f41277558e3cf3851282efeb6a74c',
     'tools/phase7_longrun_data.py': '52fe1b2713fff784f2b5c8bf606e41c6985c094309b8292af3ee12ebf38e04ac',
     'tools/phase7_longrun_os.py': 'a624f83150fd1b09917431798b6cdcd366e5d2f1f9e9db0efcb92918698dec87',

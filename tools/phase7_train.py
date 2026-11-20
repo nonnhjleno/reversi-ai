@@ -37,6 +37,7 @@ _SOURCES = (
 )
 _ALGORITHM = 'ranger-black-online-semi-gradient-td0-v1'
 _PHASE7_TRAIN_SHA256 = 'd6ab6c31dd3c051b09eaf599d1e11cb670b250035535da705754d16e8cc01bd5'
+_PHASE71_TRAIN_SHA256 = '0c8e4568c69188321ec4dac069c7107d6e6cf838e841714b48fbef8c53e8392d'
 
 
 class StoppedBeforeGame(InterruptedError):
@@ -181,11 +182,11 @@ def _restore(directory: Path, compatibility: dict[str, object]) -> Progress:
     if _canonical(state['compatibility']) != expected:
         # Phase 7は同じ手順で完局を保存している。互換変更は旧トレーナー1版に限る。
         source = cast(dict[str, str], compatibility['sources'])
-        legacy = {
-            **compatibility,
-            'sources': {**source, 'tools/phase7_train.py': _PHASE7_TRAIN_SHA256},
-        }
-        if _canonical(state['compatibility']) != _canonical(legacy):
+        legacy = [
+            {**compatibility, 'sources': {**source, 'tools/phase7_train.py': digest}}
+            for digest in (_PHASE7_TRAIN_SHA256, _PHASE71_TRAIN_SHA256)
+        ]
+        if not any(_canonical(state['compatibility']) == _canonical(item) for item in legacy):
             raise ValueError('incompatible_td_checkpoint')
     count = _counts(state['counts'])
     before = _counts(state['from_counts'])
@@ -234,9 +235,11 @@ def run(
     resume: Path | None = None,
     stop_requested: Callable[[], bool] | None = None,
     on_game: Callable[[Counts], None] | None = None,
+    longrun: bool = False,
 ) -> dict[str, object]:
     """既存資産を保護して自己対戦し、新しい完局checkpointを発行する。"""
-    if type(until) is not int or not 0 < until <= 100000:
+    limit = 500_000 if longrun and resume is not None else 100_000
+    if type(until) is not int or not 0 < until <= limit:
         raise ValueError('invalid_td_game_limit')
     if not initial.is_absolute():
         raise ValueError('td_requires_absolute_initial_path')

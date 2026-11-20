@@ -423,6 +423,7 @@ def _worker(root: Path, folder: Path) -> None:
                     resume=begin.path,
                     stop_requested=requested,
                     on_game=progress,
+                    longrun=plan.zero500,
                 )
             except train.StoppedBeforeGame:
                 data.record_skipped(folder)
