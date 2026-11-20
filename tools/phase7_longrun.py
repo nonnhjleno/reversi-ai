@@ -168,7 +168,56 @@ def _session(root: Path, name: object) -> Path:
     return root / 'sessions' / name
 
 
-def status(root: Path) -> None:
+def _simple_status(snap: dict[str, object], state: str) -> None:
+    """状態表示から必要な進捗と操作だけを選んで表示する。"""
+    target = cast(int, snap['target'])
+    rows = data.obj(snap['series'])
+    completed = 0
+    active = []
+    labels = {
+        'RUNNING': '実行中',
+        'STOPPING': '停止中',
+        'COMPLETED': '完了',
+        'WAITING': '待機中',
+    }
+    print(f'状態  {state}')
+    for name, item in rows.items():
+        row = data.obj(item)
+        saved = cast(int, row['games'])
+        current = cast(int, row.get('live_games', saved))
+        completed += saved - data.START
+        row_state = str(row.get('state', 'WAITING'))
+        if row_state in ('RUNNING', 'STOPPING'):
+            active.append(name)
+        print(
+            f'{name:<15} 現在 {current:,}局  保存 {saved:,}局  {labels.get(row_state, row_state)}'
+        )
+
+    fraction = completed / (len(rows) * (target - data.START))
+    filled = max(0, min(24, round(fraction * 24)))
+    print(f'全体進捗  [{"#" * filled}{"-" * (24 - filled)}] {fraction:.1%}')
+    print(f'同時稼働  {", ".join(active) if active else "なし"}')
+    if snap.get('evaluation'):
+        print(f'評価中  {snap["evaluation"]}')
+    speed = snap.get('games_per_second')
+    eta = snap.get('estimated_remaining_seconds')
+    if isinstance(speed, (int, float)) and isinstance(eta, (int, float)):
+        print(f'全体速度  {speed:.2f}局/秒')
+        print(f'残り時間  約{eta / 3600:.1f}時間（学習分の推定。評価時間を含みません）')
+    else:
+        print('残り時間  学習速度を実測後に表示します。評価時間は別途かかります。')
+    issues = cast(list[object], snap.get('issues', []))
+    error = snap.get('error')
+    if issues or error:
+        print(f'エラー  あり（要確認 {len(issues)}件）')
+        if error:
+            print(f'  最後のエラー  {error}')
+    else:
+        print('エラー  なし')
+    print('操作  停止: stop  |  再開: verify の後に resume  |  詳細: status --verbose')
+
+
+def status(root: Path, *, verbose: bool = False) -> None:
     """状態表示と実プロセスの一致を確認する。読み取り専用。"""
     snap = _snapshot(root)
     state = str(snap['state'])
@@ -180,6 +229,9 @@ def status(root: Path) -> None:
             state = 'STOPPING'
     elif live:
         state = 'FINISHING'
+    if not verbose:
+        _simple_status(snap, state)
+        return
     print(f'実験 {snap["run_id"]}  {state}  更新 {snap["updated_at"]}')
     if snap.get('owner'):
         print(f'管理PID {data.obj(snap["owner"])["pid"]}  生存 {"あり" if live else "なし"}')
@@ -785,6 +837,8 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument('--smoke-games', type=lambda s: _range(s, 20, 100), default=40)
         if name in ('doctor', 'start', 'resume', 'run'):
             command.add_argument('--max-workers', type=lambda s: _range(s, 1, 6), default=2)
+        if name == 'status':
+            command.add_argument('--verbose', action='store_true', help='保存先、PIDなども表示')
     return cli
 
 
@@ -817,8 +871,10 @@ def main() -> int:
             _launch(root, args.max_workers, command)
         elif command == 'verify':
             return verify(root)
+        elif command == 'status':
+            status(root, verbose=args.verbose)
         else:
-            {'stop': stop, 'status': status, 'report': report}[command](root)
+            {'stop': stop, 'report': report}[command](root)
         return 0
     except _PROBLEM as failure:
         print(f'操作できません。{failure}', file=sys.stderr, flush=True)
