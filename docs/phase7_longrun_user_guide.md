@@ -16,29 +16,38 @@ Phase 7で学習したZero-TDとPretrained-TDを、それぞれ3つのseed（701
 ```powershell
 Set-Location -LiteralPath 'C:\School\2026\後期\00_授業資料\情報学演習Ｂ'
 Get-Item -LiteralPath '.\tools\phase7_longrun.py'
+$repo = (Get-Location).Path
 $py = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'
+$script = Join-Path $repo 'tools\phase7_longrun.py'
+$assets = Join-Path $repo 'evaluation_results'
+$runId = Get-Date -Format 'yyyyMMdd-HHmmss'
+$run = Join-Path $assets "phase7-longrun-100k-$runId"
 & $py --version
+if (-not (Test-Path -LiteralPath $script)) { throw "Not in the repository root: $repo" }
+if (Test-Path -LiteralPath $run) { throw "Choose a new, unused experiment root: $run" }
 Get-PSDrive -PSProvider FileSystem
 ```
 
-ここからの例はすべてリポジトリのルートを基準にしています。新しいPowerShellを開いた場合は、上の `Set-Location` と `$py` の設定をもう一度実行してください。`python` が同じ実行ファイルを指す環境では、`& $py` の代わりに `python` を使えます。
+**重要：この実験の操作では、毎回必ず同じ `--root $run` を指定します。** 省略時はプログラム既定の `evaluation_results\phase7-longrun-100k` が使われます。直前に使った実験rootが自動で選ばれることはありません。たとえばrootを付けずに `stop` や `status` を実行すると、別の実験を参照することがあります。PowerShellを開き直した場合、環境変数の設定はやり直しますが、既存実験を続けるときは `$runId` を再生成せず、同じ実験フォルダを `$run` に設定してください。
+
+ここからの例はすべてリポジトリのルートを基準にしています。新しいPowerShellを開いた場合は、`Set-Location`、`$py`、`$script`、`$assets` を設定し直してください。既存実験を続けるときは、`$run` にその実験フォルダを明示して設定します。新しい実験用の日時付き `$run` を再生成すると別実験になるため、再開時には使わないでください。`python` が同じ実行ファイルを指す環境では、`& $py` の代わりに `python` を使えます。
 
 ## 最初の起動
 
 まず点検し、次に保存先を初期化します。この2つの操作では学習は始まりません。途中でエラーが表示された場合は、内容を確認してから次へ進みます。
 
 ```powershell
-& $py -B tools/phase7_longrun.py doctor
-& $py -B tools/phase7_longrun.py init
+& $py -B $script doctor --root $run --assets $assets --max-workers 2
+& $py -B $script init --root $run --assets $assets
 ```
 
-`doctor` は6件のモデルのSHA-256と設定、再開に使う乱数状態、評価資産、書き込みと空き容量を点検します。例えば途中で `空き容量 4.50 GiB。直接CPython 3.13.5。` と表示します。 `init` 後は実験先 `evaluation_results\phase7-longrun-100k` ができます。別名で作る場合は、全コマンドに同じ `--root '保存先のパス'` を付けます。
+`doctor` は6件のモデルのSHA-256と設定、再開に使う乱数状態、評価資産、書き込みと空き容量を点検します。例えば途中で `空き容量 4.50 GiB。直接CPython 3.13.5。` と表示します。`init` は `$run` で指定したフォルダを初期化します。この例では日時入りの新しいフォルダを使います。以前の実験を続ける場合は、その既存フォルダを `$run` に指定し、`init` は実行しないでください。別の新しい実験には、未使用のrootを選んでください。
 
 次の `start` が本番の開始操作です。追加学習を開始する日に実行してください。
 
 ```powershell
-& $py -B tools/phase7_longrun.py start --max-workers 2
-& $py -B tools/phase7_longrun.py status
+& $py -B $script start --root $run --max-workers 2
+& $py -B $script status --root $run
 ```
 
 起動に成功すると `管理PID 12345 起動確認済み。` に続いて実験先とログの場所が表示されます。PIDは実行中のプログラムを識別する番号です。 `run` は同じ管理処理を現在のターミナルで実行します。前面で運転するときは、タブを閉じる前に Ctrl+C で停止を要求し、保存が終わるまで待ちます。
@@ -52,8 +61,8 @@ Get-PSDrive -PSProvider FileSystem
 ## 安全に停止する
 
 ```powershell
-& $py -B tools/phase7_longrun.py stop
-& $py -B tools/phase7_longrun.py status
+& $py -B $script stop --root $run
+& $py -B $script status --root $run
 ```
 
 `STOPPING` は停止要求の受付を表します。各学習処理は現在の対局を終えて、モデル・乱数状態・棋譜をひと組で保存します。評価中の停止は評価1件の終了後になるため、学習中より待つことがあります。 `status` に `STOPPED` が表示され、管理PIDが `生存 なし` になったらPCの電源を切れます。 `COMPLETED` でPIDが終了している場合も同様です。保存中はタスクマネージャーで強制終了したり、実験先を移動・変更したりしないでください。
@@ -61,9 +70,9 @@ Get-PSDrive -PSProvider FileSystem
 ## 再開する
 
 ```powershell
-& $py -B tools/phase7_longrun.py verify
-& $py -B tools/phase7_longrun.py resume --max-workers 2
-& $py -B tools/phase7_longrun.py status
+& $py -B $script verify --root $run
+& $py -B $script resume --root $run --max-workers 2
+& $py -B $script status --root $run
 ```
 
 `verify` は保存済みの系列、局数、モデル、評価の対応を点検します。 `resume` は最後に確定したcheckpoint（モデルと乱数状態などの再開用の組）を探します。区間の途中で電源が落ちた場合、最後の確定局数以降を再実行します。通常の保存間隔は1,000局で、20,000・50,000・100,000局でも必ず保存します。復旧時の表示で、確定局数や再実行する範囲、不完全だった試行の場所を確認できます。検証で過去の異常が表示されても、有効な保存点が残っていれば再開できる場合があります。完了した系列や検証済みの評価は再実行しません。
@@ -71,7 +80,7 @@ Get-PSDrive -PSProvider FileSystem
 ## 結果を開く
 
 ```powershell
-& $py -B tools/phase7_longrun.py report
+& $py -B $script report --root $run
 ```
 
 このコマンドが表示する新しい `reports\report-…` フォルダを開きます。 `summary.md` はそのまま読める対戦成績の一覧です。 `results.csv` と `progress.csv` はExcelなどで開ける対局成績と学習進捗の表です。 `summary.json` には同じ集計に加え、先後・ペアごとの情報、試行の異常、モデルの識別情報などを保存します。節目の評価が終わると、同形式の報告を自動で作ります。
@@ -100,7 +109,7 @@ Get-PSDrive -PSProvider FileSystem
 
 ## コマンド早見表
 
-各行を `& $py -B tools/phase7_longrun.py コマンド名` の形で実行します。
+すべての操作で、同じ実験を指す `--root $run` を付けてください。例：`& $py -B $script status --root $run`。rootを省略すると、既定の `evaluation_results\phase7-longrun-100k` が対象になります。
 
 | コマンド | すること |
 |---|---|
@@ -113,6 +122,18 @@ Get-PSDrive -PSProvider FileSystem
 | `resume` | 確定済みの続きを独立プロセスで開始 |
 | `verify` | 保存点と評価記録を点検 |
 | `report` | 保存済みの記録から集計を新しく出力 |
+
+### 進捗の簡易表示と詳細表示
+
+`status` は全体の進捗バー、系列ごとの現在局数と保存局数、実行状態、同時に動いている系列、全体速度、残り時間、エラーの有無を表示します。残り時間は学習の実測速度から求めた目安で、評価にかかる時間は含みません。評価中は状態欄を確認してください。
+
+保存先やPID、更新回数、checkpointのパスも調べたいときは、次のように詳細表示を指定します。
+
+```powershell
+& $py -B $script status --root $run --verbose
+```
+
+`status` と `status --verbose` は状態を読むだけで、学習やcheckpointを変更しません。
 
 ## 日をまたいで続ける例
 
@@ -142,13 +163,14 @@ STOPPING 停止を要求しました。
 以下は元のZero-TDの10,000局地点から40局だけ学習し、短い評価を行います。 `--smoke pretrained` に替える場合は別の新規保存先を用意します。 `--smoke-games` は20〜100局です。同じ試験先で停止・再開を試すときは、`stop`、`status`、`resume` にも同じ `--root` を指定します。
 
 ```powershell
-$trial = 'evaluation_results\phase7-longrun-smoke-zero'
-& $py -B tools/phase7_longrun.py doctor --root $trial --smoke zero --smoke-games 40
-& $py -B tools/phase7_longrun.py init --root $trial --smoke zero --smoke-games 40
-& $py -B tools/phase7_longrun.py start --root $trial --max-workers 1
-& $py -B tools/phase7_longrun.py status --root $trial
-& $py -B tools/phase7_longrun.py verify --root $trial
-& $py -B tools/phase7_longrun.py report --root $trial
+$trialId = Get-Date -Format 'yyyyMMdd-HHmmss'
+$trial = Join-Path $assets "phase7-longrun-smoke-zero-$trialId"
+& $py -B $script doctor --root $trial --assets $assets --smoke zero --smoke-games 40
+& $py -B $script init --root $trial --assets $assets --smoke zero --smoke-games 40
+& $py -B $script start --root $trial --max-workers 1
+& $py -B $script status --root $trial
+& $py -B $script verify --root $trial
+& $py -B $script report --root $trial
 ```
 
 
