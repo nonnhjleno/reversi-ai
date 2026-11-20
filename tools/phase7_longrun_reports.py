@@ -46,6 +46,39 @@ _ZERO_REFERENCE = {
 }
 
 
+class StartupTimeout(data.RunError):
+    """評価契約を満たした試行で、異常が対局開始前の応答待ちに限られている。"""
+
+
+def _only_startup_timeouts(games: list[_Game], counts: object) -> bool:
+    """集計値と対局の最初のコマンドから、再試行できる応答待ちだけを判定する。"""
+    kinds = data.obj(counts)
+    if not kinds.get('timeout') or kinds.keys() - {
+        'timeout',
+        'process_exit',
+        'incomplete_color_pair',
+    }:
+        return False
+    failures = [data.obj(game['error']) for game in games if game.get('error') is not None]
+    if not failures:
+        return False
+    for failure in failures:
+        if failure.get('kind') != 'timeout' or failure.get('command') != 'name':
+            return False
+        trace = data.obj(failure.get('diagnostics'))
+        commands = trace.get('commands')
+        if trace.get('stderr_tail') != [] or not isinstance(commands, list) or len(commands) != 1:
+            return False
+        probe = data.obj(commands[0])
+        if (probe.get('command'), probe.get('startup_probe'), probe.get('error')) != (
+            'name',
+            True,
+            'timeout',
+        ):
+            return False
+    return True
+
+
 @dataclass(frozen=True)
 class Match:
     """1系列と固定相手、または同一seedの系列間対局。"""
@@ -144,8 +177,9 @@ def verified_match(
         'population_sha256'
     ):
         raise data.RunError(f'{job.key} の評価ファイルが保存時と違います。')
-    if summary.get('asset_changed') is not False or summary['errors']:
+    if summary.get('asset_changed') is not False:
         raise data.RunError(f'{job.key} に評価異常があります。')
+    failed = bool(summary['errors'])
     plan = openings.load_population(population)
     selected, selection = openings.select_entries(plan, len(plan['entries']), phase7_eval.EVAL_SEED)
     case_ids = [c['case_id'] for c in selected]
@@ -160,8 +194,8 @@ def verified_match(
         or conditions.get('budget_policy') != 'descriptive'
         or [conditions.get(k) for k in ('startup_timeout', 'command_timeout', 'genmove_timeout')]
         != [5, 1, 10]
-        or status.get('execution') != 'complete'
-        or status.get('protocol') != 'verified'
+        or status.get('execution') != ('failed' if failed else 'complete')
+        or status.get('protocol') != ('failed' if failed else 'verified')
     ):
         raise data.RunError(f'{job.key} の評価条件または終了状態が違います。')
     budgets = data.obj(conditions['budget_configs'])
@@ -202,11 +236,15 @@ def verified_match(
         seeds = {
             role: evaluate._seed_for(phase7_eval.EVAL_SEED, g['case_id'], role) for role in 'AB'
         }
-        if g['colors'] != colors or g['seeds'] != seeds or g.get('error') is not None:
+        if g['colors'] != colors or g['seeds'] != seeds:
             raise data.RunError(f'{job.key} の先後・seed・実行状態が違います。')
     score = phase7_eval._game_stats(games, job.opponent == 'search_v1')
-    if score['errors'] or any(summary.get(k) != v for k, v in score.items()):
+    if any(summary.get(k) != v for k, v in score.items()):
         raise data.RunError(f'{job.key} の集計が元対局と一致しません。')
+    if failed and _only_startup_timeouts(games, score['errors']):
+        raise StartupTimeout(f'{job.key} の起動時 name が期限内に応答しませんでした。')
+    if failed or any(g.get('error') is not None for g in games):
+        raise data.RunError(f'{job.key} に評価異常があります。')
     return {**summary, 'report': str(raw), 'state_sha256': candidate.sha}
 
 
@@ -228,6 +266,10 @@ def find_result(
             if not data.skipped(path, 'match'):
                 completed = verified_match(job, marks, path / 'match', plan.population)
                 complete.append(completed)
+        except StartupTimeout as failure:
+            errors.append(
+                {'attempt': str(path), 'problem': str(failure), 'cause': 'startup_timeout'}
+            )
         except (data.RunError, OSError, ValueError, KeyError, TypeError) as failure:
             if plan.zero500 and (path / 'match' / 'summary.json').exists():
                 raise data.RunError(

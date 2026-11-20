@@ -675,44 +675,82 @@ class Manager:
             if self.stopping:
                 break
             existing, issues = reporting.find_result(self.plan, job, marks)
+            for delay in (1.0, 3.0, None):
+                if existing is not None or self.stopping:
+                    break
+                try:
+                    existing = self._attempt_match(job, marks)
+                except reporting.StartupTimeout as failure:
+                    if not self.plan.zero500:
+                        raise
+                    existing, issues = reporting.find_result(self.plan, job, marks)
+                    if delay is None:
+                        self.issues.extend({'evaluation': job.key, **item} for item in issues)
+                        raise
+                    if existing is None and not self.stopping:
+                        if data.load(self.plan.root)[1] != self.digest:
+                            raise data.RunError(
+                                '評価の再試行前に実験設定が変化しました。'
+                            ) from failure
+                        reporting.match_inputs(job, marks)
+                        print(f'評価を再試行 {job.key}: {failure}', flush=True)
+                        time.sleep(delay)
+                else:
+                    if self.plan.zero500:
+                        existing, issues = reporting.find_result(self.plan, job, marks)
+                    break
             self.issues.extend({'evaluation': job.key, **item} for item in issues)
             if existing is not None:
                 scores.setdefault(job.opponent, []).append(cast(float, existing['point_rate']))
-                continue
-            self.evaluating = f'{stage} {job.key}'
-            folder = (
-                self.plan.root / 'evaluations' / str(stage) / job.key / f'attempt-{uuid4().hex}'
-            )
-            folder.mkdir(parents=True)
-            paths = {job.label: str(marks[job.label].path)}
-            if (name := job.opponent_mark) is not None:
-                paths[name] = str(marks[name].path)
-            child = self.spawn(
-                folder,
-                job.label,
-                {
-                    'kind': 'eval',
-                    'stage': stage,
-                    'opponent': job.opponent,
-                    'marks': paths,
-                },
-            )
-            while child.process.poll() is None:
-                self.publish('STOPPING' if self.stopping else 'EVALUATING')
-                time.sleep(0.5)
-            rc = self.outcome(child)
-            if rc != 0:
-                raise data.RunError(f'評価 {job.key} が異常終了しました（終了値 {rc}、{folder}）。')
-            if not (folder / 'match' / 'summary.json').is_file() and self.stopping:
-                break
-            verified = reporting.verified_match(job, marks, folder / 'match', self.plan.population)
-            scores.setdefault(job.opponent, []).append(cast(float, verified['point_rate']))
         self.evaluating = None
         self.evaluation_seconds += time.monotonic() - self.evaluation_started
         self.evaluation_started = None
         if not self.stopping:
             self.latest_evaluation = stage
             self.latest_scores = {name: statistics.mean(values) for name, values in scores.items()}
+
+    def _attempt_match(
+        self, job: reporting.Match, marks: dict[str, data.Checkpoint]
+    ) -> dict[str, object] | None:
+        """専用の出力先で1試行を実行し、確定済み対局だけを返す。"""
+        self.evaluating = f'{job.stage} {job.key}'
+        folder = (
+            self.plan.root / 'evaluations' / str(job.stage) / job.key / f'attempt-{uuid4().hex}'
+        )
+        folder.mkdir(parents=True)
+        paths = {job.label: str(marks[job.label].path)}
+        if (name := job.opponent_mark) is not None:
+            paths[name] = str(marks[name].path)
+        child = self.spawn(
+            folder,
+            job.label,
+            {
+                'kind': 'eval',
+                'stage': job.stage,
+                'opponent': job.opponent,
+                'marks': paths,
+            },
+        )
+        while child.process.poll() is None:
+            self.publish('STOPPING' if self.stopping else 'EVALUATING')
+            time.sleep(0.5)
+        rc = self.outcome(child)
+        match = folder / 'match'
+        has_summary = (match / 'summary.json').is_file()
+        if rc == 0:
+            if self.stopping and not has_summary:
+                return None
+            return reporting.verified_match(job, marks, match, self.plan.population)
+        if self.plan.zero500 and rc == 1 and has_summary:
+            try:
+                reporting.verified_match(job, marks, match, self.plan.population)
+            except reporting.StartupTimeout:
+                raise
+            except _PROBLEM as failure:
+                raise data.RunError(
+                    f'評価 {job.key} が異常終了しました（終了値 {rc}、{folder}）。{failure}'
+                ) from failure
+        raise data.RunError(f'評価 {job.key} が異常終了しました（終了値 {rc}、{folder}）。')
 
     def drain(self) -> None:
         """異常時に新しい仕事を止め、起動済み処理の解放を待つ。"""

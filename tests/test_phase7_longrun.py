@@ -169,6 +169,65 @@ def test_zero500_retries_only_a_child_that_never_started(tmp_path, short_checkpo
     assert not list(attempt2.glob('launch-failure-*'))
 
 
+def test_zero500_evaluation_retries_only_startup_name_timeout():
+    """棋譜や集計の異常と、起動時応答を得られなかった対局を区別する。"""
+    diagnostics = {
+        'stderr_tail': [],
+        'commands': [{'command': 'name', 'startup_probe': True, 'error': 'timeout'}],
+    }
+    error = {'command': 'name', 'kind': 'timeout', 'diagnostics': diagnostics}
+    counts = {'timeout': 1, 'process_exit': 2, 'incomplete_color_pair': 1}
+    assert reporting._only_startup_timeouts([{}, {'error': error}], counts)
+    assert not reporting._only_startup_timeouts([{}], counts)
+    assert not reporting._only_startup_timeouts([{'error': error}], {**counts, 'illegal_move': 1})
+    assert not reporting._only_startup_timeouts(
+        [{'error': {**error, 'command': 'genmove'}}], counts
+    )
+    assert not reporting._only_startup_timeouts(
+        [{'error': {**error, 'diagnostics': {**diagnostics, 'stderr_tail': ['boot error']}}}],
+        counts,
+    )
+
+
+def test_zero500_evaluation_retries_at_most_twice(tmp_path, short_checkpoint, monkeypatch):
+    """起動失敗の試行は保存し、別試行の確定結果だけを取り込む。"""
+    origin = short_checkpoint
+    plan = data.Plan(tmp_path, tmp_path, 'test', 'zero', 20, '', data.ZERO500)
+    owner = {'pid': 123, 'created': 456}
+    manager = cli.Manager(plan, 'cfg', tmp_path, owner, {origin.label: origin}, 1)
+    job = reporting.Match(plan.target, origin.label, 'search_v1')
+    record = {'point_rate': 0.5}
+    attempts: list[object] = []
+    succeed = True
+
+    def play(match, _marks):
+        attempts.append(match)
+        if len(attempts) < 3 or not succeed:
+            raise reporting.StartupTimeout('simulated')
+        return record
+
+    def find(*_args):
+        history = [] if not attempts else [{'problem': 'startup_timeout'}]
+        if len(attempts) >= 3 and succeed:
+            return record, [{**item, 'recovery': 'verified_replacement'} for item in history]
+        return None, history
+
+    monkeypatch.setattr(manager, '_attempt_match', play)
+    monkeypatch.setattr(reporting, 'matches', lambda *_args: [job])
+    monkeypatch.setattr(reporting, 'find_result', find)
+    monkeypatch.setattr(reporting, 'match_inputs', lambda *_args: None)
+    monkeypatch.setattr(data, 'load', lambda _root: (plan, 'cfg'))
+    monkeypatch.setattr(cli.time, 'sleep', lambda _seconds: None)
+    manager.evaluate(plan.target)
+    assert len(attempts) == 3 and manager.latest_scores == {'search_v1': 0.5}
+    assert manager.issues[0]['recovery'] == 'verified_replacement'
+    attempts.clear()
+    succeed = False
+    with pytest.raises(reporting.StartupTimeout):
+        manager.evaluate(plan.target)
+    assert len(attempts) == 3
+
+
 def _variant(path, edit):
     """意図した破損内容だけを変え、内容ハッシュを付け直す。"""
     entry = path / 'state.json'
