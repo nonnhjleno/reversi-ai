@@ -228,6 +228,30 @@ def test_zero500_evaluation_retries_at_most_twice(tmp_path, short_checkpoint, mo
     assert len(attempts) == 3
 
 
+def test_zero500_status_collision_is_advisory_during_work(tmp_path, short_checkpoint, monkeypatch):
+    """運転中の表示は延期でき、起動・終了の確定が失敗した場合は例外が伝わる。"""
+    origin = short_checkpoint
+    plan = data.Plan(tmp_path, tmp_path, 'test', 'zero', 20, '', data.ZERO500)
+    manager = cli.Manager(
+        plan, 'cfg', tmp_path, {'pid': 123, 'created': 456}, {origin.label: origin}, 1
+    )
+    calls = []
+
+    def blocked(path, payload):
+        calls.append((path, payload))
+        raise windows.DisplayBusy('status.json')
+
+    monkeypatch.setattr(windows, 'replace_json', blocked)
+    monkeypatch.setattr(cli.time, 'sleep', lambda _seconds: None)
+    manager._write_status('RUNNING', {})
+    manager._write_status('EVALUATING', {})
+    assert len(calls) == 2 and len(manager.issues) == 1
+    assert manager.issues[0]['occurrences'] == 2
+    with pytest.raises(windows.DisplayBusy):
+        manager._write_status('COMPLETED', {})
+    assert len(calls) == 5
+
+
 def _variant(path, edit):
     """意図した破損内容だけを変え、内容ハッシュを付け直す。"""
     entry = path / 'state.json'

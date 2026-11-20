@@ -486,6 +486,7 @@ class Manager:
         self.latest_evaluation: int | None = None
         self.latest_scores: dict[str, float] = {}
         self.error: str | None = None
+        self.status_conflict: dict[str, object] | None = None
 
     @property
     def stopping(self) -> bool:
@@ -521,8 +522,8 @@ class Manager:
             training_seconds -= time.monotonic() - evaluating
         speed = (games - self.initial_games) / training_seconds if training_seconds > 1 else 0.0
         remaining = self.plan.target * len(rows) - games
-        windows.replace_json(
-            self.plan.root / 'status.json',
+        self._write_status(
+            state,
             {
                 'run_id': self.plan.run_id,
                 'config_sha256': self.digest,
@@ -545,6 +546,34 @@ class Manager:
                 'error': self.error,
             },
         )
+
+    def _write_status(self, state: str, payload: dict[str, object]) -> None:
+        """運転中の表示競合は記録する。起動と終了では公開を確認する。"""
+        path = self.plan.root / 'status.json'
+        critical = state not in {'RUNNING', 'EVALUATING', 'STOPPING'}
+        for delay in (0.3, 0.6, None) if critical else (None,):
+            try:
+                windows.replace_json(path, payload)
+            except windows.DisplayBusy as failure:
+                if delay is not None:
+                    time.sleep(delay)
+                    continue
+                if critical:
+                    raise
+                if self.status_conflict is None:
+                    self.status_conflict = {
+                        'path': str(path),
+                        'problem': '運転中の進捗表示を延期',
+                        'recovery': 'display_only',
+                        'occurrences': 0,
+                    }
+                    self.issues.append(self.status_conflict)
+                    print(f'{data.DISPLAY_DEFERRED} {failure}', flush=True)
+                self.status_conflict['occurrences'] = (
+                    cast(int, self.status_conflict['occurrences']) + 1
+                )
+            else:
+                return
 
     def spawn(self, folder: Path, label: str, request: dict[str, object]) -> Child:
         """試行固有のログと保存先で子プロセスを起動する。"""
