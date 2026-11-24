@@ -9,6 +9,7 @@ import platform
 import shutil
 import sys
 import tempfile
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -16,6 +17,7 @@ from typing import cast
 from reversi_player import ntuple_io
 from tools import evidence, phase7_eval, phase7_td
 from tools import phase7_train as train
+from tools import phase7_longrun_os as windows
 from tools.phase65_data import sha_file
 
 ROOT = train.ROOT
@@ -25,6 +27,34 @@ START = 10_000
 TARGETS = (20_000, 50_000, 100_000)
 DEFAULT_ROOT = ROOT / 'evaluation_results' / 'phase7-longrun-100k'
 PHASE7 = 'phase7-td0-20261119'
+PHASE71 = 'phase7-longrun-100k-rerun-20261120'
+ZERO500 = 'zero-500k'
+ZERO_START = 100_000
+ZERO_TARGETS = (150_000, 200_000, 300_000, 400_000, 500_000)
+ZERO_ORIGINS = {
+    'zero-701': (
+        'e4a8fd9ad8c44cdf87ec09bf561a609f',
+        'decef2f0bbc4d3efc2df530faa957211e55c07371cd3467f0aaa7f8d246396fa',
+        '8d66fc82e95c4e52781391e0b05e5c36dab9d8fad26a690a4e4dfefc257c1e72',
+    ),
+    'zero-702': (
+        'f7fcea8fbd424b8bba21cb0675206f4c',
+        'f9b5a4c163d8798864b8ee9a3ed0a3e80feea8ce9ed46c4c15a2fd8c52d74273',
+        '656a2ab1b3004d34945a63274f6bfc4d2321abf327b028a63bd11848e146a0a1',
+    ),
+    'zero-703': (
+        '3ba999e0bd1d4fe38e1a9ab89004bf3f',
+        '8c7b26e3c21d3fbc5be4fc4920340dc86c85fbc5cd33c4218dd91ffaafd8b4c4',
+        '4b777638fec0aa6cabb695a996e864166edeedfec2e363f80a8c3021fd95ef1d',
+    ),
+}
+_PHASE71_MANAGER = {
+    'tools/phase7_train.py': train._PHASE71_TRAIN_SHA256,
+    'tools/phase7_longrun.py': '5693a1a4a75516e7c810c79a6ca47a17210f41277558e3cf3851282efeb6a74c',
+    'tools/phase7_longrun_data.py': '52fe1b2713fff784f2b5c8bf606e41c6985c094309b8292af3ee12ebf38e04ac',
+    'tools/phase7_longrun_os.py': 'a624f83150fd1b09917431798b6cdcd366e5d2f1f9e9db0efcb92918698dec87',
+    'tools/phase7_longrun_reports.py': 'f4fe99a848bf28132a9a13f7f2e53669748482a8f550912b870c5a8ca63f4bca',
+}
 POP_SHA = 'ce747c9019a6661df549c3a9260af3a5c55229593515793be6ecd50aba08c7ff'
 ORIGIN_SHA = {
     'zero-701': '1a83e7e4c415ac25dd2e2944b0bdd5f2a5ade48d71408be48bed85ede064d8e2',
@@ -76,18 +106,18 @@ def obj(value: object) -> dict[str, object]:
     return cast(dict[str, object], value)
 
 
-def read(path: Path) -> dict[str, object]:
+def read(path: Path, *, changing: bool = False) -> dict[str, object]:
     """JSONを読み、ファイルが分かるエラーにする。"""
     try:
         for _ in range(8):
             try:
-                raw = path.read_bytes()
+                raw = windows.shared_bytes(path) if changing else path.read_bytes()
             except PermissionError:
                 # 状態JSONを差し替える瞬間の一時的な共有競合だけを再試行する。
                 time.sleep(0.03)
             else:
                 return obj(json.loads(raw))
-        return obj(json.loads(path.read_bytes()))
+        return obj(json.loads(windows.shared_bytes(path) if changing else path.read_bytes()))
     except (OSError, ValueError) as failure:
         raise RunError(f'読み込めません（{path}）。{failure}') from failure
 
@@ -149,16 +179,41 @@ class Plan:
     smoke: str | None
     smoke_games: int
     population_sha: str
+    profile: str = 'phase71'
+
+    @property
+    def zero500(self) -> bool:
+        """10万局から継続する計画かを返す。"""
+        return self.profile == ZERO500
+
+    @property
+    def start(self) -> int:
+        """固定する開始局数。"""
+        return ZERO_START if self.zero500 else START
 
     @property
     def labels(self) -> tuple[str, ...]:
         """決定的な系列順。"""
+        if self.zero500 and self.smoke in (None, 'all'):
+            return tuple(ZERO_ORIGINS)
         return tuple(ORIGIN_SHA) if self.smoke is None else (f'{self.smoke}-701',)
 
     @property
     def milestones(self) -> tuple[int, ...]:
         """評価を実行する累積局数。"""
-        return TARGETS if self.smoke is None else (START + self.smoke_games,)
+        if self.smoke is not None:
+            return (self.start + self.smoke_games,)
+        return ZERO_TARGETS if self.zero500 else TARGETS
+
+    @property
+    def stages(self) -> tuple[int, ...]:
+        """取り込む基準結果と新規評価の節目。"""
+        return (self.start, *self.milestones) if self.smoke is None else self.milestones
+
+    @property
+    def max_workers(self) -> int:
+        """系列数に応じた実行上限。"""
+        return 3 if self.zero500 else 6
 
     @property
     def target(self) -> int:
@@ -178,7 +233,7 @@ class Plan:
     @property
     def minimum_free(self) -> int:
         """実行中の1区間と保存の余白。"""
-        return (512 if self.smoke is None else 32) * 2**20
+        return (1024 if self.zero500 else 512) * 2**20 if self.smoke is None else 32 * 2**20
 
     def next_stop(self, games: int) -> int:
         """定期保存と評価節目を越えない次境界。"""
@@ -189,7 +244,7 @@ class Plan:
 
 def payload(plan: Plan) -> dict[str, object]:
     """変更を検出する設定とソースの記録。"""
-    return {
+    result: dict[str, object] = {
         'version': 1,
         'run_id': plan.run_id,
         'assets': str(plan.assets),
@@ -197,7 +252,7 @@ def payload(plan: Plan) -> dict[str, object]:
         'smoke_games': plan.smoke_games,
         'population_sha256': plan.population_sha,
         'labels': list(plan.labels),
-        'start': START,
+        'start': plan.start,
         'milestones': list(plan.milestones),
         'interval': 1000 if plan.smoke is None else 10,
         'rate': RATE,
@@ -206,6 +261,9 @@ def payload(plan: Plan) -> dict[str, object]:
         'runtime': train._runtime(),
         'sources': fingerprint(),
     }
+    if plan.zero500:
+        result.update(version=2, profile=ZERO500)
+    return result
 
 
 def load(root: Path) -> tuple[Plan, str]:
@@ -213,8 +271,11 @@ def load(root: Path) -> tuple[Plan, str]:
     x, digest = unseal(root / 'config.json')
     smoke = x.get('smoke')
     limit = x.get('smoke_games')
+    profile = x.get('profile', 'phase71')
     if (
-        smoke not in (None, 'zero', 'pretrained')
+        (profile != 'phase71' and profile != ZERO500)
+        or smoke
+        not in ((None, 'zero', 'all') if profile == ZERO500 else (None, 'zero', 'pretrained'))
         or type(limit) is not int
         or not 20 <= limit <= 100
     ):
@@ -227,10 +288,13 @@ def load(root: Path) -> tuple[Plan, str]:
         smoke,
         limit,
         str(x.get('population_sha256')),
+        str(profile),
     )
+    expected = payload(plan)
+    old = {**expected, 'sources': {**obj(expected['sources']), **_PHASE71_MANAGER}}
     if (
         not assets.is_absolute()
-        or x != payload(plan)
+        or (x != expected and (plan.zero500 or x != old))
         or sha_file(plan.population) != plan.population_sha
     ):
         raise RunError('設定、開発序盤、ソース、またはPython環境が初期化時と違います。')
@@ -351,6 +415,66 @@ def origins(assets: Path) -> dict[str, Origin]:
     return out
 
 
+def _zero_origins(plan: Plan) -> Iterator[tuple[str, Origin]]:
+    """Phase 7.1の確定モデル・乱数・設定を元の保存点から復元する。"""
+    root = plan.assets / PHASE71
+    if (
+        unseal(root / 'config.json')[1]
+        != '05a9dab8ae38155ef983d09720d59a38c1e8d3c924d79bed6247f23fff577e5c'
+        or unseal(root / 'manifest.json')[1]
+        != '7de9dc9551234de3be2bc6a8b76615173fd25f273ca92b4b7f8ec1d24f988a4f'
+    ):
+        raise RunError('Phase 7.1の確定設定またはmanifestが異なります。')
+    relative, expected = _INITIALS['zero']
+    initial = plan.assets / relative
+    model = ntuple_io.load_model(initial)
+    if model.file_sha256 != expected:
+        raise RunError('全ゼロの初期モデルが異なります。')
+    sources, runtime = train.sources(), train._runtime()
+    for label in plan.labels:
+        attempt, state_sha, model_sha = ZERO_ORIGINS[label]
+        config = phase7_td.Config(RATE, EPSILON, int(label.split('-')[1]))
+        compatible = {
+            'initial': {'model_id': model.model_id, 'sha256': expected},
+            'settings': train._settings(config),
+            'sources': sources,
+            'runtime': runtime,
+        }
+        folder = root / 'checkpoints' / label / f'attempt-{attempt}'
+        mark = checkpoint(folder / 'checkpoint', compatible)
+        job, _ = unseal(folder / 'job.json')
+        if (
+            mark.sha != state_sha
+            or mark.model_sha != model_sha
+            or mark.counts.games != ZERO_START
+            or mark.previous is None
+            or job
+            != {
+                'label': label,
+                'from': mark.before.games,
+                'parent': mark.previous,
+                'until': ZERO_START,
+            }
+        ):
+            raise RunError(f'{label} の10万局checkpointが異なります。')
+        yield label, Origin(label, initial, config, compatible, mark)
+
+
+def plan_origins(plan: Plan, *, audit: bool = False) -> dict[str, Origin]:
+    """通常の復元では固定起点を、事前確認では直前までの連鎖も検証する。"""
+    if not plan.zero500:
+        return origins(plan.assets)
+    selected = dict(_zero_origins(plan))
+    if audit:
+        original, _ = load(plan.assets / PHASE71)
+        earlier = origins(plan.assets)
+        for label, origin in selected.items():
+            chain, _ = scan(original, earlier[label])
+            if chain[-1] != origin.checkpoint:
+                raise RunError(f'{label} のPhase 7.1連鎖が10万局の起点につながりません。')
+    return selected
+
+
 def accept(plan: Plan, origin: Origin, attempt: Path, begin: Checkpoint) -> Checkpoint:
     """正しい系列と親から作られた完了済みの区間だけを採用する。"""
     job, _ = unseal(attempt / 'job.json')
@@ -391,6 +515,32 @@ def skipped(folder: Path, output: str) -> bool:
     return True
 
 
+DISPLAY_DEFERRED = '進捗表示の更新を次回に延期'
+
+
+def runtime_issues(folder: Path) -> list[dict[str, str]]:
+    """ログを保存したまま、継続できた表示競合と起動再試行を集計する。"""
+    issues = []
+    for path in sorted(folder.glob('process*.log')):
+        with path.open(encoding='utf-8', errors='replace') as stream:
+            count = sum(line.startswith(DISPLAY_DEFERRED) for line in stream)
+        if count:
+            issues.append(
+                {
+                    'path': str(path),
+                    'problem': f'進捗表示を延期 {count}回',
+                    'recovery': 'display_only',
+                }
+            )
+    for path in sorted(folder.glob('launch-failure-*.json')):
+        event, _ = unseal(path)
+        issue = {'path': str(path), 'problem': str(event['failure'])}
+        if (folder / 'process.json').is_file():
+            issue['recovery'] = 'launch_retry'
+        issues.append(issue)
+    return issues
+
+
 def scan(plan: Plan, origin: Origin) -> tuple[list[Checkpoint], list[dict[str, object]]]:
     """健全な連鎖と再実行が必要な区間を保存済み試行から構成する。"""
     directory = plan.root / 'checkpoints' / origin.label
@@ -404,6 +554,10 @@ def scan(plan: Plan, origin: Origin) -> tuple[list[Checkpoint], list[dict[str, o
             if not skipped(attempt, 'checkpoint'):
                 possible.setdefault(str(job['parent']), []).append(attempt)
         except (OSError, ValueError, KeyError, RunError) as failure:
+            if plan.zero500 and (
+                (attempt / 'job.json').exists() or (attempt / 'checkpoint' / 'state.json').exists()
+            ):
+                raise RunError(f'{origin.label} の区間記録が不正です（{attempt}）。') from failure
             problems.append({'path': str(attempt), 'problem': str(failure)})
     chain = [origin.checkpoint]
     while chain[-1].counts.games < plan.target:
@@ -413,6 +567,10 @@ def scan(plan: Plan, origin: Origin) -> tuple[list[Checkpoint], list[dict[str, o
             try:
                 children.append(accept(plan, origin, attempt, begin))
             except (OSError, ValueError, KeyError, RunError) as failure:
+                if plan.zero500 and (attempt / 'checkpoint' / 'state.json').exists():
+                    raise RunError(
+                        f'{origin.label} の確定保存点が不正です（{attempt}）。'
+                    ) from failure
                 problems.append(
                     {
                         'path': str(attempt),
@@ -429,7 +587,33 @@ def scan(plan: Plan, origin: Origin) -> tuple[list[Checkpoint], list[dict[str, o
             break
         chain.append(children[0])
     for attempts in possible.values():
-        problems.extend(
-            {'path': str(a), 'problem': '確定済み連鎖につながっていません。'} for a in attempts
-        )
+        if plan.zero500 and any((a / 'checkpoint' / 'state.json').exists() for a in attempts):
+            raise RunError(f'{origin.label} に親を照合できない確定保存点があります。')
+        for attempt in attempts:
+            issue: dict[str, object] = {
+                'path': str(attempt),
+                'problem': '確定済み連鎖につながっていません。',
+            }
+            if plan.zero500:
+                job, _ = unseal(attempt / 'job.json')
+                issue.update({'from': job.get('from'), 'until': job.get('until')})
+            problems.append(issue)
+    if plan.zero500:
+        for issue in problems:
+            end = issue.get('until')
+            if isinstance(end, int) and chain[-1].counts.games >= end:
+                issue['recovery'] = 'verified_replacement'
+        for attempt in sorted(directory.glob('attempt-*')):
+            if (attempt / 'process-exit.json').is_file() or not (
+                attempt / 'process.json'
+            ).is_file():
+                for runtime_issue in runtime_issues(attempt):
+                    recorded: dict[str, object] = dict(runtime_issue)
+                    if (attempt / 'job.json').is_file():
+                        job, _ = unseal(attempt / 'job.json')
+                        if 'recovery' not in recorded and job.get('until') in {
+                            mark.counts.games for mark in chain
+                        }:
+                            recorded['recovery'] = 'verified_replacement'
+                    problems.append(recorded)
     return chain, problems
