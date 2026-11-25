@@ -40,6 +40,10 @@ Phase 7.2の対照は `evaluation_results/phase7-zero-500k-20261121/checkpoints/
 - Phase 6.5の対照は学習81,919棋譜・epoch 4、TDは0局。ファイルは `evaluation_results/phase6-5-supervised-20261118/stages/fit-81919-0.000125-65/epoch-4.json`。モデルIDは `sha256:725a194e1b84cfed224b6cc6e2d68a131fd070f2350a848a738de52b77f48757`、SHA-256は `76d7be731a4944725d08a45b1f3a678cb7d5e274c040f7495027518352a61331`。[Phase 6.5報告](reports/20261118_phase65_supervised.md)
 - 手作業評価は学習済みモデルIDや学習局数を持たない。比較元候補の現行 `reversi_player/ai_engine.py` のSHA-256は `93850b2a98e4f4c222be4895606c7e50ba9da725bca79e6349547c87463b1168`、同ディレクトリの `response_config.json` は `092b2c88fdc3c341c3bbb72e88eb8df853135c882a0f8e0f7bd4535ee28526ef`。着手時は使用する提出ZIPの実体・manifestと比較元の実行argvも固定する。深度2 `search_v1` と提出設定の深度4 Rangerを区別する。[提出資産](提出パッケージ.md)・[Phase 5設計](phase5_design.md)
 
+### Phase 8の同一時間比較とモデルの扱い
+
+同じ12開発序盤を先後で交換し、主要6モデルを提出版Rangerと各24局比較した。探索上限は6.5秒、最大深度は4。Zero-TD 10万局の3 seed平均は53.47%、Pretrained-TD 5万局は43.75%だった。固定深度2での平均65.28%、58.33%からは両系列とも下がった。Zero-TDの勝ち点率は今回の開発セットで50%を上回ったものの、共有序盤ペアを単位にした系列差の95%区間は−3.47〜+24.31ポイントと0を含んだ。同一時間の開発基準である系列平均55%以上と2 seed以上の50%超を満たす系列はなく、提出版を維持する。[先後別・序盤別の集計と採用判断](reports/20261125_phase8_search_integration.md#同一時間の追加評価)
+
 ## 2. 探索方式と高速化
 
 Minimaxは自分と相手の最善応手を交互に選ぶ。Negamaxは同じ二人零和探索を手番視点の符号反転で表す。同じ深さ、葉評価、パス・終局規則であれば、正しいAlpha-Betaと全幅Minimaxは同じ根のminimax値を求める。違いは枝刈りによる探索量で、同点時の着手は別途規定する。反復深化は完了した浅い探索を次の着手順や期限時の応答に使う。PVS／NegaScoutは有望な最初の手を通常窓で、後続を狭い窓で調べ、必要なときだけ再探索する方式である。最初の手の順序が悪いと再探索費用が増える。連続値では整数用の `alpha+1` を流用せず、比較可能な値域と境界を先に定義する。
