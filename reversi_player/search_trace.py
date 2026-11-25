@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import os
@@ -13,7 +13,7 @@ import time
 from typing import TYPE_CHECKING, TextIO, cast
 
 if TYPE_CHECKING:
-    from reversi_player import ai_engine, timed_search
+    from reversi_player import ai_engine, ntuple_io, timed_search
 elif __package__:
     from . import ai_engine, timed_search
 else:
@@ -22,6 +22,33 @@ else:
 
 
 MAX_TRACE_DEPTH = 4
+MODEL_ENV = 'REVERSI_SEARCH_MODEL'
+_MODEL_FIELDS = {'model_path', 'model_id', 'model_sha256'}
+
+
+@dataclass(frozen=True)
+class SearchModel:
+    """探索で共有する凍結モデルと起動時の読込区間。"""
+
+    artifact: ntuple_io.ModelArtifact
+    start_ns: int
+    end_ns: int
+
+
+def load_search_model(path: str) -> SearchModel:
+    """絶対パスのPhase 6モデルを検証する。通常起動ではimportしない。"""
+    started = time.perf_counter_ns()
+    model_path = Path(path)
+    if not model_path.is_absolute():
+        raise ValueError('search_model_requires_absolute_path')
+    if TYPE_CHECKING:
+        from reversi_player import ntuple_io
+    elif __package__:
+        from . import ntuple_io
+    else:
+        import ntuple_io
+    artifact = ntuple_io.load_model(model_path)
+    return SearchModel(artifact, started, time.perf_counter_ns())
 
 
 def _object(value: object) -> dict[str, object]:
@@ -109,7 +136,7 @@ def load(
     allowed = {'algorithm', 'ordered', 'deterministic', 'counting_definition_id'}
     if kind == 'time':
         allowed.add('max_depth')
-    if set(search) - allowed:
+    if set(search) - (allowed | _MODEL_FIELDS):
         raise ValueError('unsupported_search_setting')
     algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
     ordered = search.get('ordered', True)
@@ -156,6 +183,17 @@ def load(
         raise ValueError('trace_config_identity_mismatch')
     if context.get('host_clock') != clock_descriptor():
         raise ValueError('trace_clock_mismatch')
+    model = None
+    if _MODEL_FIELDS & search.keys():
+        path, model_id, model_digest = (
+            search.get(key) for key in ('model_path', 'model_id', 'model_sha256')
+        )
+        if not all(isinstance(value, str) and value for value in (path, model_id, model_digest)):
+            raise ValueError('incomplete_search_model_identity')
+        assert isinstance(path, str)
+        model = load_search_model(path)
+        if (model.artifact.model_id, model.artifact.file_sha256) != (model_id, model_digest):
+            raise ValueError('search_model_identity_mismatch')
     return SearchTrace(
         config,
         context,
@@ -168,6 +206,7 @@ def load(
         apply_move,
         time_limit_ns=time_limit,
         max_depth=maximum,
+        model=model,
     )
 
 
@@ -188,12 +227,15 @@ class SearchTrace:
         *,
         time_limit_ns: int | None = None,
         max_depth: int = MAX_TRACE_DEPTH,
+        model: SearchModel | None = None,
     ) -> None:
         """検証後の設定を保持し、原traceを排他作成する。"""
         self._config, self._context = config, context
         self._child_entry_ns, self._depth = child_entry_ns, depth
         self._algorithm, self._ordered = algorithm, ordered
         self._legal, self._apply = legal_moves_for, apply_move
+        self._model = model
+        self._leaf_evaluator = model.artifact.model.value if model is not None else None
         self._timed = (
             timed_search.TimedSelector(
                 legal_moves_for,
@@ -201,6 +243,7 @@ class SearchTrace:
                 replace(timed_search.load_policy(), max_depth=max_depth),
                 limit_ns=time_limit_ns,
                 ordered=ordered,
+                leaf_evaluator=self._leaf_evaluator,
             )
             if time_limit_ns is not None
             else None
@@ -218,7 +261,8 @@ class SearchTrace:
         self._stream.flush()
 
     def ready(self) -> None:
-        """Board構築後の受付準備とモデルなしを記録する。"""
+        """Board構築後の受付準備と、起動時のモデル読込の有無を記録する。"""
+        model = self._model
         self._emit(
             {
                 **self._context,
@@ -228,12 +272,12 @@ class SearchTrace:
                 'clock': 'perf_counter_ns',
                 'measurement_scope': 'search_only',
                 'clock_descriptor': clock_descriptor(),
-                'model_id': None,
-                'model_load_elapsed_ns': 0,
+                'model_id': model.artifact.model_id if model else None,
+                'model_load_elapsed_ns': model.end_ns - model.start_ns if model else 0,
                 'fallback': False,
-                'model_load_status': 'not_required',
-                'model_load_start_ns': None,
-                'model_load_end_ns': None,
+                'model_load_status': 'startup' if model else 'not_required',
+                'model_load_start_ns': model.start_ns if model else None,
+                'model_load_end_ns': model.end_ns if model else None,
                 'child_entry_ns': self._child_entry_ns,
                 'protocol_ready_ns': time.perf_counter_ns(),
                 'pid': os.getpid(),
@@ -259,10 +303,23 @@ class SearchTrace:
             self._search = started, ended, result
             return result.move
         result_fixed = (
-            ai_engine.search_minimax(rows, color, self._depth, self._legal, self._apply)
+            ai_engine.search_minimax(
+                rows,
+                color,
+                self._depth,
+                self._legal,
+                self._apply,
+                leaf_evaluator=self._leaf_evaluator,
+            )
             if self._algorithm == 'minimax'
             else ai_engine.search_alpha_beta(
-                rows, color, self._depth, self._legal, self._apply, ordered=self._ordered
+                rows,
+                color,
+                self._depth,
+                self._legal,
+                self._apply,
+                ordered=self._ordered,
+                leaf_evaluator=self._leaf_evaluator,
             )
         )
         ended = time.perf_counter_ns()
@@ -338,7 +395,7 @@ class SearchTrace:
                     'color': color,
                     'board_sha256': hashlib.sha256('\n'.join(rows).encode('ascii')).hexdigest(),
                     'response': response.rstrip('\n'),
-                    'model_id': None,
+                    'model_id': self._model.artifact.model_id if self._model else None,
                     'model_load_elapsed_ns': 0,
                     'fallback': False,
                     'search_start_ns': started,

@@ -360,10 +360,17 @@ def _dispatch(board: Board, cmd: list[str]) -> bool:
 
 def main() -> None:
     """通常経路の入出力を維持し、対応設定では実計測を別JSONLへ保存する。"""
+    model_path = os.environ.get(search_trace.MODEL_ENV)
+    if model_path is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
+        raise ValueError('search_model_requires_one_configuration_source')
     trace = search_trace.load(_CHILD_ENTRY_NS, legal_moves_for, apply_move)
+    model = search_trace.load_search_model(model_path) if model_path is not None else None
     # unknown＋空searchは従来の固定深度・非計測を維持する。
     controller = (
-        timed_search.TimedSelector(legal_moves_for, apply_move, timed_search.load_policy())
+        timed_search.TimedSelector(
+            legal_moves_for, apply_move, timed_search.load_policy(),
+            leaf_evaluator=model.artifact.model.value if model is not None else None,
+        )
         if trace is None and not os.environ.get('REVERSI_EVAL_CONFIG') else None
     )
     selector = trace.select if trace is not None else (

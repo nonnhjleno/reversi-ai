@@ -646,6 +646,11 @@ flowchart LR
 Phase 5のtime予約分を実測後に再設計した。search_traceからtimed_searchへ渡す要求上限と、内部の停止予約分を分け、SS基準のtime_stopとCC基準のコマンド停止の早い方で中断する。実測2回を受けた120msを含む予約分の式は[現行境界](harness_contracts.md#phase-5の時間対応境界)を参照する。上の依存図・状態遷移・時計端点・実着手の責務を照合し、変更が数値判定だけであることを確認した。
 
 
+
+### Phase 8の明示的な葉評価
+
+[Phase 8の接続設計](phase8_search_integration.md)では、既存の探索に凍結モデルの葉評価を渡す。盤面更新、期限管理、予算・通信の検証の責務は上図のままとする。設定でモデルを指定した場合、`search_trace.py` が `ntuple_io.py` で起動時に照合し、固定探索と時間探索へ黒視点の評価を渡す。終局と根視点への変換は `ai_engine.py` が扱う。ハーネスはモデルIDとファイルSHA-256が記録・取得した資産に結び付くことを既存のtrace4とschema 5で検証する。
+
 ## Phase 5最終レビュー：品質runnerの終了判定
 
 既存の所有子process待機・tree回収の後に、同じperf_counterの実経過を指定上限へ照合する。終了コード0とerrorなしだけではPASSにせず、実測上限超過をtimeout_elapsedとして失敗記録へ渡す。原ログ・実終了値を保存し、新しい常駐監視・独立process・品質上限の変更は導入しない。外部AIと正式評価の依存・通信は変えない。[品質step上限](harness_contracts.md#phase-5最終レビュー品質stepの経過上限)を参照する。

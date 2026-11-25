@@ -114,6 +114,7 @@ def search_iterative(
     limit_ns: int | None = None,
     clock: Clock | None = None,
     ordered: bool = True,
+    leaf_evaluator: ai_engine.LeafEvaluator | None = None,
 ) -> TimedResult:
     """全反復で期限を共有し、完全rootが戻った深度だけを採用する。
 
@@ -194,7 +195,13 @@ def search_iterative(
         other = 'W' if turn == 'B' else 'B'
         if remaining == 0 or (not moves and not _legal(snapshot, other)):
             _check()
-            value = ai_engine.evaluate_position(snapshot, color, _legal)
+            value = (
+                ai_engine.evaluate_position(snapshot, color, _legal)
+                if leaf_evaluator is None
+                else ai_engine._evaluate_leaf(
+                    snapshot, turn, color, moves, other, _legal, leaf_evaluator
+                )
+            )
             leaves += 1
             _check()
             return value, None
@@ -281,10 +288,12 @@ class TimedSelector:
         *,
         limit_ns: int | None = None,
         ordered: bool = True,
+        leaf_evaluator: ai_engine.LeafEvaluator | None = None,
     ) -> None:
         """純粋callbackと設定を保持し、呼出しごとの結果は置き換える。"""
         self._legal, self._apply, self._policy = legal_moves_for, apply_move, policy
         self._limit_ns, self._ordered = limit_ns, ordered
+        self._leaf_evaluator = leaf_evaluator
         self._received: int | None = None
         self.result: TimedResult | None = None
 
@@ -309,6 +318,7 @@ class TimedSelector:
                 policy=self._policy,
                 limit_ns=self._limit_ns,
                 ordered=self._ordered,
+                leaf_evaluator=self._leaf_evaluator,
             )
             return self.result.move
         finally:

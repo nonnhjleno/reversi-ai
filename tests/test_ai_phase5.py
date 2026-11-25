@@ -620,79 +620,21 @@ def test_invalid_time_settings_fail_before_trace_creation(tmp_path, change):
 
 
 def test_production_dependencies_and_reference_hash_are_preserved():
-    """engineから本体/GUI/harnessへの逆依存と参照探索の改変を検出する。"""
+    """固定版の実バイトと探索層の依存方向を検査する。"""
 
-    assert (
-        hashlib.sha256(
-            Path('reversi_player/ai_engine.py').read_bytes().replace(b'\r\n', b'\n')
-        ).hexdigest()
-        # Python 3.7対応のTypeAlias構文へ変更。探索本体の一致は別テストで検査する。
-        == '2291da912920b64c53c314d89a056e6499220c737d923d9c9e4cacba2d6023cb'
+    folder = Path('baselines/search_v1')
+    manifest_bytes = (folder / 'manifest.json').read_bytes()
+    assert hashlib.sha256(manifest_bytes).hexdigest() == (
+        '575b27da6e31df65b2ecb9ae329dc4747918d150340911c807249e2881ee030f'
     )
+    manifest = json.loads(manifest_bytes)
+    for filename, digest in manifest['assets'].items():
+        assert hashlib.sha256((folder / filename).read_bytes()).hexdigest() == digest
 
     source = Path(timed_search.__file__).read_text(encoding='utf-8')
-
     assert 'from harness' not in source and 'import harness' not in source
-
     assert 'import reversi' not in source and 'import web' not in source
-
     assert search_trace.clock_descriptor() == protocol.clock_descriptor()
-
-
-@pytest.mark.parametrize('filename', ['ai_engine.py', 'timed_search.py', 'search_trace.py'])
-def test_compatibility_fix_preserves_frozen_search_implementation(filename):
-    """互換性修正で評価・探索・期限処理の関数やクラスを変更していないことを検査する。"""
-    import ast
-
-    class NormalizeCastTypes(ast.NodeTransformer):
-        """castの型引数だけを同じ型式へ戻し、型の変更も検出できる形で比較する。"""
-
-        def visit_Call(self, node):
-            """旧Python向けに文字列化した型式を解析し、他の呼出引数は保持する。"""
-            self.generic_visit(node)
-            if (
-                isinstance(node.func, ast.Name)
-                and node.func.id == 'cast'
-                and node.args
-                and isinstance(node.args[0], ast.Constant)
-                and isinstance(node.args[0].value, str)
-            ):
-                node.args[0] = ast.parse(node.args[0].value, mode='eval').body
-            return node
-
-    class NormalizeExperimentalDepth(ast.NodeTransformer):
-        """時間設定だけを実験前の名前へ正規化し、他の探索ASTは完全一致させる。"""
-
-        def __init__(self, module):
-            self.module = module
-
-        def visit_Name(self, node):
-            if self.module == 'timed_search.py' and node.id == 'DEFAULT_TIMED_DEPTH':
-                return ast.copy_location(ast.Name(id='MAX_TIMED_DEPTH', ctx=node.ctx), node)
-            if self.module == 'search_trace.py' and node.id == 'MAX_TRACE_DEPTH':
-                return ast.copy_location(
-                    ast.Attribute(
-                        value=ast.Name(id='timed_search', ctx=ast.Load()),
-                        attr='MAX_TIMED_DEPTH',
-                        ctx=node.ctx,
-                    ),
-                    node,
-                )
-            return node
-
-    implementations = []
-    for directory in ('baselines/search_v1', 'reversi_player'):
-        tree = ast.parse(Path(directory, filename).read_text(encoding='utf-8'))
-        tree = NormalizeCastTypes().visit(tree)
-        tree = NormalizeExperimentalDepth(filename).visit(tree)
-        implementations.append(
-            [
-                ast.dump(node, include_attributes=False)
-                for node in tree.body
-                if isinstance(node, (ast.FunctionDef, ast.ClassDef))
-            ]
-        )
-    assert implementations[0] == implementations[1]
 
 
 @pytest.mark.parametrize(

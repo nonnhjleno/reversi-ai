@@ -16,6 +16,7 @@ LegalMoves: TypeAlias = Tuple[Move, ...]
 MoveSelector: TypeAlias = Callable[[BoardRows, str, LegalMoves], Optional[Move]]
 LegalMovesFor: TypeAlias = Callable[[BoardRows, str], LegalMoves]
 ApplyMove: TypeAlias = Callable[[BoardRows, str, Move], BoardRows]
+LeafEvaluator: TypeAlias = Callable[[BoardRows, str], float]
 
 POSITION_WEIGHTS = (
     (120, -20, 20, 5, 5, 20, -20, 120),
@@ -151,15 +152,19 @@ def _extract_features(
     )
 
 
+def _terminal_score(difference: int) -> float:
+    """Phase 5の根視点の確定勝敗と石差を返す。"""
+    if difference > 0:
+        return float(1000 + difference)
+    if difference < 0:
+        return float(-1000 + difference)
+    return 0.0
+
+
 def _score_features(features: _PositionFeatures) -> float:
     """確定勝敗を優先し、非終局は整数分子を一度だけfloatへ変換する。"""
     if features.terminal:
-        difference = features.disc_difference
-        if difference > 0:
-            return float(1000 + difference)
-        if difference < 0:
-            return float(-1000 + difference)
-        return 0.0
+        return _terminal_score(features.disc_difference)
 
     # 40*c/4 + 40*m/64 + 20*p/696 と同値。同じ有理数の丸め方を統一する。
     numerator = (
@@ -178,6 +183,26 @@ def evaluate_position(rows: BoardRows, viewpoint: str, legal_moves_for: LegalMov
     この得点は勝率ではなく、人手で固定した候補比較用の値である。
     """
     return _score_features(_extract_features(rows, viewpoint, legal_moves_for))
+
+
+def _evaluate_leaf(
+    rows: BoardRows,
+    turn: str,
+    root: str,
+    moves: LegalMoves,
+    opponent: str,
+    legal_moves_for: LegalMovesFor,
+    evaluate: LeafEvaluator,
+) -> float:
+    """終局を確定し、非終局の黒視点値を根視点に一度だけ変換する。"""
+    if not moves and not legal_moves_for(rows, opponent):
+        return _terminal_score(
+            sum(row.count(root) - row.count('W' if root == 'B' else 'B') for row in rows)
+        )
+    value = evaluate(rows, turn)
+    if not -1.0 <= value <= 1.0:
+        raise ValueError('invalid_leaf_value')
+    return value if root == 'B' else -value
 
 
 def make_one_ply_selector(legal_moves_for: LegalMovesFor, apply_move: ApplyMove) -> MoveSelector:
@@ -240,6 +265,7 @@ def _run_minimax(
     legal_moves_for: LegalMovesFor,
     apply_move: ApplyMove,
     root_moves: LegalMoves,
+    leaf_evaluator: LeafEvaluator | None = None,
 ) -> SearchResult:
     """完全なroot候補から全木を探索する。入力検査は公開入口が担当する。"""
     nodes = leaves = passes = 0
@@ -257,7 +283,11 @@ def _run_minimax(
         other = 'W' if turn == 'B' else 'B'
         if remaining == 0 or (not moves and not legal_moves_for(snapshot, other)):
             leaves += 1
-            return evaluate_position(snapshot, color, legal_moves_for), None
+            if leaf_evaluator is None:
+                return evaluate_position(snapshot, color, legal_moves_for), None
+            return _evaluate_leaf(
+                snapshot, turn, color, moves, other, legal_moves_for, leaf_evaluator
+            ), None
         if not moves:
             passes += 1
             value, _ = _visit(snapshot, other, remaining)
@@ -283,6 +313,8 @@ def search_minimax(
     depth: int,
     legal_moves_for: LegalMovesFor,
     apply_move: ApplyMove,
+    *,
+    leaf_evaluator: LeafEvaluator | None = None,
 ) -> SearchResult:
     """通常intの深度0〜4で剪定なしMinimaxを行い、不変の診断値を返す。
 
@@ -294,7 +326,13 @@ def search_minimax(
     _validate_search_depth(depth, 0)
     validate_position(rows, color)
     return _run_minimax(
-        rows, color, depth, legal_moves_for, apply_move, legal_moves_for(rows, color)
+        rows,
+        color,
+        depth,
+        legal_moves_for,
+        apply_move,
+        legal_moves_for(rows, color),
+        leaf_evaluator,
     )
 
 
@@ -336,6 +374,7 @@ def _run_alpha_beta(
     apply_move: ApplyMove,
     root_moves: LegalMoves,
     ordered: bool,
+    leaf_evaluator: LeafEvaluator | None = None,
 ) -> AlphaBetaResult:
     """root順を固定し、内部だけ並べ替えるfail-soft Alpha-Beta。"""
     nodes = leaves = passes = cutoffs = 0
@@ -355,7 +394,11 @@ def _run_alpha_beta(
         other = 'W' if turn == 'B' else 'B'
         if remaining == 0 or (not moves and not legal_moves_for(snapshot, other)):
             leaves += 1
-            return evaluate_position(snapshot, color, legal_moves_for), None
+            if leaf_evaluator is None:
+                return evaluate_position(snapshot, color, legal_moves_for), None
+            return _evaluate_leaf(
+                snapshot, turn, color, moves, other, legal_moves_for, leaf_evaluator
+            ), None
         if not moves:
             passes += 1
             value, _ = _visit(snapshot, other, remaining, alpha, beta)
@@ -396,6 +439,7 @@ def search_alpha_beta(
     apply_move: ApplyMove,
     *,
     ordered: bool = True,
+    leaf_evaluator: LeafEvaluator | None = None,
 ) -> AlphaBetaResult:
     """深度0〜4で厳密なroot値と従来同点順の最善手を返す。
 
@@ -407,7 +451,14 @@ def search_alpha_beta(
         raise ValueError('invalid_search_order')
     validate_position(rows, color)
     return _run_alpha_beta(
-        rows, color, depth, legal_moves_for, apply_move, legal_moves_for(rows, color), ordered
+        rows,
+        color,
+        depth,
+        legal_moves_for,
+        apply_move,
+        legal_moves_for(rows, color),
+        ordered,
+        leaf_evaluator,
     )
 
 
