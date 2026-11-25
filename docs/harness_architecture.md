@@ -651,6 +651,10 @@ Phase 5のtime予約分を実測後に再設計した。search_traceからtimed_
 
 [Phase 8の接続設計](phase8_search_integration.md)では、既存の探索に凍結モデルの葉評価を渡す。盤面更新、期限管理、予算・通信の検証の責務は上図のままとする。設定でモデルを指定した場合、`search_trace.py` が `ntuple_io.py` で起動時に照合し、固定探索と時間探索へ黒視点の評価を渡す。終局と根視点への変換は `ai_engine.py` が扱う。ハーネスはモデルIDとファイルSHA-256が記録・取得した資産に結び付くことを既存のtrace4とschema 5で検証する。
 
+### Phase 9-Aの明示的な置換表
+
+設定の `search.tt_capacity` から、固定探索と時間探索が使用する表の容量を指定できる。表は1回の着手の探索が所有する。上図の `ai_engine.py` が表を実装し、時間探索では `timed_search.py` が反復間で共有する。置換表を有効にした探索の `tt_diagnostics` は任意の診断情報である。予算検証、探索量の定義、通信は従来のtrace4とschema 5に従う。[Phase 9-Aの設計と操作](phase9a_tt_design.md)
+
 ## Phase 5最終レビュー：品質runnerの終了判定
 
 既存の所有子process待機・tree回収の後に、同じperf_counterの実経過を指定上限へ照合する。終了コード0とerrorなしだけではPASSにせず、実測上限超過をtimeout_elapsedとして失敗記録へ渡す。原ログ・実終了値を保存し、新しい常駐監視・独立process・品質上限の変更は導入しない。外部AIと正式評価の依存・通信は変えない。[品質step上限](harness_contracts.md#phase-5最終レビュー品質stepの経過上限)を参照する。

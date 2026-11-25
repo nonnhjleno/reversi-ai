@@ -115,6 +115,8 @@ def search_iterative(
     clock: Clock | None = None,
     ordered: bool = True,
     leaf_evaluator: ai_engine.LeafEvaluator | None = None,
+    tt_capacity: int = 0,
+    tt_stats: ai_engine.TTDiagnostics | None = None,
 ) -> TimedResult:
     """全反復で期限を共有し、完全rootが戻った深度だけを採用する。
 
@@ -159,6 +161,8 @@ def search_iterative(
     chosen = min(root_moves, key=lambda m: (m[1], m[0])) if root_moves else None
     exact_value: float | None = None
     reason = 'max_depth_completed' if root_moves else 'no_legal_move'
+    capacity = ai_engine.validate_tt_capacity(tt_capacity)
+    table: ai_engine._TranspositionTable | None = None
 
     def _check() -> int:
         """通常int・単調性を検査し、同じ停止時刻だけを全再帰で使う。"""
@@ -191,6 +195,17 @@ def search_iterative(
         nonlocal nodes, leaves, passes, cutoffs
         nodes += 1
         _check()
+        key = None
+        index_slot = 0
+        window = None
+        if table is not None and known is None:
+            key = (snapshot, turn)
+            index_slot = table.index(key)
+            cached = table.probe(index_slot, key, remaining, alpha, beta)
+            _check()
+            if cached is not None:
+                return cached, None
+            window = (alpha, beta)
         moves = _legal(snapshot, turn) if known is None else known
         other = 'W' if turn == 'B' else 'B'
         if remaining == 0 or (not moves and not _legal(snapshot, other)):
@@ -204,12 +219,18 @@ def search_iterative(
             )
             leaves += 1
             _check()
+            if table is not None and key is not None:
+                table.store(index_slot, key, remaining, value, None)
+                _check()
             return value, None
         if not moves:
             _check()
             passes += 1
             value, _ = _visit(snapshot, other, remaining, alpha, beta)
             _check()
+            if table is not None and key is not None:
+                table.store(index_slot, key, remaining, value, window)
+                _check()
             return value, None
         sequence = sorted(
             moves,
@@ -247,6 +268,9 @@ def search_iterative(
                 cutoffs += 1
                 break
         _check()
+        if table is not None and key is not None:
+            table.store(index_slot, key, remaining, best, window)
+            _check()
         return best, selected
 
     if root_moves:
@@ -255,6 +279,9 @@ def search_iterative(
                 if _check() >= start_deadline:
                     reason = 'new_depth_deadline'
                     break
+                if capacity and table is None:
+                    table = ai_engine._TranspositionTable(capacity, tt_stats)
+                    _check()
                 started = depth
                 value, move = _visit(rows, color, depth, float('-inf'), float('inf'), root_moves)
             except _SearchInterrupted:
@@ -289,11 +316,13 @@ class TimedSelector:
         limit_ns: int | None = None,
         ordered: bool = True,
         leaf_evaluator: ai_engine.LeafEvaluator | None = None,
+        tt_capacity: int = 0,
     ) -> None:
         """純粋callbackと設定を保持し、呼出しごとの結果は置き換える。"""
         self._legal, self._apply, self._policy = legal_moves_for, apply_move, policy
         self._limit_ns, self._ordered = limit_ns, ordered
         self._leaf_evaluator = leaf_evaluator
+        self._tt_capacity = ai_engine.validate_tt_capacity(tt_capacity)
         self._received: int | None = None
         self.result: TimedResult | None = None
 
@@ -302,7 +331,12 @@ class TimedSelector:
         self._received, self.result = received_ns, None
 
     def select(
-        self, rows: ai_engine.BoardRows, color: str, moves: ai_engine.LegalMoves
+        self,
+        rows: ai_engine.BoardRows,
+        color: str,
+        moves: ai_engine.LegalMoves,
+        *,
+        tt_stats: ai_engine.TTDiagnostics | None = None,
     ) -> ai_engine.Move | None:
         """単一期限で探索する。例外でも前回起点を次回へ持ち越さない。"""
         self.result = None
@@ -319,6 +353,8 @@ class TimedSelector:
                 limit_ns=self._limit_ns,
                 ordered=self._ordered,
                 leaf_evaluator=self._leaf_evaluator,
+                tt_capacity=self._tt_capacity,
+                tt_stats=tt_stats,
             )
             return self.result.move
         finally:

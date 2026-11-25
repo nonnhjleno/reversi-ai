@@ -366,6 +366,109 @@ class AlphaBetaResult(SearchResult):
     cutoffs: int
 
 
+TT_CAPACITY_ENV = 'REVERSI_TT_CAPACITY'
+MAX_TT_CAPACITY = 16_384
+_TTKey: TypeAlias = Tuple[BoardRows, str]
+
+
+def validate_tt_capacity(value: object) -> int:
+    """0か2の累乗を受け付け、固定長表の容量を制限する。"""
+    if type(value) is not int or not 0 <= value <= MAX_TT_CAPACITY or value & (value - 1):
+        raise ValueError('invalid_tt_capacity')
+    return value
+
+
+@dataclass
+class TTDiagnostics:
+    """一探索について、同じ局面の発見と値を再利用できた回数を記録する。"""
+
+    capacity: int = 0
+    probes: int = 0
+    state_hits: int = 0
+    depth_hits: int = 0
+    depth_misses: int = 0
+    exact: int = 0
+    lower: int = 0
+    upper: int = 0
+    collisions: int = 0
+    stores: int = 0
+    replacements: int = 0
+    peak_entries: int = 0
+
+
+@dataclass(frozen=True)
+class _TTEntry:
+    """根視点の値を、照合用の状態・残り深さ・境界種別と保持する。"""
+
+    key: _TTKey
+    depth: int
+    value: float
+    bound: str
+
+
+class _TranspositionTable:
+    """1回の根探索が所有する直接配置の固定長表。着手順に関与しない。"""
+
+    def __init__(self, capacity: int, stats: TTDiagnostics | None) -> None:
+        """空スロットを事前確保する。根視点と評価は呼出元の探索中に固定される。"""
+        self._slots: list[_TTEntry | None] = [None] * capacity
+        self._mask = capacity - 1
+        self.stats = stats if stats is not None else TTDiagnostics()
+        self.stats.capacity = capacity
+
+    def index(self, key: _TTKey) -> int:
+        """hashは添字にだけ使い、等価性は探索値を読む前に別途照合する。"""
+        return hash(key) & self._mask
+
+    def probe(self, index: int, key: _TTKey, depth: int, alpha: float, beta: float) -> float | None:
+        """完全一致かつ同じ残り深さの正確値または十分な境界だけを返す。"""
+        stats = self.stats
+        stats.probes += 1
+        entry = self._slots[index]
+        if entry is None:
+            return None
+        if entry.key != key:
+            stats.collisions += 1
+            return None
+        stats.state_hits += 1
+        if entry.depth != depth:
+            stats.depth_misses += 1
+            return None
+        stats.depth_hits += 1
+        if entry.bound == 'EXACT':
+            stats.exact += 1
+        elif entry.bound == 'LOWER' and entry.value >= beta:
+            stats.lower += 1
+        elif entry.bound == 'UPPER' and entry.value <= alpha:
+            stats.upper += 1
+        else:
+            return None
+        return entry.value
+
+    def store(
+        self, index: int, key: _TTKey, depth: int, value: float, window: tuple[float, float] | None
+    ) -> None:
+        """確定した値を登録する。葉は正確値、内部は探索開始窓で境界を分類する。"""
+        bound = 'EXACT'
+        if window is not None:
+            if value <= window[0]:
+                bound = 'UPPER'
+            elif value >= window[1]:
+                bound = 'LOWER'
+        old = self._slots[index]
+        if old is not None:
+            if old.key == key and (
+                old.depth > depth
+                or (old.depth == depth and old.bound == 'EXACT' and bound != 'EXACT')
+            ):
+                return
+            self.stats.replacements += 1
+        else:
+            self.stats.peak_entries += 1
+        self._slots[index] = _TTEntry(key, depth, value, bound)
+        self.stats.stores += 1
+
+
 def _run_alpha_beta(
     rows: BoardRows,
     color: str,
@@ -375,9 +478,13 @@ def _run_alpha_beta(
     root_moves: LegalMoves,
     ordered: bool,
     leaf_evaluator: LeafEvaluator | None = None,
+    tt_capacity: int = 0,
+    tt_stats: TTDiagnostics | None = None,
 ) -> AlphaBetaResult:
     """root順を固定し、内部だけ並べ替えるfail-soft Alpha-Beta。"""
     nodes = leaves = passes = cutoffs = 0
+    capacity = validate_tt_capacity(tt_capacity)
+    table = _TranspositionTable(capacity, tt_stats) if capacity else None
 
     def _visit(
         snapshot: BoardRows,
@@ -390,18 +497,35 @@ def _run_alpha_beta(
         """同じplacement深度とroot視点で実際に訪問した呼出しを数える。"""
         nonlocal nodes, leaves, passes, cutoffs
         nodes += 1
+        key = None
+        index_slot = 0
+        window = None
+        if table is not None and known_moves is None:
+            key = (snapshot, turn)
+            index_slot = table.index(key)
+            cached = table.probe(index_slot, key, remaining, alpha, beta)
+            if cached is not None:
+                return cached, None
+            window = (alpha, beta)
         moves = legal_moves_for(snapshot, turn) if known_moves is None else known_moves
         other = 'W' if turn == 'B' else 'B'
         if remaining == 0 or (not moves and not legal_moves_for(snapshot, other)):
             leaves += 1
-            if leaf_evaluator is None:
-                return evaluate_position(snapshot, color, legal_moves_for), None
-            return _evaluate_leaf(
-                snapshot, turn, color, moves, other, legal_moves_for, leaf_evaluator
-            ), None
+            value = (
+                evaluate_position(snapshot, color, legal_moves_for)
+                if leaf_evaluator is None
+                else _evaluate_leaf(
+                    snapshot, turn, color, moves, other, legal_moves_for, leaf_evaluator
+                )
+            )
+            if table is not None and key is not None:
+                table.store(index_slot, key, remaining, value, None)
+            return value, None
         if not moves:
             passes += 1
             value, _ = _visit(snapshot, other, remaining, alpha, beta)
+            if table is not None and key is not None:
+                table.store(index_slot, key, remaining, value, window)
             return value, None
         # rootを並べ替えない。後続子のfail-low同値では先行の厳密最善手を保つ。
         if ordered and known_moves is None:
@@ -425,6 +549,8 @@ def _run_alpha_beta(
             if alpha >= beta and index + 1 < len(sequence):
                 cutoffs += 1
                 break
+        if table is not None and key is not None:
+            table.store(index_slot, key, remaining, best, window)
         return best, selected
 
     value, move = _visit(rows, color, depth, float('-inf'), float('inf'), root_moves)
@@ -440,6 +566,8 @@ def search_alpha_beta(
     *,
     ordered: bool = True,
     leaf_evaluator: LeafEvaluator | None = None,
+    tt_capacity: int = 0,
+    tt_stats: TTDiagnostics | None = None,
 ) -> AlphaBetaResult:
     """深度0〜4で厳密なroot値と従来同点順の最善手を返す。
 
@@ -459,6 +587,8 @@ def search_alpha_beta(
         legal_moves_for(rows, color),
         ordered,
         leaf_evaluator,
+        tt_capacity,
+        tt_stats,
     )
 
 

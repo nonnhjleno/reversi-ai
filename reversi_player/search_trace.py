@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 import os
@@ -133,7 +133,7 @@ def load(
         depth = 0
     else:
         raise ValueError('unsupported_search_budget')
-    allowed = {'algorithm', 'ordered', 'deterministic', 'counting_definition_id'}
+    allowed = {'algorithm', 'ordered', 'deterministic', 'counting_definition_id', 'tt_capacity'}
     if kind == 'time':
         allowed.add('max_depth')
     if set(search) - (allowed | _MODEL_FIELDS):
@@ -141,6 +141,9 @@ def load(
     algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
     ordered = search.get('ordered', True)
     maximum = search.get('max_depth', MAX_TRACE_DEPTH)
+    tt_capacity = ai_engine.validate_tt_capacity(search.get('tt_capacity', 0))
+    if algorithm == 'minimax' and tt_capacity:
+        raise ValueError('tt_requires_alpha_beta')
     if (
         type(algorithm) is not str
         or type(ordered) is not bool
@@ -207,6 +210,7 @@ def load(
         time_limit_ns=time_limit,
         max_depth=maximum,
         model=model,
+        tt_capacity=tt_capacity,
     )
 
 
@@ -228,6 +232,7 @@ class SearchTrace:
         time_limit_ns: int | None = None,
         max_depth: int = MAX_TRACE_DEPTH,
         model: SearchModel | None = None,
+        tt_capacity: int = 0,
     ) -> None:
         """検証後の設定を保持し、原traceを排他作成する。"""
         self._config, self._context = config, context
@@ -235,6 +240,8 @@ class SearchTrace:
         self._algorithm, self._ordered = algorithm, ordered
         self._legal, self._apply = legal_moves_for, apply_move
         self._model = model
+        self._tt_capacity = tt_capacity
+        self._tt_stats: ai_engine.TTDiagnostics | None = None
         self._leaf_evaluator = model.artifact.model.value if model is not None else None
         self._timed = (
             timed_search.TimedSelector(
@@ -244,6 +251,7 @@ class SearchTrace:
                 limit_ns=time_limit_ns,
                 ordered=ordered,
                 leaf_evaluator=self._leaf_evaluator,
+                tt_capacity=tt_capacity,
             )
             if time_limit_ns is not None
             else None
@@ -295,8 +303,11 @@ class SearchTrace:
     ) -> ai_engine.Move | None:
         """純粋探索を実測する。実Boardの確定は呼出し元が一度だけ行う。"""
         started = time.perf_counter_ns()
+        self._tt_stats = (
+            ai_engine.TTDiagnostics(capacity=self._tt_capacity) if self._tt_capacity else None
+        )
         if self._timed is not None:
-            self._timed.select(rows, color, moves)
+            self._timed.select(rows, color, moves, tt_stats=self._tt_stats)
             result = self._timed.result
             assert result is not None
             ended = time.perf_counter_ns()
@@ -320,6 +331,8 @@ class SearchTrace:
                 self._apply,
                 ordered=self._ordered,
                 leaf_evaluator=self._leaf_evaluator,
+                tt_capacity=self._tt_capacity,
+                tt_stats=self._tt_stats,
             )
         )
         ended = time.perf_counter_ns()
@@ -411,6 +424,9 @@ class SearchTrace:
                 }
             )
             event.update(extra)
+            if self._tt_stats is not None:
+                event['tt_diagnostics'] = asdict(self._tt_stats)
+                self._tt_stats = None
             self._sequence += 1
             self._search = None
         if words != ['quit']:

@@ -361,6 +361,10 @@ def _dispatch(board: Board, cmd: list[str]) -> bool:
 def main() -> None:
     """通常経路の入出力を維持し、対応設定では実計測を別JSONLへ保存する。"""
     model_path = os.environ.get(search_trace.MODEL_ENV)
+    tt_argument = os.environ.get(ai_engine.TT_CAPACITY_ENV)
+    if tt_argument is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
+        raise ValueError('tt_requires_one_configuration_source')
+    tt_capacity = ai_engine.validate_tt_capacity(int(tt_argument)) if tt_argument is not None else 0
     if model_path is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
         raise ValueError('search_model_requires_one_configuration_source')
     trace = search_trace.load(_CHILD_ENTRY_NS, legal_moves_for, apply_move)
@@ -370,6 +374,7 @@ def main() -> None:
         timed_search.TimedSelector(
             legal_moves_for, apply_move, timed_search.load_policy(),
             leaf_evaluator=model.artifact.model.value if model is not None else None,
+            tt_capacity=tt_capacity,
         )
         if trace is None and not os.environ.get('REVERSI_EVAL_CONFIG') else None
     )
