@@ -655,6 +655,10 @@ Phase 5のtime予約分を実測後に再設計した。search_traceからtimed_
 
 設定の `search.tt_capacity` から、固定探索と時間探索が使用する表の容量を指定できる。表は1回の着手の探索が所有する。上図の `ai_engine.py` が表を実装し、時間探索では `timed_search.py` が反復間で共有する。置換表を有効にした探索の `tt_diagnostics` は任意の診断情報である。予算検証、探索量の定義、通信は従来のtrace4とschema 5に従う。[Phase 9-Aの設計と操作](phase9a_tt_design.md)
 
+### Phase 9-Bの最大深度
+
+時間探索の `search.max_depth` に明示した深度上限を `SearchTrace` から `ResponsePolicy` へ渡す。上限5・6の実験でも従来の時刻と盤面更新の規則を使う。開始した反復の深度・時間・作業量はtrace4の補助記録に保持する。公開する手は完了した最深反復から選ぶ。固定深度設定の受付範囲と、ハーネスの正式資格判定は従来どおりである。[Phase 9-Bの設計](phase9b_depth_design.md)
+
 ## Phase 5最終レビュー：品質runnerの終了判定
 
 既存の所有子process待機・tree回収の後に、同じperf_counterの実経過を指定上限へ照合する。終了コード0とerrorなしだけではPASSにせず、実測上限超過をtimeout_elapsedとして失敗記録へ渡す。原ログ・実終了値を保存し、新しい常駐監視・独立process・品質上限の変更は導入しない。外部AIと正式評価の依存・通信は変えない。[品質step上限](harness_contracts.md#phase-5最終レビュー品質stepの経過上限)を参照する。

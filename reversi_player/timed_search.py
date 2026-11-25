@@ -20,7 +20,8 @@ else:
 Clock: TypeAlias = Callable[[], int]
 _CORNERS = ((0, 0), (7, 0), (0, 7), (7, 7))
 DEFAULT_TIMED_DEPTH = 4
-MAX_TIMED_DEPTH = 5
+MAX_TIMED_DEPTH = 6
+SEARCH_DEPTH_ENV = 'REVERSI_MAX_DEPTH'
 MIN_TIME_BUDGET_NS = 1_000_000
 MAX_TIME_BUDGET_NS = 6_500_000_000
 
@@ -46,7 +47,7 @@ class ResponsePolicy:
             raise ValueError('invalid_response_policy')
 
 
-def load_policy() -> ResponsePolicy:
+def load_policy(*, max_depth: int | None = None) -> ResponsePolicy:
     """scriptと同じディレクトリの提出設定を読む。欠損や未知項目は伝播・拒否する。"""
     raw: object = json.loads(
         Path(__file__).with_name('response_config.json').read_text(encoding='utf-8')
@@ -57,11 +58,11 @@ def load_policy() -> ResponsePolicy:
     values = cast('dict[str, object]', raw)
     if any(type(v) is not int for v in values.values()):
         raise ValueError('invalid_response_config')
+    policy = ResponsePolicy(**cast('dict[str, int]', values))
+    if max_depth is None:
+        return policy
     return ResponsePolicy(
-        *(
-            cast(int, values[k])
-            for k in ('target_ns', 'new_depth_margin_ns', 'stop_margin_ns', 'max_depth')
-        )
+        policy.target_ns, policy.new_depth_margin_ns, policy.stop_margin_ns, max_depth
     )
 
 
@@ -80,6 +81,19 @@ class TimedResult:
     stop_reason: str
     stop_deadline_ns: int
     stop_requested_ns: int | None
+
+
+@dataclass(frozen=True)
+class Iteration:
+    """実際に開始した反復の経過時間と追加作業量。"""
+
+    depth: int
+    completed: bool
+    elapsed_ns: int
+    nodes: int
+    leaves: int
+    value: float | None
+    move: ai_engine.Move | None
 
 
 class _SearchInterrupted(Exception):
@@ -117,6 +131,7 @@ def search_iterative(
     leaf_evaluator: ai_engine.LeafEvaluator | None = None,
     tt_capacity: int = 0,
     tt_stats: ai_engine.TTDiagnostics | None = None,
+    iterations: list[Iteration] | None = None,
 ) -> TimedResult:
     """全反復で期限を共有し、完全rootが戻った深度だけを採用する。
 
@@ -275,6 +290,7 @@ def search_iterative(
 
     if root_moves:
         for depth in range(1, policy.max_depth + 1):
+            before_nodes, before_leaves = nodes, leaves
             try:
                 if _check() >= start_deadline:
                     reason = 'new_depth_deadline'
@@ -282,13 +298,29 @@ def search_iterative(
                 if capacity and table is None:
                     table = ai_engine._TranspositionTable(capacity, tt_stats)
                     _check()
+                iteration_start = previous
                 started = depth
                 value, move = _visit(rows, color, depth, float('-inf'), float('inf'), root_moves)
             except _SearchInterrupted:
                 reason = 'time_limit'
+            else:
+                # 部分root値やfail-low同値で完了結果を書き換えない。
+                chosen, exact_value, completed = move, value, depth
+            if iterations is not None and started == depth:
+                settled = completed == depth
+                iterations.append(
+                    Iteration(
+                        depth,
+                        settled,
+                        previous - iteration_start,
+                        nodes - before_nodes,
+                        leaves - before_leaves,
+                        exact_value if settled else None,
+                        chosen if settled else None,
+                    )
+                )
+            if reason == 'time_limit':
                 break
-            # 部分root値やfail-low同値で完了結果を書き換えない。
-            chosen, exact_value, completed = move, value, depth
     return TimedResult(
         chosen,
         exact_value,
@@ -337,6 +369,7 @@ class TimedSelector:
         moves: ai_engine.LegalMoves,
         *,
         tt_stats: ai_engine.TTDiagnostics | None = None,
+        iterations: list[Iteration] | None = None,
     ) -> ai_engine.Move | None:
         """単一期限で探索する。例外でも前回起点を次回へ持ち越さない。"""
         self.result = None
@@ -355,6 +388,7 @@ class TimedSelector:
                 leaf_evaluator=self._leaf_evaluator,
                 tt_capacity=self._tt_capacity,
                 tt_stats=tt_stats,
+                iterations=iterations,
             )
             return self.result.move
         finally:

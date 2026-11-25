@@ -21,7 +21,7 @@ else:
     import timed_search
 
 
-MAX_TRACE_DEPTH = 4
+DEFAULT_TRACE_DEPTH = timed_search.DEFAULT_TIMED_DEPTH
 MODEL_ENV = 'REVERSI_SEARCH_MODEL'
 _MODEL_FIELDS = {'model_path', 'model_id', 'model_sha256'}
 
@@ -140,7 +140,7 @@ def load(
         raise ValueError('unsupported_search_setting')
     algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
     ordered = search.get('ordered', True)
-    maximum = search.get('max_depth', MAX_TRACE_DEPTH)
+    maximum = search.get('max_depth', DEFAULT_TRACE_DEPTH)
     tt_capacity = ai_engine.validate_tt_capacity(search.get('tt_capacity', 0))
     if algorithm == 'minimax' and tt_capacity:
         raise ValueError('tt_requires_alpha_beta')
@@ -156,7 +156,7 @@ def load(
         )
         or (kind == 'time' and algorithm != 'iterative')
         or type(maximum) is not int
-        or not 1 <= maximum <= MAX_TRACE_DEPTH
+        or not 1 <= maximum <= timed_search.MAX_TIMED_DEPTH
     ):
         raise ValueError('unsupported_search_algorithm')
     if (
@@ -230,7 +230,7 @@ class SearchTrace:
         apply_move: ai_engine.ApplyMove,
         *,
         time_limit_ns: int | None = None,
-        max_depth: int = MAX_TRACE_DEPTH,
+        max_depth: int = DEFAULT_TRACE_DEPTH,
         model: SearchModel | None = None,
         tt_capacity: int = 0,
     ) -> None:
@@ -242,6 +242,8 @@ class SearchTrace:
         self._model = model
         self._tt_capacity = tt_capacity
         self._tt_stats: ai_engine.TTDiagnostics | None = None
+        self._measure_iterations = 'max_depth' in _object(config['search'])
+        self._iterations: list[timed_search.Iteration] | None = None
         self._leaf_evaluator = model.artifact.model.value if model is not None else None
         self._timed = (
             timed_search.TimedSelector(
@@ -307,7 +309,10 @@ class SearchTrace:
             ai_engine.TTDiagnostics(capacity=self._tt_capacity) if self._tt_capacity else None
         )
         if self._timed is not None:
-            self._timed.select(rows, color, moves, tt_stats=self._tt_stats)
+            self._iterations = [] if self._measure_iterations else None
+            self._timed.select(
+                rows, color, moves, tt_stats=self._tt_stats, iterations=self._iterations
+            )
             result = self._timed.result
             assert result is not None
             ended = time.perf_counter_ns()
@@ -424,6 +429,8 @@ class SearchTrace:
                 }
             )
             event.update(extra)
+            if self._iterations is not None and self._search is not None:
+                event['iterations'] = [asdict(step) for step in self._iterations]
             if self._tt_stats is not None:
                 event['tt_diagnostics'] = asdict(self._tt_stats)
                 self._tt_stats = None

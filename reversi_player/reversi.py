@@ -361,6 +361,10 @@ def _dispatch(board: Board, cmd: list[str]) -> bool:
 def main() -> None:
     """通常経路の入出力を維持し、対応設定では実計測を別JSONLへ保存する。"""
     model_path = os.environ.get(search_trace.MODEL_ENV)
+    depth_argument = os.environ.get(timed_search.SEARCH_DEPTH_ENV)
+    if depth_argument is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
+        raise ValueError('search_depth_requires_one_configuration_source')
+    max_depth = int(depth_argument) if depth_argument is not None else None
     tt_argument = os.environ.get(ai_engine.TT_CAPACITY_ENV)
     if tt_argument is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
         raise ValueError('tt_requires_one_configuration_source')
@@ -372,7 +376,7 @@ def main() -> None:
     # unknown＋空searchは従来の固定深度・非計測を維持する。
     controller = (
         timed_search.TimedSelector(
-            legal_moves_for, apply_move, timed_search.load_policy(),
+            legal_moves_for, apply_move, timed_search.load_policy(max_depth=max_depth),
             leaf_evaluator=model.artifact.model.value if model is not None else None,
             tt_capacity=tt_capacity,
         )

@@ -380,7 +380,7 @@ def test_invalid_time_budgets_are_rejected(value):
     'field,value',
     [
         ('max_depth', 0),
-        ('max_depth', 6),
+        ('max_depth', 7),
         ('max_depth', True),
         ('target_ns', 10000000000),
         ('stop_margin_ns', 0),
@@ -394,27 +394,6 @@ def test_invalid_response_policy_is_rejected(field, value):
 
     with pytest.raises(ValueError):
         timed_search.ResponsePolicy(**{field: value})
-
-
-def test_depth_five_is_experimental_only_and_existing_trace_range_stays_four(tmp_path):
-    """時間対応のみ深度5を許し、既定と正式trace受理範囲は深度4を保つ。"""
-    assert timed_search.ResponsePolicy().max_depth == 4
-    assert timed_search.ResponsePolicy(max_depth=5).max_depth == 5
-    with pytest.raises(ValueError):
-        timed_search.ResponsePolicy(max_depth=6)
-    assert search_trace.MAX_TRACE_DEPTH == 4
-
-    config = _time_config()
-    config['search']['max_depth'] = 5
-    path, raw = tmp_path / 'config.json', tmp_path / 'trace.jsonl'
-    path.write_text(json.dumps(config), encoding='utf-8')
-    with pytest.raises(protocol.HarnessError):
-        protocol.Player(
-            'reversi_player/reversi.py',
-            evaluation_config=path,
-            evaluation_trace=raw,
-            evaluation_context=_context(config),
-        )
 
 
 def test_bad_callbacks_clock_and_rule_exceptions_are_not_normal_interruptions():
@@ -597,7 +576,7 @@ def test_invalid_time_settings_fail_before_trace_creation(tmp_path, change):
         key, value = {
             'true': ('deterministic', True),
             'algorithm': ('algorithm', 'minimax'),
-            'max_depth': ('max_depth', 5),
+            'max_depth': ('max_depth', 7),
             'extra': ('tt', True),
             'model': ('model_id', 'not-supported'),
         }[change]

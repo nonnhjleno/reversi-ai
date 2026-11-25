@@ -1,5 +1,11 @@
 # 品質基盤導入の進捗と検証証拠
 
+## AI開発 Phase 9-Bの品質検証（2026-11-26）
+
+深度5・6の専用34件と、既存の深度境界の16件が成功した。3回目のFull（`quality-3fdf42431f334cc7a222af77ef3c86c1`）はpytestが1,800秒上限に達して終了コード1だった。中断前に1,189件の成功を記録した。終了時のJUnitを取得できず、証拠工程も失敗したため、この時点のG2は未達だった。strict mypyは37ファイル、独立smokeは1件が成功した。対局・計測から最終品質検証までに変わった品質対象は、範囲外入力のテスト2件を修正した `tests/test_ai_phase5.py` だけだった。 [Phase 9-Bの実行報告](reports/20261125_phase9b_depth.md)、[停止と再取得の経緯](QUALITY_BLOCKERS.md)
+
+速度の回復を確認した4回目は終了コード0で、必須11工程がすべて成功した。pytestは2,006件、うち専用34件が成功した。失敗・エラー・スキップは各0件。strict mypyは37ファイル、独立smokeは1件。ソース80ファイルの開始・終了・現在のSHA-256は一致した。保存証拠のpublication検査にも成功し、G2はPASSとなった。原証拠は `quality-b312d287fa814af59df4748bdb79eb0d`。
+
 ## AI開発Phase 7（2026-11-20）
 
 学習と参考評価の4モジュールをstrictに登録した。直接CPython 3.13.5で最終Fullは終了0、必須11工程PASS。pytest 1,839件、独立smoke 1件、strict mypy 30ファイル。失敗・エラー・スキップは各0件。69対象の開始・終了・現在のソースSHA-256と原証拠の整合を照合した。原証拠IDは `quality-2ae6fbf4cc684ea8aea4c5da382ff2e6`。[Phase 7の実装・比較報告](reports/20261120_phase7_td0.md)
