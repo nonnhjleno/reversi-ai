@@ -135,7 +135,7 @@ def load(
         raise ValueError('unsupported_search_budget')
     allowed = {'algorithm', 'ordered', 'deterministic', 'counting_definition_id', 'tt_capacity'}
     if kind == 'time':
-        allowed.add('max_depth')
+        allowed.update(('max_depth', 'move_ordering'))
     if set(search) - (allowed | _MODEL_FIELDS):
         raise ValueError('unsupported_search_setting')
     algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
@@ -165,6 +165,9 @@ def load(
         != ai_engine.SEARCH_COUNTING_DEFINITION
     ):
         raise ValueError('unsupported_search_contract')
+    move_ordering = timed_search.validate_move_ordering(
+        search.get('move_ordering', 'static'), ordered, tt_capacity
+    )
     context = _object(json.loads(raw_context))
     for key in (
         'run_id',
@@ -211,6 +214,7 @@ def load(
         max_depth=maximum,
         model=model,
         tt_capacity=tt_capacity,
+        move_ordering=move_ordering,
     )
 
 
@@ -233,6 +237,7 @@ class SearchTrace:
         max_depth: int = DEFAULT_TRACE_DEPTH,
         model: SearchModel | None = None,
         tt_capacity: int = 0,
+        move_ordering: str = 'static',
     ) -> None:
         """検証後の設定を保持し、原traceを排他作成する。"""
         self._config, self._context = config, context
@@ -254,6 +259,7 @@ class SearchTrace:
                 ordered=ordered,
                 leaf_evaluator=self._leaf_evaluator,
                 tt_capacity=tt_capacity,
+                move_ordering=move_ordering,
             )
             if time_limit_ns is not None
             else None

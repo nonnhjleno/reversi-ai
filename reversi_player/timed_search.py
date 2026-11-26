@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 from pathlib import Path
 import time
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from reversi_player import ai_engine
+
+    _PrincipalLine: TypeAlias = tuple[ai_engine.Move | None, ...]
 elif __package__:
     from . import ai_engine
 else:
@@ -22,6 +24,7 @@ _CORNERS = ((0, 0), (7, 0), (0, 7), (7, 7))
 DEFAULT_TIMED_DEPTH = 4
 MAX_TIMED_DEPTH = 6
 SEARCH_DEPTH_ENV = 'REVERSI_MAX_DEPTH'
+MOVE_ORDERING_ENV = 'REVERSI_MOVE_ORDERING'
 MIN_TIME_BUDGET_NS = 1_000_000
 MAX_TIME_BUDGET_NS = 6_500_000_000
 
@@ -96,6 +99,29 @@ class Iteration:
     move: ai_engine.Move | None
 
 
+@dataclass
+class OrderingDiagnostics:
+    """最大深度の診断で、着手順の費用と主変化の利用を実測する。"""
+
+    ordering_ns: int = 0
+    first_cutoffs: int = 0
+    pv_candidates: int = 0
+    pv_legal: int = 0
+    pv_promoted: int = 0
+    pv_exact_nodes: int = 0
+    pv_exact_best: int = 0
+    completed_lines: list[_PrincipalLine] = field(default_factory=list)
+
+
+def validate_move_ordering(value: object, ordered: bool, tt_capacity: int) -> str:
+    """従来順と、内部で完了反復の主変化を使う排他的な実験設定を受け付ける。"""
+    if not isinstance(value, str) or value not in ('static', 'pv'):
+        raise ValueError('invalid_move_ordering')
+    if value == 'pv' and (not ordered or tt_capacity):
+        raise ValueError('pv_requires_static_order_and_disabled_tt')
+    return value
+
+
 class _SearchInterrupted(Exception):
     """時間確認だけが発生させる内部制御。通常例外の代用にしない。"""
 
@@ -132,6 +158,8 @@ def search_iterative(
     tt_capacity: int = 0,
     tt_stats: ai_engine.TTDiagnostics | None = None,
     iterations: list[Iteration] | None = None,
+    move_ordering: str = 'static',
+    ordering_stats: OrderingDiagnostics | None = None,
 ) -> TimedResult:
     """全反復で期限を共有し、完全rootが戻った深度だけを採用する。
 
@@ -178,6 +206,10 @@ def search_iterative(
     reason = 'max_depth_completed' if root_moves else 'no_legal_move'
     capacity = ai_engine.validate_tt_capacity(tt_capacity)
     table: ai_engine._TranspositionTable | None = None
+    mode = validate_move_ordering(move_ordering, ordered, capacity)
+    # パスは連続しない。placement深度の2倍で実際の再帰段数を保持できる。
+    lines: list[_PrincipalLine] | None = [()] * (2 * policy.max_depth + 1) if mode == 'pv' else None
+    prior: _PrincipalLine = ()
 
     def _check() -> int:
         """通常int・単調性を検査し、同じ停止時刻だけを全再帰で使う。"""
@@ -205,11 +237,15 @@ def search_iterative(
         alpha: float,
         beta: float,
         known: ai_engine.LegalMoves | None = None,
+        ply: int = 0,
+        hint: _PrincipalLine = (),
     ) -> tuple[float, ai_engine.Move | None]:
         """root順と厳密改善を保つAlpha-Beta。実呼出しを中断前に計数する。"""
         nonlocal nodes, leaves, passes, cutoffs
         nodes += 1
         _check()
+        if lines is not None:
+            lines[ply] = ()
         key = None
         index_slot = 0
         window = None
@@ -241,12 +277,16 @@ def search_iterative(
         if not moves:
             _check()
             passes += 1
-            value, _ = _visit(snapshot, other, remaining, alpha, beta)
+            pass_hint = hint[1:] if hint and hint[0] is None else ()
+            value, _ = _visit(snapshot, other, remaining, alpha, beta, ply=ply + 1, hint=pass_hint)
+            if lines is not None:
+                lines[ply] = (None,) + lines[ply + 1]
             _check()
             if table is not None and key is not None:
                 table.store(index_slot, key, remaining, value, window)
                 _check()
             return value, None
+        order_started = time.perf_counter_ns() if ordering_stats is not None else 0
         sequence = sorted(
             moves,
             key=(
@@ -262,7 +302,20 @@ def search_iterative(
                 )
             ),
         )
+        # 根は行・列順を維持する。旧主変化と一致する内部の合法手だけを優先する。
+        preferred = hint[0] if hint else None
+        position = -1
+        if known is None and preferred is not None and preferred in sequence:
+            position = sequence.index(preferred)
+            if position:
+                sequence.insert(0, sequence.pop(position))
+        if ordering_stats is not None:
+            ordering_stats.ordering_ns += time.perf_counter_ns() - order_started
+            ordering_stats.pv_candidates += known is None and preferred is not None
+            ordering_stats.pv_legal += position >= 0
+            ordering_stats.pv_promoted += position > 0
         _check()
+        entry_alpha, entry_beta = alpha, beta
         maximizing = turn == color
         best = float('-inf') if maximizing else float('inf')
         selected = None
@@ -271,17 +324,27 @@ def search_iterative(
             child = apply_move(snapshot, turn, move)
             ai_engine.validate_position(child, turn)
             _check()
-            value, _ = _visit(child, other, remaining - 1, alpha, beta)
+            child_hint = hint[1:] if move == preferred else ()
+            value, _ = _visit(
+                child, other, remaining - 1, alpha, beta, ply=ply + 1, hint=child_hint
+            )
             _check()
             if (maximizing and value > best) or (not maximizing and value < best):
                 best, selected = value, move
+                if lines is not None:
+                    lines[ply] = (move,) + lines[ply + 1]
             if maximizing:
                 alpha = max(alpha, best)
             else:
                 beta = min(beta, best)
             if alpha >= beta and index + 1 < len(sequence):
                 cutoffs += 1
+                if ordering_stats is not None:
+                    ordering_stats.first_cutoffs += index == 0
                 break
+        if ordering_stats is not None and position >= 0 and entry_alpha < best < entry_beta:
+            ordering_stats.pv_exact_nodes += 1
+            ordering_stats.pv_exact_best += selected == preferred
         _check()
         if table is not None and key is not None:
             table.store(index_slot, key, remaining, best, window)
@@ -300,12 +363,18 @@ def search_iterative(
                     _check()
                 iteration_start = previous
                 started = depth
-                value, move = _visit(rows, color, depth, float('-inf'), float('inf'), root_moves)
+                value, move = _visit(
+                    rows, color, depth, float('-inf'), float('inf'), root_moves, hint=prior
+                )
             except _SearchInterrupted:
                 reason = 'time_limit'
             else:
                 # 部分root値やfail-low同値で完了結果を書き換えない。
                 chosen, exact_value, completed = move, value, depth
+                if lines is not None:
+                    prior = lines[0]
+                    if ordering_stats is not None:
+                        ordering_stats.completed_lines.append(prior)
             if iterations is not None and started == depth:
                 settled = completed == depth
                 iterations.append(
@@ -349,12 +418,14 @@ class TimedSelector:
         ordered: bool = True,
         leaf_evaluator: ai_engine.LeafEvaluator | None = None,
         tt_capacity: int = 0,
+        move_ordering: str = 'static',
     ) -> None:
         """純粋callbackと設定を保持し、呼出しごとの結果は置き換える。"""
         self._legal, self._apply, self._policy = legal_moves_for, apply_move, policy
         self._limit_ns, self._ordered = limit_ns, ordered
         self._leaf_evaluator = leaf_evaluator
         self._tt_capacity = ai_engine.validate_tt_capacity(tt_capacity)
+        self._move_ordering = validate_move_ordering(move_ordering, ordered, self._tt_capacity)
         self._received: int | None = None
         self.result: TimedResult | None = None
 
@@ -389,6 +460,7 @@ class TimedSelector:
                 tt_capacity=self._tt_capacity,
                 tt_stats=tt_stats,
                 iterations=iterations,
+                move_ordering=self._move_ordering,
             )
             return self.result.move
         finally:

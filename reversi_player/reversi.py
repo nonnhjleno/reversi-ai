@@ -371,6 +371,9 @@ def main() -> None:
     tt_capacity = ai_engine.validate_tt_capacity(int(tt_argument)) if tt_argument is not None else 0
     if model_path is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
         raise ValueError('search_model_requires_one_configuration_source')
+    move_ordering = os.environ.get(timed_search.MOVE_ORDERING_ENV)
+    if move_ordering is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
+        raise ValueError('move_ordering_requires_one_configuration_source')
     trace = search_trace.load(_CHILD_ENTRY_NS, legal_moves_for, apply_move)
     model = search_trace.load_search_model(model_path) if model_path is not None else None
     # unknown＋空searchは従来の固定深度・非計測を維持する。
@@ -379,6 +382,7 @@ def main() -> None:
             legal_moves_for, apply_move, timed_search.load_policy(max_depth=max_depth),
             leaf_evaluator=model.artifact.model.value if model is not None else None,
             tt_capacity=tt_capacity,
+            move_ordering=move_ordering if move_ordering is not None else 'static',
         )
         if trace is None and not os.environ.get('REVERSI_EVAL_CONFIG') else None
     )
