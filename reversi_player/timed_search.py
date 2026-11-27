@@ -12,7 +12,9 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     from reversi_player import ai_engine
+    from reversi_player.bitboard import BitPosition
 
+    _Snapshot: TypeAlias = ai_engine.BoardRows | BitPosition
     _PrincipalLine: TypeAlias = tuple[ai_engine.Move | None, ...]
 elif __package__:
     from . import ai_engine
@@ -25,6 +27,7 @@ DEFAULT_TIMED_DEPTH = 4
 MAX_TIMED_DEPTH = 6
 SEARCH_DEPTH_ENV = 'REVERSI_MAX_DEPTH'
 MOVE_ORDERING_ENV = 'REVERSI_MOVE_ORDERING'
+BOARD_BACKEND_ENV = 'REVERSI_BOARD_BACKEND'
 MIN_TIME_BUDGET_NS = 1_000_000
 MAX_TIME_BUDGET_NS = 6_500_000_000
 
@@ -122,6 +125,17 @@ def validate_move_ordering(value: object, ordered: bool, tt_capacity: int) -> st
     return value
 
 
+def validate_board_backend(
+    value: object, ordered: bool, move_ordering: str, tt_capacity: int
+) -> str:
+    """盤面方式を検証し、Bitboardに他の探索実験を混ぜる設定を拒否する。"""
+    if not isinstance(value, str) or value not in ('array', 'bitboard'):
+        raise ValueError('invalid_board_backend')
+    if value == 'bitboard' and (not ordered or move_ordering != 'static' or tt_capacity):
+        raise ValueError('bitboard_requires_static_order_and_disabled_tt')
+    return value
+
+
 class _SearchInterrupted(Exception):
     """時間確認だけが発生させる内部制御。通常例外の代用にしない。"""
 
@@ -160,6 +174,7 @@ def search_iterative(
     iterations: list[Iteration] | None = None,
     move_ordering: str = 'static',
     ordering_stats: OrderingDiagnostics | None = None,
+    board_backend: str = 'array',
 ) -> TimedResult:
     """全反復で期限を共有し、完全rootが戻った深度だけを採用する。
 
@@ -207,6 +222,16 @@ def search_iterative(
     capacity = ai_engine.validate_tt_capacity(tt_capacity)
     table: ai_engine._TranspositionTable | None = None
     mode = validate_move_ordering(move_ordering, ordered, capacity)
+    backend = validate_board_backend(board_backend, ordered, mode, capacity)
+    root_snapshot: _Snapshot = rows
+    if backend == 'bitboard' and root_moves:
+        # 既存の配布物もarrayを使用できるよう、依存の読込は明示設定時に限る。
+        if TYPE_CHECKING or __package__:
+            from reversi_player.bitboard import BitPosition
+        else:
+            from bitboard import BitPosition
+
+        root_snapshot = BitPosition.from_rows(rows)
     # パスは連続しない。placement深度の2倍で実際の再帰段数を保持できる。
     lines: list[_PrincipalLine] | None = [()] * (2 * policy.max_depth + 1) if mode == 'pv' else None
     prior: _PrincipalLine = ()
@@ -223,15 +248,19 @@ def search_iterative(
             raise _SearchInterrupted()
         return current
 
-    def _legal(snapshot: ai_engine.BoardRows, turn: str) -> ai_engine.LegalMoves:
+    def _legal(snapshot: _Snapshot, turn: str) -> ai_engine.LegalMoves:
         """合法手生成の前後で停止を確認する。callback例外は伝播する。"""
         _check()
-        moves = _moves(legal_moves_for(snapshot, turn))
+        moves = (
+            _moves(legal_moves_for(snapshot, turn))
+            if isinstance(snapshot, tuple)
+            else snapshot.legal_moves(turn)
+        )
         _check()
         return moves
 
     def _visit(
-        snapshot: ai_engine.BoardRows,
+        snapshot: _Snapshot,
         turn: str,
         remaining: int,
         alpha: float,
@@ -249,7 +278,7 @@ def search_iterative(
         key = None
         index_slot = 0
         window = None
-        if table is not None and known is None:
+        if table is not None and known is None and isinstance(snapshot, tuple):
             key = (snapshot, turn)
             index_slot = table.index(key)
             cached = table.probe(index_slot, key, remaining, alpha, beta)
@@ -261,11 +290,25 @@ def search_iterative(
         other = 'W' if turn == 'B' else 'B'
         if remaining == 0 or (not moves and not _legal(snapshot, other)):
             _check()
+            leaf_legal: ai_engine.LegalMovesFor = _legal
+            if isinstance(snapshot, tuple):
+                evaluation_rows = snapshot
+            else:
+                evaluation_rows = snapshot.to_rows()
+
+                def _legal_at_leaf(
+                    _rows: ai_engine.BoardRows, leaf_turn: str
+                ) -> ai_engine.LegalMoves:
+                    """この葉のBitboardから合法手を返す。評価は従来の行を読む。"""
+                    return _legal(snapshot, leaf_turn)
+
+                leaf_legal = _legal_at_leaf
+
             value = (
-                ai_engine.evaluate_position(snapshot, color, _legal)
+                ai_engine.evaluate_position(evaluation_rows, color, leaf_legal)
                 if leaf_evaluator is None
                 else ai_engine._evaluate_leaf(
-                    snapshot, turn, color, moves, other, _legal, leaf_evaluator
+                    evaluation_rows, turn, color, moves, other, leaf_legal, leaf_evaluator
                 )
             )
             leaves += 1
@@ -321,8 +364,12 @@ def search_iterative(
         selected = None
         for index, move in enumerate(sequence):
             _check()
-            child = apply_move(snapshot, turn, move)
-            ai_engine.validate_position(child, turn)
+            child: _Snapshot
+            if isinstance(snapshot, tuple):
+                child = apply_move(snapshot, turn, move)
+                ai_engine.validate_position(child, turn)
+            else:
+                child = snapshot.play(turn, move)
             _check()
             child_hint = hint[1:] if move == preferred else ()
             value, _ = _visit(
@@ -364,7 +411,7 @@ def search_iterative(
                 iteration_start = previous
                 started = depth
                 value, move = _visit(
-                    rows, color, depth, float('-inf'), float('inf'), root_moves, hint=prior
+                    root_snapshot, color, depth, float('-inf'), float('inf'), root_moves, hint=prior
                 )
             except _SearchInterrupted:
                 reason = 'time_limit'
@@ -419,6 +466,7 @@ class TimedSelector:
         leaf_evaluator: ai_engine.LeafEvaluator | None = None,
         tt_capacity: int = 0,
         move_ordering: str = 'static',
+        board_backend: str = 'array',
     ) -> None:
         """純粋callbackと設定を保持し、呼出しごとの結果は置き換える。"""
         self._legal, self._apply, self._policy = legal_moves_for, apply_move, policy
@@ -426,6 +474,9 @@ class TimedSelector:
         self._leaf_evaluator = leaf_evaluator
         self._tt_capacity = ai_engine.validate_tt_capacity(tt_capacity)
         self._move_ordering = validate_move_ordering(move_ordering, ordered, self._tt_capacity)
+        self._board_backend = validate_board_backend(
+            board_backend, ordered, self._move_ordering, self._tt_capacity
+        )
         self._received: int | None = None
         self.result: TimedResult | None = None
 
@@ -461,6 +512,7 @@ class TimedSelector:
                 tt_stats=tt_stats,
                 iterations=iterations,
                 move_ordering=self._move_ordering,
+                board_backend=self._board_backend,
             )
             return self.result.move
         finally:

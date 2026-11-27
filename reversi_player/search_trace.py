@@ -135,7 +135,7 @@ def load(
         raise ValueError('unsupported_search_budget')
     allowed = {'algorithm', 'ordered', 'deterministic', 'counting_definition_id', 'tt_capacity'}
     if kind == 'time':
-        allowed.update(('max_depth', 'move_ordering'))
+        allowed.update(('max_depth', 'move_ordering', 'board_backend'))
     if set(search) - (allowed | _MODEL_FIELDS):
         raise ValueError('unsupported_search_setting')
     algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
@@ -167,6 +167,9 @@ def load(
         raise ValueError('unsupported_search_contract')
     move_ordering = timed_search.validate_move_ordering(
         search.get('move_ordering', 'static'), ordered, tt_capacity
+    )
+    board_backend = timed_search.validate_board_backend(
+        search.get('board_backend', 'array'), ordered, move_ordering, tt_capacity
     )
     context = _object(json.loads(raw_context))
     for key in (
@@ -215,6 +218,7 @@ def load(
         model=model,
         tt_capacity=tt_capacity,
         move_ordering=move_ordering,
+        board_backend=board_backend,
     )
 
 
@@ -238,6 +242,7 @@ class SearchTrace:
         model: SearchModel | None = None,
         tt_capacity: int = 0,
         move_ordering: str = 'static',
+        board_backend: str = 'array',
     ) -> None:
         """検証後の設定を保持し、原traceを排他作成する。"""
         self._config, self._context = config, context
@@ -260,6 +265,7 @@ class SearchTrace:
                 leaf_evaluator=self._leaf_evaluator,
                 tt_capacity=tt_capacity,
                 move_ordering=move_ordering,
+                board_backend=board_backend,
             )
             if time_limit_ns is not None
             else None

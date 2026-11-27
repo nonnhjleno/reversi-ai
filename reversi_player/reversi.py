@@ -374,6 +374,9 @@ def main() -> None:
     move_ordering = os.environ.get(timed_search.MOVE_ORDERING_ENV)
     if move_ordering is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
         raise ValueError('move_ordering_requires_one_configuration_source')
+    board_backend = os.environ.get(timed_search.BOARD_BACKEND_ENV)
+    if board_backend is not None and os.environ.get('REVERSI_EVAL_CONFIG'):
+        raise ValueError('board_backend_requires_one_configuration_source')
     trace = search_trace.load(_CHILD_ENTRY_NS, legal_moves_for, apply_move)
     model = search_trace.load_search_model(model_path) if model_path is not None else None
     # unknown＋空searchは従来の固定深度・非計測を維持する。
@@ -383,6 +386,7 @@ def main() -> None:
             leaf_evaluator=model.artifact.model.value if model is not None else None,
             tt_capacity=tt_capacity,
             move_ordering=move_ordering if move_ordering is not None else 'static',
+            board_backend=board_backend if board_backend is not None else 'array',
         )
         if trace is None and not os.environ.get('REVERSI_EVAL_CONFIG') else None
     )

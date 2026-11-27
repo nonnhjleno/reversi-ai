@@ -659,6 +659,10 @@ Phase 5のtime予約分を実測後に再設計した。search_traceからtimed_
 
 時間探索の `search.max_depth` に明示した深度上限を `SearchTrace` から `ResponsePolicy` へ渡す。上限5・6の実験でも従来の時刻と盤面更新の規則を使う。開始した反復の深度・時間・作業量はtrace4の補助記録に保持する。公開する手は完了した最深反復から選ぶ。固定深度設定の受付範囲と、ハーネスの正式資格判定は従来どおりである。[Phase 9-Bの設計](phase9b_depth_design.md)
 
+### Phase 9-Dの盤面バックエンド
+
+時間探索の `search.board_backend` は既定の `array` と実験用の `bitboard` を選ぶ。BitboardはTT無効と静的な着手順を条件とする。通常起動では `REVERSI_BOARD_BACKEND` で指定する。外部プロトコルを処理するBoardは行表現を持ち、時間探索は選択した盤面形式で子局面を作る。Bitboardの葉は既存評価用の行に変換する。探索時刻・カウンター・trace4・schema5は従来の契約に従う。盤面のデータフローとperftの規約は[Phase 9-Dの設計](phase9d_bitboard_design.md)を参照。
+
 ## Phase 5最終レビュー：品質runnerの終了判定
 
 既存の所有子process待機・tree回収の後に、同じperf_counterの実経過を指定上限へ照合する。終了コード0とerrorなしだけではPASSにせず、実測上限超過をtimeout_elapsedとして失敗記録へ渡す。原ログ・実終了値を保存し、新しい常駐監視・独立process・品質上限の変更は導入しない。外部AIと正式評価の依存・通信は変えない。[品質step上限](harness_contracts.md#phase-5最終レビュー品質stepの経過上限)を参照する。
