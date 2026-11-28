@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
+from functools import partial
 import hashlib
 import json
 import os
@@ -23,6 +24,7 @@ else:
 
 DEFAULT_TRACE_DEPTH = timed_search.DEFAULT_TIMED_DEPTH
 MODEL_ENV = 'REVERSI_SEARCH_MODEL'
+NTUPLE_BACKEND_ENV = 'REVERSI_NTUPLE_BACKEND'
 _MODEL_FIELDS = {'model_path', 'model_id', 'model_sha256'}
 
 
@@ -49,6 +51,25 @@ def load_search_model(path: str) -> SearchModel:
         import ntuple_io
     artifact = ntuple_io.load_model(model_path)
     return SearchModel(artifact, started, time.perf_counter_ns())
+
+
+def direct_evaluator(
+    value: object, board_backend: str, model: SearchModel | None
+) -> timed_search.BitboardEvaluator | None:
+    """実験設定を検証し、凍結モデルを直接評価へ結び付ける。"""
+    if type(value) is not str or value not in ('rows', 'bitboard'):
+        raise ValueError('invalid_ntuple_backend')
+    if value == 'rows':
+        return None
+    if board_backend != 'bitboard' or model is None:
+        raise ValueError('direct_evaluation_requires_bitboard_and_ntuple_model')
+    if TYPE_CHECKING:
+        from reversi_player import ntuple_bitboard
+    elif __package__:
+        from . import ntuple_bitboard
+    else:
+        import ntuple_bitboard
+    return partial(ntuple_bitboard.value, model=model.artifact.model)
 
 
 def _object(value: object) -> dict[str, object]:
@@ -135,7 +156,7 @@ def load(
         raise ValueError('unsupported_search_budget')
     allowed = {'algorithm', 'ordered', 'deterministic', 'counting_definition_id', 'tt_capacity'}
     if kind == 'time':
-        allowed.update(('max_depth', 'move_ordering', 'board_backend'))
+        allowed.update(('max_depth', 'move_ordering', 'board_backend', 'ntuple_backend'))
     if set(search) - (allowed | _MODEL_FIELDS):
         raise ValueError('unsupported_search_setting')
     algorithm = search.get('algorithm', 'iterative' if kind == 'time' else 'alphabeta')
@@ -219,6 +240,9 @@ def load(
         tt_capacity=tt_capacity,
         move_ordering=move_ordering,
         board_backend=board_backend,
+        bitboard_evaluator=direct_evaluator(
+            search.get('ntuple_backend', 'rows'), board_backend, model
+        ),
     )
 
 
@@ -243,6 +267,7 @@ class SearchTrace:
         tt_capacity: int = 0,
         move_ordering: str = 'static',
         board_backend: str = 'array',
+        bitboard_evaluator: timed_search.BitboardEvaluator | None = None,
     ) -> None:
         """検証後の設定を保持し、原traceを排他作成する。"""
         self._config, self._context = config, context
@@ -266,6 +291,7 @@ class SearchTrace:
                 tt_capacity=tt_capacity,
                 move_ordering=move_ordering,
                 board_backend=board_backend,
+                bitboard_evaluator=bitboard_evaluator,
             )
             if time_limit_ns is not None
             else None

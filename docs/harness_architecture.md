@@ -663,6 +663,10 @@ Phase 5のtime予約分を実測後に再設計した。search_traceからtimed_
 
 時間探索の `search.board_backend` は既定の `array` と実験用の `bitboard` を選ぶ。BitboardはTT無効と静的な着手順を条件とする。通常起動では `REVERSI_BOARD_BACKEND` で指定する。外部プロトコルを処理するBoardは行表現を持ち、時間探索は選択した盤面形式で子局面を作る。Bitboardの葉は既存評価用の行に変換する。探索時刻・カウンター・trace4・schema5は従来の契約に従う。盤面のデータフローとperftの規約は[Phase 9-Dの設計](phase9d_bitboard_design.md)を参照。
 
+### Phase 9-Eの直接n-tuple評価
+
+`search.ntuple_backend` は既定の `rows` と実験用の `bitboard` を選ぶ。直接評価は凍結したn-tupleモデルとBitboard盤面を使い、座標を行に変換せずLUTの参照列を求める。従来のモデル形式、葉の評価規約、探索時刻、trace4とschema5を使う。[Phase 9-Eの設計](phase9e_ntuple_bitboard_design.md)を参照。
+
 ## Phase 5最終レビュー：品質runnerの終了判定
 
 既存の所有子process待機・tree回収の後に、同じperf_counterの実経過を指定上限へ照合する。終了コード0とerrorなしだけではPASSにせず、実測上限超過をtimeout_elapsedとして失敗記録へ渡す。原ログ・実終了値を保存し、新しい常駐監視・独立process・品質上限の変更は導入しない。外部AIと正式評価の依存・通信は変えない。[品質step上限](harness_contracts.md#phase-5最終レビュー品質stepの経過上限)を参照する。

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from reversi_player import ai_engine
     from reversi_player.bitboard import BitPosition
 
+    BitboardEvaluator: TypeAlias = Callable[[BitPosition, str], float]
     _Snapshot: TypeAlias = ai_engine.BoardRows | BitPosition
     _PrincipalLine: TypeAlias = tuple[ai_engine.Move | None, ...]
 elif __package__:
@@ -175,6 +176,7 @@ def search_iterative(
     move_ordering: str = 'static',
     ordering_stats: OrderingDiagnostics | None = None,
     board_backend: str = 'array',
+    bitboard_evaluator: BitboardEvaluator | None = None,
 ) -> TimedResult:
     """全反復で期限を共有し、完全rootが戻った深度だけを採用する。
 
@@ -223,6 +225,10 @@ def search_iterative(
     table: ai_engine._TranspositionTable | None = None
     mode = validate_move_ordering(move_ordering, ordered, capacity)
     backend = validate_board_backend(board_backend, ordered, mode, capacity)
+    if bitboard_evaluator is not None and (
+        backend != 'bitboard' or not callable(bitboard_evaluator)
+    ):
+        raise ValueError('direct_evaluation_requires_bitboard')
     root_snapshot: _Snapshot = rows
     if backend == 'bitboard' and root_moves:
         # 既存の配布物もarrayを使用できるよう、依存の読込は明示設定時に限る。
@@ -290,27 +296,36 @@ def search_iterative(
         other = 'W' if turn == 'B' else 'B'
         if remaining == 0 or (not moves and not _legal(snapshot, other)):
             _check()
-            leaf_legal: ai_engine.LegalMovesFor = _legal
-            if isinstance(snapshot, tuple):
-                evaluation_rows = snapshot
+            if bitboard_evaluator is not None and not isinstance(snapshot, tuple):
+                if not moves and not _legal(snapshot, other):
+                    value = ai_engine._terminal_score(snapshot.disc_difference(color))
+                else:
+                    black_value = bitboard_evaluator(snapshot, turn)
+                    if not -1.0 <= black_value <= 1.0:
+                        raise ValueError('invalid_leaf_value')
+                    value = black_value if color == 'B' else -black_value
             else:
-                evaluation_rows = snapshot.to_rows()
+                leaf_legal: ai_engine.LegalMovesFor = _legal
+                if isinstance(snapshot, tuple):
+                    evaluation_rows = snapshot
+                else:
+                    evaluation_rows = snapshot.to_rows()
 
-                def _legal_at_leaf(
-                    _rows: ai_engine.BoardRows, leaf_turn: str
-                ) -> ai_engine.LegalMoves:
-                    """この葉のBitboardから合法手を返す。評価は従来の行を読む。"""
-                    return _legal(snapshot, leaf_turn)
+                    def _legal_at_leaf(
+                        _rows: ai_engine.BoardRows, leaf_turn: str
+                    ) -> ai_engine.LegalMoves:
+                        """この葉のBitboardから合法手を返す。評価は従来の行を読む。"""
+                        return _legal(snapshot, leaf_turn)
 
-                leaf_legal = _legal_at_leaf
+                    leaf_legal = _legal_at_leaf
 
-            value = (
-                ai_engine.evaluate_position(evaluation_rows, color, leaf_legal)
-                if leaf_evaluator is None
-                else ai_engine._evaluate_leaf(
-                    evaluation_rows, turn, color, moves, other, leaf_legal, leaf_evaluator
+                value = (
+                    ai_engine.evaluate_position(evaluation_rows, color, leaf_legal)
+                    if leaf_evaluator is None
+                    else ai_engine._evaluate_leaf(
+                        evaluation_rows, turn, color, moves, other, leaf_legal, leaf_evaluator
+                    )
                 )
-            )
             leaves += 1
             _check()
             if table is not None and key is not None:
@@ -467,11 +482,13 @@ class TimedSelector:
         tt_capacity: int = 0,
         move_ordering: str = 'static',
         board_backend: str = 'array',
+        bitboard_evaluator: BitboardEvaluator | None = None,
     ) -> None:
         """純粋callbackと設定を保持し、呼出しごとの結果は置き換える。"""
         self._legal, self._apply, self._policy = legal_moves_for, apply_move, policy
         self._limit_ns, self._ordered = limit_ns, ordered
         self._leaf_evaluator = leaf_evaluator
+        self._bitboard_evaluator = bitboard_evaluator
         self._tt_capacity = ai_engine.validate_tt_capacity(tt_capacity)
         self._move_ordering = validate_move_ordering(move_ordering, ordered, self._tt_capacity)
         self._board_backend = validate_board_backend(
@@ -513,6 +530,7 @@ class TimedSelector:
                 iterations=iterations,
                 move_ordering=self._move_ordering,
                 board_backend=self._board_backend,
+                bitboard_evaluator=self._bitboard_evaluator,
             )
             return self.result.move
         finally:

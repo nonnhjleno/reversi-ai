@@ -1397,3 +1397,7 @@ Phase 1Aの固定5 seedのランダム互換、Phase 1Bの位置重み・(y,x)�
 次はPhase 2の設計と、AI変更前のpositional_v1比較版固定。現branch feat/ai-phase1 / HEAD eb2e860の未コミットworking treeのhashで対象を識別する。Phase 2実装・Git操作は行わず、今回の変更は総括・計画・進捗の文書だけ。意味・依存・通信・正式評価契約は変えていないためモデル図の変更は不要。
 
 総括文書更新後の再実行: `evaluation_results/quality-c1e5e48e0616406fb55c8274a9654107/` で全10必須段階PASS。全pytest 787成功・0失敗（492.24秒）、独立smoke 1成功・786 deselected（3.11秒）、publication検証=[]、開始/終了および現在検査対象hash一致。quality.json SHA-256は `8400df5320196eac74d58dde96f073c650c19e4430c3da172ce7898bf3e350aa`。既存評価JSONは再取得・上書きせず保存証拠から再解析し、事前登録の本文条件は変更していない。
+
+## Phase 9-Eの品質状況（2026-11-28）
+
+Windows直接CPython 3.13.5で関連256件を確認した。正式Fullは初回から3回目までpytestの1,800秒上限で失敗し、4回目に成功した。正式Fullは終了値0で11工程を通過した。pytestは2,091件（819.911秒）、strict mypyは39ファイル、独立smokeは1件。対象85ファイルは開始時・終了時・現行のハッシュが一致し、原証拠のpublication検証もエラー0件。証拠は `evaluation_results/quality-9633ef096d774752bb1e2527fbdf47ae/quality.json`。[Phase 9-Eの実行報告](reports/20261128_phase9e_ntuple_bitboard.md)
