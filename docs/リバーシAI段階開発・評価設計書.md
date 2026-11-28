@@ -483,6 +483,10 @@ Phase 9-Bで凍結したZero-TD 701を使い、置換表を無効にしたまま
 
 Bitboardから直接LUTの参照列を求め、行評価と出現順・重み・値を照合した。固定探索の結果と計数は84組で一致。葉評価は55.1%、固定D5は41.5%短縮した。正式Fullを通過し、明示設定で研究用に採用。正式提出版は維持する。[設計](phase9e_ntuple_bitboard_design.md)・[実行報告](reports/20261128_phase9e_ntuple_bitboard.md)
 
+#### Phase 9-Fの評価関数・深度の再選定
+
+手作業評価とZero-TD 701をD5・D6で比較した。総当たり144局の首位は手作業D6で、最有力の手作業D6は旧研究版に62.5%だった。研究用比較元は凍結701 D5、正式提出版は手作業D4。Phase 9-EのFullを85ファイルのハッシュ一致で再利用した。[Phase 9-F実行報告](reports/20261128_phase9f_candidate_selection.md)
+
 ### Phase 10（候補）：大型パターン、段階別評価、学習方法
 
 Phase 8と探索高速化の計測を基に、許容できる葉の処理時間とメモリを見積もる。既存n-tupleでSGDとAdamを比較し、大型パターンと段階数は独立に変える。Phase 11の監査済み外部教師を共通に使う場合は、既存n-tuple、大型n-tuple、NNを同じラベルと条件で比較する。[技術研究計画 第4〜6節](phase8_plus_research.md)
